@@ -1,0 +1,19 @@
+name: PR Discord Notification
+on:
+  pull_request:
+    types: [opened, closed] # Triggers on PR opens and closes/merges
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: cabrera-evil/discord-notify-action@v1.0.2
+        with:
+          # Set in repo Settings → Secrets and variables → Actions
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: 'Pull Request Event'
+          description: 'A PR was updated in the team repo.'
+          repo_name: ${{ github.repository }}
+          repo_url: ${{ github.event.pull_request.html_url }}
+          author: ${{ github.actor }}
