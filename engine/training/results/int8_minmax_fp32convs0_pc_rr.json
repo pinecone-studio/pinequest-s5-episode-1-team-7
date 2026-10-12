@@ -1,0 +1,25 @@
+{
+  "fp32": {
+    "size_mb": 6.42,
+    "test_auc": 0.9602,
+    "seconds_per_slide": 0.109
+  },
+  "int8": {
+    "size_mb": 1.79,
+    "test_auc": 0.5819,
+    "seconds_per_slide": 0.204
+  },
+  "size_reduction": 0.721,
+  "auc_drop": 0.3783,
+  "speedup": 0.53,
+  "config": {
+    "method": "minmax",
+    "calib_samples": 512,
+    "per_channel": true,
+    "reduce_range": true,
+    "fp32_convs": 0,
+    "eval_limit": 0,
+    "name": ""
+  },
+  "benchmark": "150 patches, batch 16, 4 threads, onnxruntime 1.31.0"
+}
