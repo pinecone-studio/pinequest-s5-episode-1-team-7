@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from pipeline import analyze_slide
-from pipeline.placeholder import placeholder_patch_scores
 
 WHITE = (245, 245, 245)
 TISSUE = (200, 120, 180)
@@ -58,11 +57,19 @@ def test_analyze_slide_rejects_unreadable_file(tmp_path):
         analyze_slide(str(path))
 
 
-def test_placeholder_scores_more_stain_higher():
-    pale = np.full((1, 224, 224, 3), (230, 200, 220), dtype=np.uint8)
-    strong = np.full((1, 224, 224, 3), TISSUE, dtype=np.uint8)
+def test_analyze_slide_scores_tissue_higher_than_background(tmp_path, result_cleanup):
+    pale = np.full((224, 448, 3), (230, 215, 225), dtype=np.uint8)
+    pale[:, :224] = TISSUE
+    result = analyze_slide(write_image(tmp_path / "slide.png", pale))
+    result_cleanup.append(result["heatmap_path"])
 
-    scores = placeholder_patch_scores(np.concatenate([pale, strong]))
+    assert result["num_patches"] == 1  # the pale half is masked out as background
+    assert result["score"] > 0.5  # tiny fixture model: stained tissue scores ~0.75
 
-    assert 0.0 <= scores[0] < scores[1] <= 1.0
-    assert len(placeholder_patch_scores(np.zeros((0, 224, 224, 3), dtype=np.uint8))) == 0
+
+def test_analyze_slide_without_model_fails_loudly(tmp_path, monkeypatch):
+    monkeypatch.setenv("TRIAGE_MODEL_PATH", str(tmp_path / "missing.onnx"))
+    image = np.full((224, 224, 3), TISSUE, dtype=np.uint8)
+
+    with pytest.raises(FileNotFoundError, match="AI model not found"):
+        analyze_slide(write_image(tmp_path / "slide.png", image))

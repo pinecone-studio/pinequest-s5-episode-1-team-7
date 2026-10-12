@@ -59,6 +59,7 @@ Get the whole system running early, before the model exists.
 ### Step 5 — Inference runner (TDD 3.1 step 4, 5.2)
 - `pipeline/inference.py`: load the ONNX session with provider fallback (DirectML / OpenVINO → CPU).
 - Dynamic batching (N = 8 or 16) → `P_malignant ∈ [0,1]` per patch.
+- Done: `analyze_slide` now uses the real model (batches of 16; DirectML → OpenVINO → CPU). A missing model raises a clear error instead of returning fake scores. Finding for step 6: the interim `max(P_patch)` slide score cannot separate slides. A slide built from normal PCam patches scored 0.995 against 1.000 for tumour, because about 2% of normal patches score high. The top-10% mean gave 0.36 vs 1.00, and the mean gave 0.04 vs 0.70.
 
 ### Step 6 — Slide-level score (TDD 3.1 step 5)
 - `pipeline/scoring.py`: `S_slide = w1 · max(P_patch) + w2 · mean(top-k P_patch)`.

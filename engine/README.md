@@ -57,4 +57,14 @@ ONNX contract for the inference runner (step 5):
 - output `p_malignant`: float32 `(N,)` in [0, 1]
 - ImageNet normalisation and the sigmoid are inside the graph
 
+## Inference (step 5)
+`pipeline/inference.py` runs the exported model inside `analyze_slide()`:
+- Model: `model/model_fp32.onnx`, or the file in `TRIAGE_MODEL_PATH`. It is not in git, so get it from a teammate or train and export it as above. **If it is missing, `analyze_slide` raises `FileNotFoundError`** and the backend marks the slide FAILED with that message. There is no silent fallback to fake scores.
+- Execution providers are tried in the order DirectML → OpenVINO → CPU. Only the providers in the installed onnxruntime build are tried (`onnxruntime-directml` or `onnxruntime-openvino`); plain `onnxruntime` is CPU only.
+- Patches are scored in batches of 16 and resized to the model's input size if they differ.
+- onnxruntime is imported on first use. `backend/requirements.txt` must include it (step 8, coordinate with the backend owner); without it, every slide fails with `No module named 'onnxruntime'`.
+- Tests use `tests/fixtures/tiny_model.onnx` (449 bytes, same contract), so they need neither torch nor the real model.
+
+A 12 MP capture (~200 tissue patches) takes about 0.6 s end to end on CPU (i5-13400F), including tiling, masking and the heatmap.
+
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.
