@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights and datasets are large; share them outside git.
+model/*.onnx
+model/*.pt
+data/
