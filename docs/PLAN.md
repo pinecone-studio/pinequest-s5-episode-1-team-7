@@ -50,6 +50,7 @@ Get the whole system running early, before the model exists.
 - Start from pretrained MobileNetV3-Small (fallback: ResNet-18) with a binary head (benign / malignant).
 - Fine-tune on a public histopathology dataset (e.g. PCam or BreakHis); keep the training script in `engine/training/`.
 - Export to `engine/model/model_fp32.onnx`. Record accuracy / AUC on a held-out set.
+- Result (PCam, MobileNetV3-Small, 224 px, strong augmentation + EMA): test AUC 0.960, accuracy 86.0%, 0.29 s CPU per slide (FP32). The first 96 px run scored AUC 0.919. Details in `engine/README.md` and `engine/training/results/`.
 
 ### Step 4 — INT8 quantization (TDD 5.2)
 - `onnxruntime.quantization.quantize_static` with a small calibration set → `model_int8.onnx`.
