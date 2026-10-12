@@ -1,0 +1,68 @@
+import os
+
+import cv2
+import numpy as np
+import pytest
+
+from pipeline import analyze_slide
+from pipeline.placeholder import placeholder_patch_scores
+
+WHITE = (245, 245, 245)
+TISSUE = (200, 120, 180)
+
+
+def write_image(path, rgb):
+    cv2.imwrite(str(path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+    return str(path)
+
+
+@pytest.fixture
+def result_cleanup():
+    """Delete the temp heatmaps analyze_slide creates."""
+    paths = []
+    yield paths
+    for path in paths:
+        if os.path.exists(path):
+            os.remove(path)
+
+
+def test_analyze_slide_scores_tissue_and_writes_heatmap(tmp_path, result_cleanup):
+    image = np.full((300, 500, 3), WHITE, dtype=np.uint8)
+    image[:, :224] = TISSUE  # left column of the 2x3 grid is tissue
+    result = analyze_slide(write_image(tmp_path / "slide.png", image))
+    result_cleanup.append(result["heatmap_path"])
+
+    assert set(result) == {"score", "heatmap_path", "num_patches", "inference_ms"}
+    assert 0.0 < result["score"] <= 1.0
+    assert result["num_patches"] == 1  # bottom-left tile is only 76/224 tissue -> dropped
+    heatmap = cv2.imread(result["heatmap_path"], cv2.IMREAD_UNCHANGED)
+    assert heatmap.shape == (300, 500, 4)
+    assert result["inference_ms"] >= 0
+
+
+def test_analyze_slide_blank_image_scores_zero(tmp_path, result_cleanup):
+    image = np.full((448, 448, 3), WHITE, dtype=np.uint8)
+    result = analyze_slide(write_image(tmp_path / "blank.png", image))
+    result_cleanup.append(result["heatmap_path"])
+
+    assert result["score"] == 0.0
+    assert result["num_patches"] == 0
+    assert (cv2.imread(result["heatmap_path"], cv2.IMREAD_UNCHANGED)[..., 3] == 0).all()
+
+
+def test_analyze_slide_rejects_unreadable_file(tmp_path):
+    path = tmp_path / "broken.png"
+    path.write_bytes(b"not an image")
+
+    with pytest.raises(ValueError):
+        analyze_slide(str(path))
+
+
+def test_placeholder_scores_more_stain_higher():
+    pale = np.full((1, 224, 224, 3), (230, 200, 220), dtype=np.uint8)
+    strong = np.full((1, 224, 224, 3), TISSUE, dtype=np.uint8)
+
+    scores = placeholder_patch_scores(np.concatenate([pale, strong]))
+
+    assert 0.0 <= scores[0] < scores[1] <= 1.0
+    assert len(placeholder_patch_scores(np.zeros((0, 224, 224, 3), dtype=np.uint8))) == 0
