@@ -1,0 +1,5 @@
+# Training and export only; not needed at runtime.
+-r requirements.txt
+torch>=2.3
+torchvision>=0.18
+onnx>=1.16

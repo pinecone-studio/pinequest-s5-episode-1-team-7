@@ -1,0 +1,7 @@
+# Runtime dependencies for the AI engine (bundled with the backend).
+numpy>=1.26
+opencv-python-headless>=4.9
+onnxruntime>=1.18
+
+# Dev
+pytest>=8.0
