@@ -31,7 +31,8 @@ def test_analyze_slide_scores_tissue_and_writes_heatmap(tmp_path, result_cleanup
     result = analyze_slide(write_image(tmp_path / "slide.png", image))
     result_cleanup.append(result["heatmap_path"])
 
-    assert set(result) == {"score", "heatmap_path", "num_patches", "inference_ms"}
+    assert set(result) == {"score", "risk_flag", "heatmap_path", "num_patches", "inference_ms"}
+    assert result["risk_flag"] in {"red", "yellow", "green"}
     assert 0.0 < result["score"] <= 1.0
     assert result["num_patches"] == 1  # bottom-left tile is only 76/224 tissue -> dropped
     heatmap = cv2.imread(result["heatmap_path"], cv2.IMREAD_UNCHANGED)

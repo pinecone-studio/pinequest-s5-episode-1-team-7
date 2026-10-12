@@ -83,4 +83,31 @@ INT8 keeps accuracy and is 72% smaller, but it is **slower** than FP32: MobileNe
 
 A 12 MP capture (~200 tissue patches) takes about 0.6 s end to end on CPU (i5-13400F), including tiling, masking and the heatmap.
 
+## Slide score and risk flag (step 6)
+`pipeline/scoring.py` turns the patch probabilities into one score and a flag:
+
+```
+z       = W_MAX · max(logit P) + (1 − W_MAX) · mean(top-K logit P)     W_MAX = 0, K = 3
+S_slide = sigmoid(z / 4)                                                red ≥ 0.82, yellow ≥ 0.72
+```
+
+- The formula is the TDD's, applied to patch log-odds rather than probabilities. The model is so confident that probability-space scores crowd just below 1.0 (thresholds would sit at 0.99x and slides would tie).
+- `analyze_slide` now returns `risk_flag` too, so the backend's `TRIAGE_RED` / `TRIAGE_YELLOW` defaults are no longer used: the thresholds belong to this model's score scale.
+- `python -m training.tune_scoring` chose W_MAX, K and the thresholds on slides simulated from PCam validation patches. Normal slides have 50–250 normal patches; tumour slides have 1–50% tumour patches. Red is set to catch 5% of normal validation slides, and yellow-or-red 25%.
+
+Test split, 2,000 simulated slides per row:
+
+| Slide | Slide AUC | Flagged red | Flagged yellow or red |
+|---|---|---|---|
+| Normal | – | 0.0% | 3.0% |
+| 1% tumour | 0.745 | 3.7% | 27.7% |
+| 2% tumour | 0.857 | 17.3% | 53.3% |
+| 5% tumour | 0.969 | 56.9% | 86.3% |
+| 10% tumour | 0.997 | 86.4% | 98.1% |
+| 25% tumour | 1.000 | 99.1% | 99.95% |
+
+The old `max(P)` rule scored a normal PCam-built slide 0.995 against 1.000 for tumour. The new score gives 0.69 (green) against 0.95 (red), and 0.88 (red) for a slide with 5% tumour.
+
+Limits: patches are sampled independently, which ignores within-slide correlation (stain, focus), and PCam's validation and test splits differ (normal slides flagged yellow or red: 25% on validation, 3% on test). Re-tune on real smartphone captures before relying on the thresholds.
+
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.
