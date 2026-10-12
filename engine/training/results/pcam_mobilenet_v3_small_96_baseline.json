@@ -1,0 +1,113 @@
+{
+  "dataset": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+  "config": {
+    "arch": "mobilenet_v3_small",
+    "img_size": 96,
+    "epochs": 8,
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "workers": 4,
+    "limit": 0,
+    "seed": 0
+  },
+  "best_epoch": 2,
+  "valid": {
+    "auc": 0.9576244464721547,
+    "accuracy": 0.8861083984375,
+    "sensitivity": 0.8458671879772741,
+    "specificity": 0.9262759924385633,
+    "n": 32768
+  },
+  "test": {
+    "auc": 0.9190950339125717,
+    "accuracy": 0.812225341796875,
+    "sensitivity": 0.6837027538621238,
+    "specificity": 0.9406381550851077,
+    "n": 32768
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.3118678118044045,
+      "seconds": 139.40734399994835,
+      "val_auc": 0.9570160408638761,
+      "val_accuracy": 0.887359619140625,
+      "val_sensitivity": 0.8872258537479382,
+      "val_specificity": 0.8874931398255991,
+      "val_n": 32768
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.18641063940594904,
+      "seconds": 65.99469819990918,
+      "val_auc": 0.9576244464721547,
+      "val_accuracy": 0.8861083984375,
+      "val_sensitivity": 0.8458671879772741,
+      "val_specificity": 0.9262759924385633,
+      "val_n": 32768
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.1552012183237821,
+      "seconds": 35.026611499954015,
+      "val_auc": 0.9522501034895827,
+      "val_accuracy": 0.875823974609375,
+      "val_sensitivity": 0.820392204777323,
+      "val_specificity": 0.9311543386791877,
+      "val_n": 32768
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.13600250792660518,
+      "seconds": 28.040553500060923,
+      "val_auc": 0.9509690328241602,
+      "val_accuracy": 0.87811279296875,
+      "val_sensitivity": 0.8253405828089682,
+      "val_specificity": 0.9307884627111409,
+      "val_n": 32768
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.11702887708452181,
+      "seconds": 28.222847299999557,
+      "val_auc": 0.9418021716381932,
+      "val_accuracy": 0.8529052734375,
+      "val_sensitivity": 0.7493432708167879,
+      "val_specificity": 0.9562778218184036,
+      "val_n": 32768
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.10112339705301565,
+      "seconds": 28.415360199986026,
+      "val_auc": 0.9449521791720402,
+      "val_accuracy": 0.86151123046875,
+      "val_sensitivity": 0.7646160425193964,
+      "val_specificity": 0.9582291603146533,
+      "val_n": 32768
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.08759464725699218,
+      "seconds": 28.025643899920397,
+      "val_auc": 0.9471085429170063,
+      "val_accuracy": 0.860443115234375,
+      "val_sensitivity": 0.7605229397030974,
+      "val_specificity": 0.9601804988109031,
+      "val_n": 32768
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.08130704929499188,
+      "seconds": 28.370373900048435,
+      "val_auc": 0.946134581715915,
+      "val_accuracy": 0.85992431640625,
+      "val_sensitivity": 0.7561854725395565,
+      "val_specificity": 0.9634733825233246,
+      "val_n": 32768
+    }
+  ],
+  "torch": "2.14.1+cu126",
+  "device": "NVIDIA GeForce RTX 4060"
+}
