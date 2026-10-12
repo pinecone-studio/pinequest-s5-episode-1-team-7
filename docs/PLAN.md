@@ -55,6 +55,7 @@ Get the whole system running early, before the model exists.
 ### Step 4 — INT8 quantization (TDD 5.2)
 - `onnxruntime.quantization.quantize_static` with a small calibration set → `model_int8.onnx`.
 - Compare FP32 and INT8 size (target about 75% smaller), AUC drop, and CPU latency. Target: under 1.5 s per slide.
+- Result: INT8 (first 10 convs kept FP32) is 72% smaller (1.8 MB) with no AUC loss (0.963), but slower than FP32 on CPU (0.15 s vs 0.10 s per slide), because MobileNetV3-Small is too small to gain from INT8. Fully quantized, AUC collapses to 0.58. **Decision: the runtime uses `model_fp32.onnx`**, which already meets the 1.5 s target with a wide margin. Details in `engine/README.md`.
 
 ### Step 5 — Inference runner (TDD 3.1 step 4, 5.2)
 - `pipeline/inference.py`: load the ONNX session with provider fallback (DirectML / OpenVINO → CPU).

@@ -57,4 +57,20 @@ ONNX contract for the inference runner (step 5):
 - output `p_malignant`: float32 `(N,)` in [0, 1]
 - ImageNet normalisation and the sigmoid are inside the graph
 
+## INT8 quantization (step 4)
+```bash
+python -m training.quantize     # model/model_fp32.onnx -> model/model_int8.onnx, plus an FP32 vs INT8 report
+```
+Static QDQ quantization of the Conv and Gemm layers, calibrated on 512 PCam training patches. The first 10 convolutions stay FP32 (`--fp32-convs`): in MobileNetV3 a few channels of the first conv are far larger than the rest, so a shared 8-bit scale wipes out the small channels and the following depthwise conv amplifies the error. Weights use reduce-range (7-bit) so CPUs without VNNI, such as the TDD's 8th-gen i3, don't hit ONNX Runtime's U8S8 saturation issue.
+
+| Model (PCam test split) | Test AUC | Size | CPU time / slide* |
+|---|---|---|---|
+| FP32 | 0.960 | 6.4 MB | 0.10 s |
+| **INT8, first 10 convs FP32** | **0.963** | **1.8 MB (−72%)** | 0.15 s |
+| INT8, every conv quantized | 0.582 | 1.8 MB | 0.20 s |
+
+\*Median of 5 runs after warm-up (the step 3 table above timed one cold run), same 150 patches and 4 threads.
+
+INT8 keeps accuracy and is 72% smaller, but it is **slower** than FP32: MobileNetV3-Small is so small that the extra quantize/dequantize steps cost more than the 8-bit maths saves. Use `model_fp32.onnx` at runtime; `model_int8.onnx` only helps where file size matters. INT8 does pay off for bigger models: ResNet-18 went from 1.29 s / 44.8 MB to 0.43 s / 11.4 MB with near-identical outputs, but that is still slower than MobileNetV3-Small in FP32.
+
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.
