@@ -8,23 +8,23 @@ import tempfile
 import time
 
 from .heatmap import render_heatmap, save_heatmap
+from .inference import get_classifier
 from .masking import filter_tissue_patches
-from .placeholder import placeholder_patch_scores
 from .tiling import load_image, tile_image
 
 
 def analyze_slide(image_path: str) -> dict:
     """Score one slide image and write its heatmap PNG to a temp file (the backend moves it).
 
-    risk_flag is left out, so the backend derives it from its thresholds.
+    risk_flag is left out, so the backend derives it from its thresholds. Raises
+    FileNotFoundError if the AI model is missing (see pipeline/inference.py).
     """
     start = time.perf_counter()
 
     image = load_image(image_path)
     tiles = filter_tissue_patches(tile_image(image), image)
 
-    # TODO(step 5): replace with ONNX model inference.
-    probs = placeholder_patch_scores(tiles.patches)
+    probs = get_classifier().predict(tiles.patches)
     # TODO(step 6): replace with the slide-level aggregation formula.
     score = float(probs.max()) if len(probs) else 0.0
 
