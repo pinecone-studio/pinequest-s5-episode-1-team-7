@@ -89,6 +89,6 @@ Members 2 and 3 plan their own detailed steps. Their dependencies on the engine 
 ## Open questions
 - The TDD formula in 3.1 step 5 is garbled (`(Ppatch)w1`). This plan assumes it means `max(P_patch)`. Confirm with the team, along with values for w1, w2 and k.
 - Red/Yellow/Green thresholds for `S_slide`. The backend currently defaults to red ≥ 0.70 and yellow ≥ 0.40 (`TRIAGE_RED`, `TRIAGE_YELLOW`).
-- Frontend: the TDD says Electron + React, but `frontend/` is Next.js. The backend's CORS settings allow Electron and port 5173 (Vite), but not port 3000 (Next.js dev).
+- Frontend: switched from Next.js to Electron + React + Vite + Tailwind (electron-vite) to match the TDD. Next.js's server features don't apply to an offline desktop app, and the backend's CORS settings already allow the Vite dev server (5173) and packaged Electron (`null` origin). Member 3 to confirm.
 - Repo layout: the TDD (7.2) uses `apps/`, `services/` and `engine/`, but the repo currently has `frontend/`, `backend/` and `engine/`. Keep the current layout unless the team decides otherwise.
 - Which training dataset to use, and whether its license allows redistribution of the weights.

@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Desktop UI (Electron + React + Vite + Tailwind)
 
-## Getting Started
+Owner: Member 3 (Front-End UI/UX & Packaging). See [../docs/PLAN.md](../docs/PLAN.md) and TDD sections 2.2, 6.1 and 6.2.
 
-First, run the development server:
+Built with [electron-vite](https://electron-vite.org). Talks to the FastAPI backend at `http://127.0.0.1:8000` (start it from `backend/`).
 
+## Layout
+- `src/main/`: Electron main process (window, app lifecycle)
+- `src/preload/`: bridge between the main process and the page
+- `src/renderer/`: the React app (Tailwind CSS v4 via `@tailwindcss/vite`)
+- `electron-builder.yml`: installer settings (`.exe` via NSIS, `.AppImage` / `.deb`)
+
+## Commands
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # Electron window with hot reload (renderer dev server on :5173)
+npm run lint
+npm run typecheck
+npm run build:win    # Windows installer in dist/
+npm run build:linux  # AppImage + deb
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- The backend URL is `API_URL` in `src/renderer/src/api.ts` (override with `VITE_API_URL`). The page's Content-Security-Policy in `src/renderer/index.html` only allows requests and images from `127.0.0.1:8000` / `localhost:8000`, so update it if the URL changes.
+- The backend's CORS settings already allow this app: the dev server (`http://localhost:5173`) and the packaged app (`file://`, origin `null`).
+- No auto-update or telemetry is configured: the app is offline-first (TDD 7.1).
+- npm 12 blocks dependency install scripts unless they are listed in `allowScripts` in `package.json`. Electron needs its script to download its binary; approve new ones with `npm install-scripts approve <package>`.
