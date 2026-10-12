@@ -10,13 +10,15 @@ import time
 from .heatmap import render_heatmap, save_heatmap
 from .inference import get_classifier
 from .masking import filter_tissue_patches
+from .scoring import risk_flag, slide_score
 from .tiling import load_image, tile_image
 
 
 def analyze_slide(image_path: str) -> dict:
     """Score one slide image and write its heatmap PNG to a temp file (the backend moves it).
 
-    risk_flag is left out, so the backend derives it from its thresholds. Raises
+    risk_flag comes from the engine's thresholds (pipeline/scoring.py), which are tuned to
+    this model's scores, so the backend's own TRIAGE_RED / TRIAGE_YELLOW are not used. Raises
     FileNotFoundError if the AI model is missing (see pipeline/inference.py).
     """
     start = time.perf_counter()
@@ -25,8 +27,7 @@ def analyze_slide(image_path: str) -> dict:
     tiles = filter_tissue_patches(tile_image(image), image)
 
     probs = get_classifier().predict(tiles.patches)
-    # TODO(step 6): replace with the slide-level aggregation formula.
-    score = float(probs.max()) if len(probs) else 0.0
+    score = slide_score(probs)
 
     fd, heatmap_path = tempfile.mkstemp(prefix="heatmap-", suffix=".png")
     os.close(fd)
@@ -34,6 +35,7 @@ def analyze_slide(image_path: str) -> dict:
 
     return {
         "score": score,
+        "risk_flag": risk_flag(score),
         "heatmap_path": heatmap_path,
         "num_patches": len(tiles.patches),
         "inference_ms": (time.perf_counter() - start) * 1000.0,
