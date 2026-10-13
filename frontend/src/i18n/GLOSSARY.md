@@ -27,6 +27,7 @@ Use these terms consistently in `locales/mn/*.json`. If a term changes here, cha
 | manual priority | гараар өгсөн эрэмбэ | `priority_override` |
 | anonymous patient code | өвчтөний нэргүй код | salted hash of the patient ID |
 | microscope camera | микроскопын камер | phone on the eyepiece, USB or Wi-Fi stream |
+| live view | шууд дүрс | camera preview before capturing |
 | hotspot | голомт | outlined high-probability area on the heatmap |
 | prioritisation assistant, not a diagnostic engine | эрэмбэлэх туслах хэрэгсэл, оношлох систем биш | TDD 8.1 warning |
 | pathologist | эмгэг судлаач | |

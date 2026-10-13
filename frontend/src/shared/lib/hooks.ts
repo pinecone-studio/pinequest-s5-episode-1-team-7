@@ -43,3 +43,14 @@ export function useDocumentTitle(title: string) {
     }
   }, [title])
 }
+
+/** False while the browser tab or desktop window is hidden (minimised, another tab in front). */
+export function usePageVisible() {
+  const [visible, setVisible] = useState(() => !document.hidden)
+  useEffect(() => {
+    const update = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [])
+  return visible
+}
