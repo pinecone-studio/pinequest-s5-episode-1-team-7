@@ -119,7 +119,7 @@ At the right scale, phones are about as good as scanners. At the wrong scale, th
 
 ## Open questions
 - The TDD formula in 3.1 step 5 is garbled (`(Ppatch)w1`). This plan assumes it means `max(P_patch)`. Step 6 proposes w1 = 0, w2 = 1, k = 3 in log-odds space. Team to confirm.
-- Red/Yellow/Green thresholds for `S_slide`. Step 6 proposes red ≥ 0.82 and yellow ≥ 0.72, returned by the engine as `risk_flag`, so the backend defaults (0.70 / 0.40) no longer apply. Team (Member 3) to confirm.
+- Red/Yellow/Green thresholds for `S_slide`. Step 6 proposes red ≥ 0.81 and yellow ≥ 0.70 (re-tuned for the distilled model, #38), returned by the engine as `risk_flag`, so the backend defaults (0.70 / 0.40) no longer apply. Team (Member 3) to confirm.
 - ~~Frontend: the TDD says Electron + React, but `frontend/` is Next.js.~~ Resolved: the dashboard is Vite + React (#26) with an Electron desktop shell (#28).
 - Repo layout: the TDD (7.2) uses `apps/`, `services/` and `engine/`, but the repo currently has `frontend/`, `backend/` and `engine/`. Keep the current layout unless the team decides otherwise.
 - ~~Which training dataset to use, and whether its license allows redistribution of the weights.~~ Resolved: PCam (CC0), so the committed weights can be redistributed (step 3).
