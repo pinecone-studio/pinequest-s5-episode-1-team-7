@@ -91,9 +91,34 @@ Members 2 and 3 plan their own detailed steps. Their dependencies on the engine 
 - **Backend (M2):** calls `analyze_slide()` after `/ingest`, stores `score`, `risk_flag` and `heatmap_path` in SQLite, and sorts the queue by `score` in descending order.
 - **Frontend (M3):** shows `risk_flag` in the worklist and overlays `heatmap_path` with the opacity slider.
 
+## Cross-team: magnification calibration (open, issue #35)
+The model only works on photos at the magnification it was trained on: **about 0.42 µm per pixel**. It cannot tell the magnification from the photo, because µm/px depends on the whole setup: objective (10×/20×/40×), eyepiece, phone adapter, phone camera and zoom, and photo resolution.
+
+**Evidence (PLISM, `engine/training/plism_eval.py`).** These are the same tissue spots imaged by 7 scanners and 6 smartphones on a microscope. The table shows the share of normal lymph-node patches the current model flags (P ≥ 0.5):
+
+| Image scale | Scanners | Phones |
+|---|---|---|
+| as captured | 11–32% | 35–76% |
+| resized to 0.6 (≈ 0.42 µm/px) | 0–10% | 0–6% |
+
+At the right scale, phones are about as good as scanners. At the wrong scale, the triage is useless.
+
+**Design**
+1. **Calibrate each setup once** (microscope + phone + adapter). The technician photographs a stage micrometer (a slide with a printed scale, ~$10–20), clicks two marks a known distance apart, and the app stores µm/px for that setup and objective.
+2. **Pick the objective** at every capture or upload. µm/px scales with objective power, so one calibration covers all objectives: `um_per_px(obj) = um_per_px(calibrated) × obj_calibrated / obj`.
+3. **The engine resizes** each photo by `um_per_px / 0.42` before tiling.
+4. **Later:** the engine estimates µm/px from nucleus size and warns when it disagrees with the selected setup (e.g. the wrong objective was picked). It is not accurate enough (±20–30%) to replace calibration.
+
+**Who does what**
+- **Engine (M1):** `analyze_slide(image_path, um_per_px=None)` resizes to `MODEL_UM_PER_PX = 0.42` before tiling and returns `um_per_px_used`. `None` keeps today's behaviour plus a warning. The heatmap stays the size of the original photo. Then the nucleus-size mismatch warning.
+- **Backend (M2):** stores setup profiles (name, calibrated µm/px, objective calibrated at); `/ingest` and `/capture/snapshot` take `setup_id` + `objective`, compute µm/px, pass it to the engine and keep it on the slide record.
+- **Frontend (M3):** a calibration screen (micrometer photo, click two marks, enter the distance); setup and objective pickers on upload and capture; a clear warning when no calibrated setup exists or the engine reports a scale mismatch.
+
+**Done when** the same slide photographed at 10× and at 40× gets similar scores and heatmaps after calibration, and normal lymph-node false alarms stay under ~10% on phone captures.
+
 ## Open questions
 - The TDD formula in 3.1 step 5 is garbled (`(Ppatch)w1`). This plan assumes it means `max(P_patch)`. Step 6 proposes w1 = 0, w2 = 1, k = 3 in log-odds space. Team to confirm.
 - Red/Yellow/Green thresholds for `S_slide`. Step 6 proposes red ≥ 0.82 and yellow ≥ 0.72, returned by the engine as `risk_flag`, so the backend defaults (0.70 / 0.40) no longer apply. Team (Member 3) to confirm.
-- Frontend: the TDD says Electron + React, but `frontend/` is Next.js. The backend's CORS settings allow Electron and port 5173 (Vite), but not port 3000 (Next.js dev).
+- ~~Frontend: the TDD says Electron + React, but `frontend/` is Next.js.~~ Resolved: the dashboard is Vite + React (#26) with an Electron desktop shell (#28).
 - Repo layout: the TDD (7.2) uses `apps/`, `services/` and `engine/`, but the repo currently has `frontend/`, `backend/` and `engine/`. Keep the current layout unless the team decides otherwise.
-- Which training dataset to use, and whether its license allows redistribution of the weights.
+- ~~Which training dataset to use, and whether its license allows redistribution of the weights.~~ Resolved: PCam (CC0), so the committed weights can be redistributed (step 3).
