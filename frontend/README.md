@@ -38,6 +38,8 @@ cd ../backend && pip install pyinstaller && pyinstaller backend.spec   # -> back
 cd ../frontend && npm run desktop:build
 ```
 
+Before a release, test the installers on clinic-like PCs with the [hardware test plan](docs/hardware-test-plan.md) (TDD 8.2).
+
 The installers are unsigned, so macOS Gatekeeper and Windows SmartScreen warn on first open: right-click → Open,
 or "More info → Run anyway". The **Desktop build** GitHub Actions workflow (`.github/workflows/desktop-build.yml`)
 builds the Windows `.exe`, Linux `.AppImage` and macOS `.dmg`. Before packaging, it checks that the frozen backend
