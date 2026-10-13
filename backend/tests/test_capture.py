@@ -71,3 +71,77 @@ def test_snapshot_endpoint_end_to_end(env, monkeypatch):
         assert slide["state"] == "queued" and slide["indication"] == "Urgent"
         assert client.post("/capture/stop").json()["active"] is False
     capture_manager.stop()
+
+
+class _MovingFakeCap:
+    """A 1920x1080 fake camera whose frames differ, like a live feed."""
+
+    def __init__(self):
+        self.n = 0
+
+    def isOpened(self): return True
+    def set(self, *a): return True
+    def grab(self): return True
+    def release(self): pass
+
+    def read(self):
+        import numpy as np
+        self.n += 1
+        return True, np.full((1080, 1920, 3), self.n % 255, dtype=np.uint8)
+
+
+def test_preview_frames_are_small_jpegs(monkeypatch):
+    import cv2
+    import numpy as np
+
+    monkeypatch.setattr(CaptureManager, "_open", staticmethod(lambda source: _MovingFakeCap()))
+    mgr = CaptureManager()
+    with pytest.raises(RuntimeError):
+        mgr.preview_jpeg()  # not started
+    mgr.start("uvc:0")
+    jpeg = mgr.preview_jpeg()
+    frame = cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR)
+    assert frame.shape[:2] == (540, 960)  # longest side capped at 960
+    assert len(jpeg) < len(mgr.snapshot_jpeg())  # lighter than a full-resolution capture
+    mgr.stop()
+
+
+def test_mjpeg_stream_parts_and_end_when_capture_stops(monkeypatch):
+    from app.capture.source import capture_manager
+    from app.routers.capture import mjpeg_frames
+
+    monkeypatch.setattr(CaptureManager, "_open", staticmethod(lambda source: _MovingFakeCap()))
+    capture_manager.start("uvc:0")
+    parts = list(mjpeg_frames(max_frames=2, fps=1000))
+    assert len(parts) == 2
+    assert all(p.startswith(b"--frame\r\nContent-Type: image/jpeg\r\n") and b"\xff\xd8" in p for p in parts)
+    capture_manager.stop()
+    assert list(mjpeg_frames(fps=1000)) == []  # stopped: the stream ends instead of hanging
+
+
+def test_preview_endpoint(env, monkeypatch):
+    pytest.importorskip("httpx")
+    from fastapi.testclient import TestClient
+
+    from app.capture.source import capture_manager
+    from app.main import app
+
+    monkeypatch.setattr(CaptureManager, "_open", staticmethod(lambda source: _MovingFakeCap()))
+    # TestClient waits for the whole body, so let the "camera" drop after 3 frames to end the stream.
+    real_preview, calls = capture_manager.preview_jpeg, []
+
+    def three_frames():
+        calls.append(1)
+        if len(calls) > 3:
+            raise RuntimeError("source dropped")
+        return real_preview()
+
+    monkeypatch.setattr(capture_manager, "preview_jpeg", three_frames)
+    with TestClient(app) as client:
+        assert client.get("/capture/preview").status_code == 409  # not started
+        client.post("/capture/start", json={"source": "uvc:0"})
+        r = client.get("/capture/preview")
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "multipart/x-mixed-replace; boundary=frame"
+        assert r.content.count(b"--frame\r\nContent-Type: image/jpeg") == 3
+    capture_manager.stop()
