@@ -118,4 +118,32 @@ Limits: patches are sampled independently, which ignores within-slide correlatio
 
 A 12 MP capture takes ~0.45 s for the heatmap and ~0.9 s for the whole `analyze_slide` (i5-13400F). Grad-CAM is not implemented: it needs gradients, meaning PyTorch (~2 GB) or a second gradient model on the clinic PC, and the patch map already shows where to look at tile resolution.
 
+## Distillation from a pathology foundation model
+A large pathology foundation model is a much better patch classifier but far too slow for a clinic CPU. Distillation trains the same 6 MB MobileNetV3 to imitate it, so the runtime is unchanged.
+
+1. **Teacher:** [Hibou-B](https://huggingface.co/histai/hibou-b) (Apache 2.0, ViT-B/14, 86M parameters), frozen, plus a linear head trained on its PCam features (`training/teacher.py`). Its weights load into transformers' built-in `Dinov2WithRegistersModel`, so no code from the model repository is executed.
+2. **Student:** `train.py --teacher hibou-b`. The loss is half true labels and half the teacher's probability for the clean image, softened with temperature 2. The student sees augmented copies, so it also learns to give a recoloured or blurred image the teacher's answer for the clean one.
+
+```bash
+# once: accept the terms on huggingface.co/histai/hibou-b, then log in with a Read token
+hf auth login
+# optional: keep the ~350 MB download off a full drive (PowerShell: $env:HF_HUB_CACHE = "B:\...")
+export HF_HUB_CACHE=/path/with/space/hf-cache/hub
+python -m training.teacher --teacher hibou-b              # features (~15 min on an RTX 4060, cached) + head
+python -m training.train --teacher hibou-b --tag kd-hibou   # ~25 min
+python -m training.export_onnx --checkpoint model/pcam_mobilenet_v3_small_224_kd-hibou.pt \
+    --out model/model_fp32_kd-hibou.onnx --results training/results/pcam_mobilenet_v3_small_224_kd-hibou.json
+```
+
+| PCam test split | AUC | Accuracy | Sensitivity | Specificity | Size |
+|---|---|---|---|---|---|
+| Hibou-B teacher (linear head) | 0.984 | 94.3% | – | – | 350 MB |
+| **Distilled student** | **0.969** | **87.8%** | **77.3%** | **98.2%** | **6 MB** |
+| Current model (no teacher) | 0.960 | 86.0% | 74.0% | 97.9% | 6 MB |
+
+The student recovers 37% of the AUC gap to the teacher, which is typical for distillation into a model this much smaller. This is a single run; PCam varies by roughly ±0.003–0.005 AUC between seeds. Shipping the student means replacing `model/model_fp32.onnx` **and re-running `training.tune_scoring`**, because the step 6 thresholds depend on the model's score distribution.
+
+## Robustness on smartphone captures (PLISM)
+`training/plism_eval.py` scores [PLISM-sm](https://doi.org/10.25452/figshare.plus.c.6773925) (CC BY 4.0): the same tissue spots imaged by 7 slide scanners and 6 smartphones through a microscope eyepiece. For each device it reports false alarms on normal lymph node, malignant-versus-normal separation, agreement with a reference scanner, and sharpness. The images are ~0.45 µm/px, close to the model's training scale. Download instructions are in the script's docstring.
+
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.

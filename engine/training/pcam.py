@@ -35,6 +35,7 @@ class PCamBatches(Dataset):
             self.labels = self.labels[:limit]
         self.x_path = Path(x_path)
         self._images = None  # opened lazily, once per worker process
+        self.soft = None     # optional per-sample teacher logits for distillation (set by train.py)
 
     @classmethod
     def from_split(cls, split: str, data_dir: Path = DATA_DIR, limit: int = 0) -> "PCamBatches":
@@ -58,6 +59,8 @@ class PCamBatches(Dataset):
             self._open()
         idx = np.sort(np.asarray(indices))  # h5py needs increasing indices
         images = np.ascontiguousarray(self._images[idx])
+        if self.soft is not None:
+            return torch.from_numpy(images), torch.from_numpy(self.labels[idx]), torch.from_numpy(self.soft[idx])
         return torch.from_numpy(images), torch.from_numpy(self.labels[idx])
 
 

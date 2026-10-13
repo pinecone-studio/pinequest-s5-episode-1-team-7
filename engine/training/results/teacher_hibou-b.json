@@ -1,0 +1,7 @@
+{
+  "teacher": "hibou-b",
+  "repo": "histai/hibou-b",
+  "valid_auc": 0.975683992836246,
+  "test_auc": 0.9842441146372318,
+  "test_accuracy": 0.9425048828125
+}

@@ -46,6 +46,9 @@ def parse_args():
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--limit", type=int, default=0, help="use only the first N samples of each split")
     p.add_argument("--tag", default="", help="appended to output file names")
+    p.add_argument("--teacher", default="", help="distil from this teacher (training/teacher.py), e.g. hibou-b")
+    p.add_argument("--kd-alpha", type=float, default=0.5, help="weight of the true labels; 1 - alpha goes to the teacher")
+    p.add_argument("--kd-temp", type=float, default=2.0, help="softens teacher and student logits for the distillation loss")
     p.add_argument("--data-dir", type=Path, default=DATA_DIR)
     p.add_argument("--seed", type=int, default=0)
     return p.parse_args()
@@ -83,6 +86,18 @@ def threshold_for_sensitivity(probs: np.ndarray, labels: np.ndarray, sensitivity
     return float(np.quantile(probs[labels == 1], 1.0 - sensitivity))
 
 
+def teacher_logits(name: str, limit: int = 0) -> np.ndarray:
+    """Teacher logit for every training image, from its cached features and head."""
+    from training.teacher import CACHE_DIR, TEACHERS, head_path
+
+    features = np.load(CACHE_DIR / f"teacher_{name}_train.npz")["features"]
+    head = nn.Linear(TEACHERS[name]["dim"], 1)
+    head.load_state_dict(torch.load(head_path(name), map_location="cpu"))
+    with torch.no_grad():
+        logits = head(torch.from_numpy(features.astype(np.float32))).squeeze(1).numpy()
+    return logits[:limit] if limit else logits
+
+
 def main():
     args = parse_args()
     torch.manual_seed(args.seed)
@@ -102,6 +117,9 @@ def main():
         optimizer, max_lr=args.lr, total_steps=args.epochs * len(train_loader), pct_start=0.1
     )
     loss_fn = nn.BCEWithLogitsLoss()
+    if args.teacher:
+        data["train"].soft = teacher_logits(args.teacher, args.limit)
+        print(f"distilling from {args.teacher}: alpha {args.kd_alpha}, temperature {args.kd_temp}")
 
     # Smoke runs (--limit) never overwrite real results.
     name = f"pcam_{args.arch}_{args.img_size}" + (f"_{args.tag}" if args.tag else "") + (f"_limit{args.limit}" if args.limit else "")
@@ -112,11 +130,18 @@ def main():
     for epoch in range(1, args.epochs + 1):
         net.train()
         start, total_loss, steps = time.perf_counter(), 0.0, 0
-        for images, y in train_loader:
+        for images, y, *soft in train_loader:
             x = augment(to_input(images, device, args.img_size), args.aug_strength)
             y = y.to(device, non_blocking=True)
             with torch.autocast(device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
-                loss = loss_fn(net.logits(x).float(), y)
+                logits = net.logits(x).float()
+            loss = loss_fn(logits, y)
+            if soft:
+                # Offline distillation: the teacher's view of the clean image is the target for the
+                # augmented one, so the student also learns to ignore stain, blur and lighting changes.
+                t = args.kd_temp
+                target = torch.sigmoid(soft[0].to(device, non_blocking=True) / t)
+                loss = args.kd_alpha * loss + (1 - args.kd_alpha) * t * t * loss_fn(logits / t, target)
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
@@ -160,6 +185,7 @@ def main():
     RESULTS_DIR.mkdir(exist_ok=True)
     result = {
         "dataset": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+        "teacher": args.teacher or None,
         "config": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items() if k != "data_dir"},
         "best_epoch": best["epoch"],
         "valid": evaluation["tta1"]["valid"],

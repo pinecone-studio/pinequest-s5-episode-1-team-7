@@ -1,0 +1,185 @@
+{
+  "dataset": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+  "teacher": "hibou-b",
+  "config": {
+    "arch": "mobilenet_v3_small",
+    "img_size": 224,
+    "epochs": 8,
+    "batch_size": 256,
+    "lr": 0.0005,
+    "weight_decay": 0.05,
+    "aug_strength": 1.0,
+    "ema_decay": 0.999,
+    "tta": 8,
+    "workers": 4,
+    "limit": 0,
+    "tag": "kd-hibou",
+    "teacher": "hibou-b",
+    "kd_alpha": 0.5,
+    "kd_temp": 2.0,
+    "seed": 0
+  },
+  "best_epoch": 6,
+  "valid": {
+    "auc": 0.9732750709611586,
+    "accuracy": 0.905487060546875,
+    "sensitivity": 0.8348097012645855,
+    "specificity": 0.9760351240929325,
+    "threshold": 0.5,
+    "n": 32768
+  },
+  "test": {
+    "auc": 0.9686701277823608,
+    "accuracy": 0.877655029296875,
+    "sensitivity": 0.7729742932160958,
+    "specificity": 0.9822463547068513,
+    "threshold": 0.5,
+    "n": 32768
+  },
+  "evaluation": {
+    "tta1": {
+      "valid": {
+        "auc": 0.9732750709611586,
+        "accuracy": 0.905487060546875,
+        "sensitivity": 0.8348097012645855,
+        "specificity": 0.9760351240929325,
+        "threshold": 0.5,
+        "n": 32768
+      },
+      "test": {
+        "auc": 0.9686701277823608,
+        "accuracy": 0.877655029296875,
+        "sensitivity": 0.7729742932160958,
+        "specificity": 0.9822463547068513,
+        "threshold": 0.5,
+        "n": 32768
+      },
+      "test_at_val_90_sensitivity": {
+        "auc": 0.9686701277823608,
+        "accuracy": 0.909423828125,
+        "sensitivity": 0.8707333455455822,
+        "specificity": 0.9480812641083521,
+        "threshold": 0.181640625,
+        "n": 32768
+      }
+    },
+    "tta8": {
+      "valid": {
+        "auc": 0.9749933793154,
+        "accuracy": 0.9091796875,
+        "sensitivity": 0.8402468079907142,
+        "specificity": 0.9779864625891823,
+        "threshold": 0.5,
+        "n": 32768
+      },
+      "test": {
+        "auc": 0.9714040014847967,
+        "accuracy": 0.8822021484375,
+        "sensitivity": 0.779507846369909,
+        "specificity": 0.9848087365017387,
+        "threshold": 0.5,
+        "n": 32768
+      },
+      "test_at_val_90_sensitivity": {
+        "auc": 0.9714040014847967,
+        "accuracy": 0.91387939453125,
+        "sensitivity": 0.8741527752335593,
+        "specificity": 0.9535720822402538,
+        "threshold": 0.206787109375,
+        "n": 32768
+      }
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.8737117839627899,
+      "seconds": 231.50005420017987,
+      "val_auc": 0.9097176387401995,
+      "val_accuracy": 0.746826171875,
+      "val_sensitivity": 0.5247724357016311,
+      "val_specificity": 0.9684736874199646,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.6922593753552064,
+      "seconds": 165.69670869992115,
+      "val_auc": 0.9642915147006169,
+      "val_accuracy": 0.893524169921875,
+      "val_sensitivity": 0.8336489706151873,
+      "val_specificity": 0.9532898347460211,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.6688356772647239,
+      "seconds": 169.00434620003216,
+      "val_auc": 0.9710811432199822,
+      "val_accuracy": 0.906158447265625,
+      "val_sensitivity": 0.8483108314496914,
+      "val_specificity": 0.9639002378193793,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.6554464792716317,
+      "seconds": 164.46321010007523,
+      "val_auc": 0.9718466872926974,
+      "val_accuracy": 0.906768798828125,
+      "val_sensitivity": 0.8481886492760706,
+      "val_specificity": 0.965241783035551,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.6459668015595526,
+      "seconds": 164.74731760006398,
+      "val_auc": 0.972817372098225,
+      "val_accuracy": 0.907562255859375,
+      "val_sensitivity": 0.8425682692895107,
+      "val_specificity": 0.972437343740472,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.6383062589447945,
+      "seconds": 163.64610109990463,
+      "val_auc": 0.9732750709611586,
+      "val_accuracy": 0.905487060546875,
+      "val_sensitivity": 0.8348097012645855,
+      "val_specificity": 0.9760351240929325,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.6326873516663909,
+      "seconds": 162.07693879981525,
+      "val_auc": 0.9731134062652157,
+      "val_accuracy": 0.9073486328125,
+      "val_sensitivity": 0.8388417129940742,
+      "val_specificity": 0.9757302274528935,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.630324537109118,
+      "seconds": 161.07637090003118,
+      "val_auc": 0.9725956687108631,
+      "val_accuracy": 0.90771484375,
+      "val_sensitivity": 0.8433624534180463,
+      "val_specificity": 0.9719495091164095,
+      "val_threshold": 0.5,
+      "val_n": 32768
+    }
+  ],
+  "torch": "2.14.1+cu126",
+  "device": "NVIDIA GeForce RTX 4060"
+}
