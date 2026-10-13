@@ -1,0 +1,16 @@
+{
+  "loading": "Loading photo…",
+  "imageMissing": "The slide photo could not be loaded.",
+  "overlay": {
+    "label": "Overlay",
+    "heat": "AI heatmap",
+    "heatMissing": "The heatmap appears once the AI has scored the slide",
+    "none": "Photo only",
+    "opacity": "Heatmap opacity"
+  },
+  "legend": {
+    "low": "Low",
+    "high": "High",
+    "hotspot": "Hotspot: look here first"
+  }
+}
