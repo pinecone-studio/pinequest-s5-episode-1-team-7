@@ -1,0 +1,66 @@
+# Front-end checks on every pull request that touches frontend/: lint, unit tests, type-check + build
+# (dashboard and Electron shell), and the browser tests in Chrome against the mocked API.
+name: Frontend checks
+
+on:
+  pull_request:
+    paths:
+      - frontend/**
+      - .github/workflows/frontend-checks.yml
+  push:
+    branches: [main]
+    paths:
+      - frontend/**
+      - .github/workflows/frontend-checks.yml
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, test, build, browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # The Electron binary is only needed for desktop builds (desktop-build.yml).
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and component tests (incl. Mongolian/English completeness)
+        run: npm test
+
+      - name: Type-check and build the dashboard
+        run: npm run build
+
+      - name: Type-check the desktop shell
+        run: npx tsc -p tsconfig.electron.json --noEmit
+
+      # Uses the Google Chrome preinstalled on GitHub's Ubuntu runners (playwright.config.ts: channel chrome).
+      - name: Browser tests (mocked API)
+        run: npm run test:e2e
+
+      - name: Upload browser-test traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: frontend/test-results/
+          retention-days: 7
