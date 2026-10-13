@@ -82,7 +82,7 @@ Get the whole system running early, before the model exists.
 - Only `score` (0–1) is required. If `risk_flag` is missing, the backend derives it from its thresholds. See `backend/app/engine_adapter.py` for how results are validated.
 - Add `onnxruntime` to `backend/requirements.txt` (coordinate with Member 2), because the engine runs in the backend's Python environment.
 - Member 2's FastAPI `/ingest` calls this. Member 3 reads `risk_flag` and `heatmap_path`.
-- Done: `analyze_slide` returns the full contract, including `risk_flag` (#20, #22, #25); `onnxruntime` is in `backend/requirements.txt` (#23); the model is committed (#24). The end-to-end `/ingest` check passed, and the packaged exe bundles the engine and model (`backend/backend.spec`, packaging fix PR).
+- Done: `analyze_slide` returns the full contract, including `risk_flag` (#20, #22, #25); `onnxruntime` is in `backend/requirements.txt` (#23); the model is committed (#24). The end-to-end `/ingest` check passed, and the packaged exe bundles the engine and model (`backend/backend.spec`, #27); the desktop app runs it (#28).
 
 ---
 
