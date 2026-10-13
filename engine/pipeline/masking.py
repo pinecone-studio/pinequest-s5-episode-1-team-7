@@ -45,10 +45,15 @@ def tissue_fraction(mask: np.ndarray, tiles: Tiles) -> np.ndarray:
 
 
 def filter_tissue_patches(
-    tiles: Tiles, image: np.ndarray, min_fraction: float = MIN_TISSUE_FRACTION
+    tiles: Tiles, image: np.ndarray, min_fraction: float = MIN_TISSUE_FRACTION, mask: np.ndarray = None
 ) -> Tiles:
-    """Keep only the tiles whose tissue fraction is at least min_fraction."""
-    keep = tissue_fraction(tissue_mask(image), tiles) >= min_fraction
+    """Keep only the tiles whose tissue fraction is at least min_fraction.
+
+    mask: the image's tissue_mask, if the caller already has it.
+    """
+    if mask is None:
+        mask = tissue_mask(image)
+    keep = tissue_fraction(mask, tiles) >= min_fraction
     return replace(tiles, patches=tiles.patches[keep], coords=tiles.coords[keep])
 
 

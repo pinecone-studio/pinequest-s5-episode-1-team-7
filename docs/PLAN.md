@@ -71,6 +71,8 @@ Get the whole system running early, before the model exists.
 ### Step 7 — Heatmap and Grad-CAM (TDD 2.3, 3.1 step 7)
 - `pipeline/heatmap.py`: build a patch-probability grid → upsample to image size → Green/Yellow/Red colormap → save a PNG overlay to local storage.
 - Grad-CAM as a follow-up, run on the FP32 PyTorch/ONNX model, because gradients are not available from the INT8 model.
+- Done: the heatmap interpolates patch probabilities, colours only tissue pixels, and outlines tiles with P ≥ 0.8 in bright cyan (TDD 6.2 focus cues). It takes ~0.45 s for a 12 MP image; `analyze_slide` takes ~0.9 s in total. Grad-CAM is deferred: it needs PyTorch (~2 GB) or a separate gradient model at runtime, for a sharper map than the patch map already gives.
+- End-to-end check (step 2b goal) passed on `main`: three JPEG slides uploaded through the backend's `/ingest` went new → queued with the engine's score, flag and heatmap (normal 0.68 green; 5% and 100% tumour 0.88 / 0.95 red).
 
 ### Step 8 — Final entry point (interface contract)
 - Wire the real model (Steps 5–7) into `analyze_slide(image_path) -> dict` in `engine/pipeline/__init__.py` (set up in Step 2b):
