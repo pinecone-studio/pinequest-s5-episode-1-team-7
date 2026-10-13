@@ -86,5 +86,24 @@ class CaptureManager:
                 raise RuntimeError("failed to encode the frame")
             return buf.tobytes()
 
+    def preview_jpeg(self, max_side: int = 960, quality: int = 70) -> bytes:
+        """A small JPEG of the current frame for the live preview (framing and focusing only; captures
+        use snapshot_jpeg() at full resolution). RuntimeError if not started or no frame."""
+        with self._lock:
+            if self._cap is None:
+                raise RuntimeError("capture is not started")
+            self._cap.grab()  # skip one buffered frame, so the preview stays close to real time
+            ok, frame = self._cap.read()
+        if not ok or frame is None:
+            raise RuntimeError("failed to read a frame from the source")
+        height, width = frame.shape[:2]
+        scale = max_side / max(height, width)
+        if scale < 1:
+            frame = cv2.resize(frame, (round(width * scale), round(height * scale)), interpolation=cv2.INTER_AREA)
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        if not ok:
+            raise RuntimeError("failed to encode the frame")
+        return buf.tobytes()
+
 
 capture_manager = CaptureManager()
