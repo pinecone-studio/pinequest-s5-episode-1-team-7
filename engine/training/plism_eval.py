@@ -33,7 +33,7 @@ from sklearn.metrics import roc_auc_score
 
 from pipeline.inference import DEFAULT_MODEL_PATH, PatchClassifier
 
-RESULTS_PATH = Path(__file__).resolve().parents[1] / "training" / "results" / "plism_eval.json"
+RESULTS_DIR = Path(__file__).resolve().parents[1] / "training" / "results"
 SCANNERS = ("GT450", "AT2", "S360", "S60", "S210", "SQ", "P")
 PHONES = ("galaxy", "iphone13", "iphone6", "itel", "moto", "redmi")
 REFERENCE = "GT450"
@@ -153,8 +153,9 @@ def main():
         results["by_scale"][str(scale)] = report
         print_table(report, f"PLISM-sm, scale {scale} (LN = normal lymph node, FA = P >= 0.5, |dP| and flips vs {REFERENCE})")
 
-    RESULTS_PATH.write_text(json.dumps(results, indent=2))
-    print(f"\nresults: {RESULTS_PATH}")
+    out = RESULTS_DIR / f"plism_{args.model.stem}.json"  # e.g. plism_model_fp32.json
+    out.write_text(json.dumps(results, indent=2))
+    print(f"\nresults: {out}")
 
 
 if __name__ == "__main__":

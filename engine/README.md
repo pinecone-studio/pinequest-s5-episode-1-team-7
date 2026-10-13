@@ -144,6 +144,28 @@ python -m training.export_onnx --checkpoint model/pcam_mobilenet_v3_small_224_kd
 The student recovers 37% of the AUC gap to the teacher, which is typical for distillation into a model this much smaller. This is a single run; PCam varies by roughly ±0.003–0.005 AUC between seeds. Shipping the student means replacing `model/model_fp32.onnx` **and re-running `training.tune_scoring`**, because the step 6 thresholds depend on the model's score distribution.
 
 ## Robustness on smartphone captures (PLISM)
-`training/plism_eval.py` scores [PLISM-sm](https://doi.org/10.25452/figshare.plus.c.6773925) (CC BY 4.0): the same tissue spots imaged by 7 slide scanners and 6 smartphones through a microscope eyepiece. For each device it reports false alarms on normal lymph node, malignant-versus-normal separation, agreement with a reference scanner, and sharpness. The images are ~0.45 µm/px, close to the model's training scale. Download instructions are in the script's docstring.
+`training/plism_eval.py` scores [PLISM-sm](https://doi.org/10.25452/figshare.plus.c.6773925) (CC BY 4.0): the same tissue spots imaged by 7 slide scanners and 6 smartphones through a microscope eyepiece. For each device it reports false alarms on normal lymph node, malignant-versus-normal separation, agreement with a reference scanner, and sharpness. Download instructions are in the script's docstring.
+
+**Magnification is the biggest factor.** The images are ~0.25 µm/px (40× objective), and the model works best with them resized to 0.6×, i.e. ~0.42 µm/px, its training scale. Normal lymph-node patches flagged (P ≥ 0.5) by the current model:
+
+| Image scale | Scanners | Phones |
+|---|---|---|
+| 1.0 (as captured) | 11–32% | 35–76% |
+| 0.75 | 1–9% | 2–31% |
+| **0.6 (≈ 0.42 µm/px)** | **0–10%** | **0–6%** |
+
+At the right scale phones are about as good as scanners, so every capture must be resized to the model's scale (issue #35).
+
+**Distilled vs current model at scale 0.6** (mean over devices; ~520 lymph-node patches per device, so 1 percentage point ≈ 5 patches):
+
+| | Current | Distilled |
+|---|---|---|
+| Phones: normal lymph-node false alarms | 3.0% | 2.6% |
+| Phones: P ≥ 0.5 flips vs the reference scanner (GT450) | 18.1% | 15.5% |
+| Phones: malignant vs normal tissue AUC (other organs) | 0.620 | 0.637 |
+| Scanners: normal lymph-node false alarms | 3.4% | 2.7% |
+| Scanners: malignant vs normal tissue AUC | 0.577 | 0.613 |
+
+The distilled model agrees better between phones and scanners and is better or equal on lymph node. **Neither model works on other organs**: 20–50% of normal patches from other organs are flagged, and malignant-vs-normal AUC is only ~0.6, because the training data is lymph node only. Each organ needs its own training data. Results: `training/results/plism_model_fp32*.json`.
 
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.
