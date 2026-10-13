@@ -12,16 +12,18 @@ means one stray high patch (dust, a fold) can't flag a slide by itself.
 
 W_MAX, TOP_K and the thresholds were chosen on slides simulated from PCam validation
 patches (training/tune_scoring.py, results in training/results/slide_scoring.json):
-red catches ~5% of normal slides, yellow-or-red ~25%. They are a starting point for the
-team (PLAN step 6) and must be re-tuned on real smartphone captures.
+red catches ~5% of normal slides, yellow-or-red ~25%. They belong to the model in
+model/model_fp32.onnx (currently the Hibou-B-distilled student): re-run tune_scoring
+whenever that file changes. They are a starting point for the team (PLAN step 6) and must
+be re-tuned on real smartphone captures.
 """
 import numpy as np
 
 W_MAX = 0.0  # the search preferred the top-k mean alone; the max term stays available
 TOP_K = 3
 TEMPERATURE = 4.0
-RED_THRESHOLD = 0.82
-YELLOW_THRESHOLD = 0.72
+RED_THRESHOLD = 0.81
+YELLOW_THRESHOLD = 0.70
 _EPS = 1e-7  # keeps logit finite for probabilities of exactly 0 or 1
 
 
