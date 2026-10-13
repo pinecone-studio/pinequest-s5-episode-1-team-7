@@ -1,0 +1,82 @@
+{
+  "app": {
+    "tagline": "AI pathology triage"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "disclaimer": {
+    "title": "Prioritisation assistant, not a diagnostic engine.",
+    "body": "The AI only orders the worklist. All slides must be manually reviewed by a pathologist."
+  },
+  "action": {
+    "cancel": "Cancel"
+  },
+  "status": {
+    "loading": "Loading…",
+    "saving": "Saving…"
+  },
+  "time": {
+    "now": "just now",
+    "minute_one": "{{count}} min ago",
+    "minute_other": "{{count}} min ago",
+    "hour_one": "{{count}} h ago",
+    "hour_other": "{{count}} h ago",
+    "day_one": "{{count}} day ago",
+    "day_other": "{{count}} days ago",
+    "seconds": "{{value}} s"
+  },
+  "engine": {
+    "online": "Triage engine online",
+    "offline": "Triage engine offline",
+    "connecting": "Connecting…"
+  },
+  "risk": {
+    "red": "High risk",
+    "yellow": "Moderate risk",
+    "green": "Low risk",
+    "scoreHint": "AI slide score, 0–100"
+  },
+  "state": {
+    "new": "New slide",
+    "image_processing": "Image processing",
+    "ai_running": "AI model running",
+    "scored": "Risk score calculated",
+    "queued": "In worklist",
+    "under_review": "Under review",
+    "archived": "Reviewed & archived",
+    "failed": "Failed"
+  },
+  "indication": {
+    "Routine": "Routine",
+    "Urgent": "Urgent"
+  },
+  "decision": {
+    "confirm_malignancy": "Confirm malignancy",
+    "mark_benign": "Mark benign",
+    "request_biopsy": "Request formal biopsy"
+  },
+  "priority": {
+    "manual": "Manual priority",
+    "manualHint": "A pathologist re-assigned this slide's priority",
+    "level": {
+      "highest": "Highest",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "slide": {
+    "title": "Slide #{{id}}",
+    "code": "ID {{code}}"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to the worklist"
+  },
+  "crash": {
+    "title": "Something went wrong on this page",
+    "body": "Your cases are safe on the clinic computer. Reload the dashboard to continue.",
+    "reload": "Reload dashboard"
+  }
+}

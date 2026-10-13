@@ -1,0 +1,44 @@
+{
+  "title": "Priority worklist",
+  "subtitle": "Highest AI risk first, so hidden malignancies in routine samples surface early.",
+  "tab": {
+    "label": "Show",
+    "queue": "Worklist ({{count}})",
+    "review": "Under review ({{count}})",
+    "archived": "Archived",
+    "queueList": "Worklist",
+    "reviewList": "Slides under review",
+    "archivedList": "Archived slides"
+  },
+  "reviewHint": "Slides a pathologist has opened. Decide, or re-assign priority to send one back to the worklist.",
+  "sort": {
+    "byRisk": "Sort by AI risk score",
+    "riskHint": "Manually prioritised slides first, then highest AI score.",
+    "arrivalHint": "Urgent requests first, then oldest first."
+  },
+  "stats": {
+    "red": "High risk",
+    "yellow": "Moderate risk",
+    "urgent": "Urgent requests",
+    "processing": "Processing"
+  },
+  "column": {
+    "risk": "AI risk",
+    "slide": "Slide",
+    "indication": "Request",
+    "score": "AI score",
+    "status": "Status"
+  },
+  "empty": {
+    "queue": "No slides waiting. Add a slide photo to begin.",
+    "review": "No slides are under review.",
+    "archived": "No archived slides yet."
+  },
+  "processing": {
+    "title": "Processing and failed"
+  },
+  "offline": {
+    "title": "Can't reach the triage engine",
+    "hint": "Start the backend on this computer (cd backend && python run_server.py), then this page reconnects by itself."
+  }
+}

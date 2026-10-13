@@ -1,0 +1,42 @@
+{
+  "title": "New slide",
+  "intro": "Capture high-field regions with the phone on the microscope eyepiece. Analysis runs on this computer, offline.",
+  "mode": {
+    "label": "How to add the slide",
+    "upload": "Upload photo",
+    "camera": "Microscope camera"
+  },
+  "field": {
+    "patient": "Patient ID (optional)",
+    "patientHint": "Stored only as an anonymous code; photo metadata is removed.",
+    "indication": "Clinical request"
+  },
+  "drop": {
+    "title": "Drop a slide photo here",
+    "formats": "or tap to choose · JPEG, PNG, TIFF · up to 40 MB"
+  },
+  "selectedPhoto": "Selected slide photo",
+  "submit": "Submit for AI triage",
+  "submitting": "Sending…",
+  "added": "Slide #{{id}} added. It appears in the worklist once the AI has scored it.",
+  "camera": {
+    "source": "Camera source",
+    "sourceHint": "uvc:0 for a phone on USB (webcam mode), or the phone's rtsp:// or http:// stream on the clinic Wi-Fi.",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "disconnect": "Disconnect",
+    "connected": "Connected to {{source}}",
+    "disconnected": "Camera not connected",
+    "capture": "Capture slide photo"
+  },
+  "error": {
+    "offline": "Can't reach the triage engine. Check that it is running on this computer, then try again.",
+    "blurry": "The photo is too blurry. Refocus the microscope and capture it again.",
+    "unreadable": "This file is not a readable image.",
+    "tooLarge": "The photo is larger than 40 MB.",
+    "badSource": "Use uvc:0 for a USB phone, or an rtsp:// or http:// address.",
+    "cameraUnavailable": "Can't open that camera. Check the cable or the phone's streaming app.",
+    "cameraOff": "Connect the camera first.",
+    "rejected": "The slide was rejected: {{detail}}"
+  }
+}

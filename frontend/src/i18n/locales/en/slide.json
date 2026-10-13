@@ -1,0 +1,53 @@
+{
+  "title": "Slide",
+  "loading": "Loading slide…",
+  "notFound": "This slide doesn't exist.",
+  "backToWorklist": "Worklist",
+  "viewerLabel": "Slide viewer",
+  "codeHint": "Anonymous patient code (salted hash); the raw patient ID is never stored.",
+  "received": "Received {{when}}",
+  "score": {
+    "title": "AI risk score",
+    "manualPriority": "Manual priority: {{level}}",
+    "patches": "Tissue patches analysed",
+    "inference": "AI inference time",
+    "aidOnly": "Prioritisation aid only: the pathologist makes the diagnosis."
+  },
+  "pipeline": {
+    "title": "Analysis progress",
+    "failed": "Analysis failed"
+  },
+  "review": {
+    "title": "Pathologist review",
+    "startHint": "Opening the slide moves it to Under review, so colleagues can see it is taken.",
+    "start": "Start review",
+    "decideHint": "Each decision archives the slide after you confirm it.",
+    "confirm": {
+      "confirm_malignancy": "Confirm malignancy?",
+      "mark_benign": "Mark this slide benign?",
+      "request_biopsy": "Request a formal biopsy?"
+    },
+    "confirmBody": "This records your decision and archives the slide. Archived slides can't be reopened.",
+    "retryHint": "Run the analysis again, e.g. after a power cut or once the engine is fixed.",
+    "retry": "Retry analysis",
+    "decision": "Decision",
+    "archivedAt": "Archived"
+  },
+  "priority": {
+    "trigger": "Re-assign priority",
+    "hint": "Manually prioritised slides are listed above AI-ranked ones, ordered by this level.",
+    "hintReview": "Sends the slide back to the worklist with this priority, above AI-ranked slides."
+  },
+  "history": {
+    "title_one": "History ({{count}} event)",
+    "title_other": "History ({{count}} events)",
+    "note": {
+      "confirm_malignancy": "malignancy confirmed",
+      "mark_benign": "marked benign",
+      "request_biopsy": "formal biopsy requested",
+      "priority_reassigned": "priority re-assigned",
+      "retry": "retried",
+      "interrupted_by_restart": "interrupted by a restart"
+    }
+  }
+}
