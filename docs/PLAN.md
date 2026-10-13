@@ -67,6 +67,7 @@ Get the whole system running early, before the model exists.
 - Map S_slide to a Red / Yellow / Green risk flag (thresholds to agree with Member 3).
 - Tests: known probability arrays → expected score and flag.
 - Done: the formula is applied to patch log-odds, with w1 = 0 and k = 3 (the mean of the 3 highest patch log-odds), and S = sigmoid(z / 4). Red ≥ 0.82, yellow ≥ 0.72. All were chosen on slides simulated from PCam validation patches (`engine/training/tune_scoring.py`). On test, 0% of normal slides are flagged red and 3% yellow; slides with 5% tumour are flagged yellow or red 86% of the time, and slides with 10% tumour 98%. `analyze_slide` now returns `risk_flag`, so the backend's thresholds are no longer used. Details in `engine/README.md`. Re-tune on real captures.
+- Update: the shipped model is now the Hibou-B-distilled student (PCam test AUC 0.969), and the thresholds were re-tuned for it to **red ≥ 0.81, yellow ≥ 0.70**. With 5% tumour, 92% of simulated slides are flagged yellow or red; 5.8% of normal slides are flagged yellow (details in `engine/README.md`).
 
 ### Step 7 — Heatmap and Grad-CAM (TDD 2.3, 3.1 step 7)
 - `pipeline/heatmap.py`: build a patch-probability grid → upsample to image size → Green/Yellow/Red colormap → save a PNG overlay to local storage.
@@ -92,7 +93,7 @@ Members 2 and 3 plan their own detailed steps. Their dependencies on the engine 
 
 ## Open questions
 - The TDD formula in 3.1 step 5 is garbled (`(Ppatch)w1`). This plan assumes it means `max(P_patch)`. Step 6 proposes w1 = 0, w2 = 1, k = 3 in log-odds space. Team to confirm.
-- Red/Yellow/Green thresholds for `S_slide`. Step 6 proposes red ≥ 0.82 and yellow ≥ 0.72, returned by the engine as `risk_flag`, so the backend defaults (0.70 / 0.40) no longer apply. Team (Member 3) to confirm.
+- Red/Yellow/Green thresholds for `S_slide`. Step 6 proposes red ≥ 0.81 and yellow ≥ 0.70 (re-tuned for the distilled model), returned by the engine as `risk_flag`, so the backend defaults (0.70 / 0.40) no longer apply. Team (Member 3) to confirm.
 - Frontend: the TDD says Electron + React, but `frontend/` is Next.js. The backend's CORS settings allow Electron and port 5173 (Vite), but not port 3000 (Next.js dev).
 - Repo layout: the TDD (7.2) uses `apps/`, `services/` and `engine/`, but the repo currently has `frontend/`, `backend/` and `engine/`. Keep the current layout unless the team decides otherwise.
 - Which training dataset to use, and whether its license allows redistribution of the weights.
