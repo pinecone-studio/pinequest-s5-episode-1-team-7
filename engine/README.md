@@ -4,7 +4,7 @@ Owner: Member 1 (ML / AI Engine). See [../docs/PLAN.md](../docs/PLAN.md) for the
 
 ## Layout
 - `pipeline/`: tiling, background masking, inference, scoring, heatmaps
-- `model/`: ONNX model files. `model_fp32.onnx` (the runtime model) is committed; INT8 and training checkpoints are not
+- `model/`: model files. Committed: `model_fp32.onnx` (the runtime model), the 224 px training checkpoints (`.pt`, for fine-tuning) and the distillation teacher head. INT8 and older checkpoints are not
 - `training/`: fine-tuning and ONNX export scripts
 - `tests/`: pytest tests
 

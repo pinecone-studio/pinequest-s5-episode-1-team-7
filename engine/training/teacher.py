@@ -24,7 +24,8 @@ from torch import nn
 from training.pcam import DATA_DIR, PCamBatches, make_loader, to_input
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
-CACHE_DIR = ENGINE_DIR / "data" / "cache"
+CACHE_DIR = ENGINE_DIR / "data" / "cache"   # teacher features (large, not in git)
+MODEL_DIR = ENGINE_DIR / "model"            # teacher head (3 KB, committed)
 RESULTS_DIR = ENGINE_DIR / "training" / "results"
 INPUT_SIZE = 224
 
@@ -76,7 +77,7 @@ class Teacher(nn.Module):
 
 
 def head_path(name: str) -> Path:
-    return CACHE_DIR / f"teacher_{name}_head.pt"
+    return MODEL_DIR / f"teacher_{name}_head.pt"
 
 
 def load_teacher(name: str, device) -> Teacher:
