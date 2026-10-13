@@ -4,7 +4,7 @@ Owner: Member 1 (ML / AI Engine). See [../docs/PLAN.md](../docs/PLAN.md) for the
 
 ## Layout
 - `pipeline/`: tiling, background masking, inference, scoring, heatmaps
-- `model/`: ONNX model files (FP32 / INT8), not committed
+- `model/`: ONNX model files. `model_fp32.onnx` (the runtime model) is committed; INT8 and training checkpoints are not
 - `training/`: fine-tuning and ONNX export scripts
 - `tests/`: pytest tests
 
@@ -75,7 +75,7 @@ INT8 keeps accuracy and is 72% smaller, but it is **slower** than FP32: MobileNe
 
 ## Inference (step 5)
 `pipeline/inference.py` runs the exported model inside `analyze_slide()`:
-- Model: `model/model_fp32.onnx`, or the file in `TRIAGE_MODEL_PATH`. It is not in git, so get it from a teammate or train and export it as above. **If it is missing, `analyze_slide` raises `FileNotFoundError`** and the backend marks the slide FAILED with that message. There is no silent fallback to fake scores.
+- Model: `model/model_fp32.onnx`, or the file in `TRIAGE_MODEL_PATH`. It is committed (6.4 MB, MobileNetV3-Small at 224 px, PCam test AUC 0.960); re-export it as above after retraining. **If it is missing, `analyze_slide` raises `FileNotFoundError`** and the backend marks the slide FAILED with that message. There is no silent fallback to fake scores.
 - Execution providers are tried in the order DirectML → OpenVINO → CPU. Only the providers in the installed onnxruntime build are tried (`onnxruntime-directml` or `onnxruntime-openvino`); plain `onnxruntime` is CPU only.
 - Patches are scored in batches of 16 and resized to the model's input size if they differ.
 - onnxruntime is imported on first use. `backend/requirements.txt` must include it (step 8, coordinate with the backend owner); without it, every slide fails with `No module named 'onnxruntime'`.

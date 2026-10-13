@@ -1,0 +1,5 @@
+# Model and data files are binary: never convert line endings or diff them as text.
+*.onnx binary
+*.pt binary
+*.npz binary
+*.h5 binary

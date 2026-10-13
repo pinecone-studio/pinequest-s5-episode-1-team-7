@@ -3,7 +3,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Model weights and datasets are large; share them outside git.
+# Datasets and training checkpoints are large; share them outside git.
+# The runtime model (model_fp32.onnx, ~6 MB) is committed so the app works after a clone.
 model/*.onnx
+!model/model_fp32.onnx
 model/*.pt
 data/
