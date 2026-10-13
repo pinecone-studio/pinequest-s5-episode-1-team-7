@@ -8,6 +8,7 @@ import { useStoredState } from '../../shared/lib/hooks.ts'
 import { Button } from '../../shared/ui/Button.tsx'
 import { fieldClass } from '../../shared/ui/field.ts'
 import { SegmentedControl } from '../../shared/ui/SegmentedControl.tsx'
+import { CameraPreview } from './CameraPreview.tsx'
 import { ingestErrorKey } from './errors.ts'
 
 type Mode = 'upload' | 'camera'
@@ -234,6 +235,8 @@ function CameraForm({ patientId, indication, onDone }: FormProps) {
         <span className={cn('size-2 rounded-full', active ? 'bg-emerald-500' : 'bg-slate-400')} />
         {active ? t('camera.connected', { source: status.data?.source }) : t('camera.disconnected')}
       </p>
+
+      {active && <CameraPreview source={status.data?.source ?? null} />}
 
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">

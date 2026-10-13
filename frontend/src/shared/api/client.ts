@@ -75,6 +75,8 @@ export const api = {
   reassignPriority: (id: number, priority: number) =>
     post<Slide>(`/slides/${id}/action`, { action: 'reassign_priority', priority }),
   retry: (id: number) => post<Slide>(`/slides/${id}/retry`),
+  /** Live MJPEG stream of the connected camera, for an <img src> (backend: GET /capture/preview). */
+  capturePreviewUrl: () => `${API_BASE}/capture/preview`,
   captureStatus: () => request<CaptureStatus>('/capture/status'),
   captureStart: (source: string) => post<CaptureStatus>('/capture/start', { source }),
   captureStop: () => post<CaptureStatus>('/capture/stop'),
