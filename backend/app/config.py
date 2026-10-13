@@ -23,6 +23,12 @@ MAX_CONCURRENT_INFERENCE = max(1, int(os.getenv("TRIAGE_MAX_INFERENCE", "1")))
 
 MAX_UPLOAD_MB = int(os.getenv("TRIAGE_MAX_UPLOAD_MB", "40"))
 
+# Laplacian-variance blur gate, TDD 8.1 (see app/quality.py). <= 0 disables
+# the check. Solid-colour synthetic images score ~0, so the default stays off
+# for tests/demos; clinics should set e.g. TRIAGE_SHARPNESS=100 to reject
+# out-of-focus captures at /ingest and /capture/snapshot time.
+SHARPNESS_THRESHOLD = float(os.getenv("TRIAGE_SHARPNESS", "0"))
+
 HOST = os.getenv("TRIAGE_HOST", "127.0.0.1")  # localhost only: offline-first
 PORT = int(os.getenv("TRIAGE_PORT", "8000"))
 
@@ -30,3 +36,7 @@ PORT = int(os.getenv("TRIAGE_PORT", "8000"))
 def ensure_dirs() -> None:
     for d in (DATA_DIR, IMAGES_DIR, HEATMAPS_DIR):
         d.mkdir(parents=True, exist_ok=True)
+        try:  # patient data: keep other local users out (best effort, e.g. no-op on Windows)
+            os.chmod(d, 0o700)
+        except OSError:
+            pass

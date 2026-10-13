@@ -1,7 +1,10 @@
 """SQLite access layer (stdlib sqlite3 keeps the PyInstaller binary small).
 
 Encryption at rest (SQLCipher, TDD 7.1) can be added later by changing only `connect()`.
+Until then, patient data is protected by restrictive file permissions (dirs 0700,
+DB file 0600, see config.ensure_dirs and init_db).
 """
+import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -65,3 +68,7 @@ def session(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
 def init_db(path: Optional[Path] = None) -> None:
     with session(path) as conn:
         conn.executescript(SCHEMA)
+    try:  # patient data: keep other local users out (best effort)
+        os.chmod(str(path or config.DB_PATH), 0o600)
+    except OSError:
+        pass

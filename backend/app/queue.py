@@ -84,8 +84,12 @@ def set_score(conn: sqlite3.Connection, slide_id: int, score: float, flag: Optio
 
 def list_queue(conn: sqlite3.Connection, sort: str = "risk") -> list[sqlite3.Row]:
     """Worklist (state = queued). 'risk' = descending S_slide (manual priority wins); 'time' = oldest first."""
-    order = "created_at ASC, id ASC" if sort == "time" else \
-        "COALESCE(priority_override, risk_score) DESC, created_at ASC, id ASC"
+    if sort == "time":
+        order = "created_at ASC, id ASC"
+    else:
+        # A pathologist's explicit override always outranks the AI score, even on ties.
+        order = ("(priority_override IS NOT NULL) DESC, "
+                 "COALESCE(priority_override, risk_score) DESC, created_at ASC, id ASC")
     return conn.execute(
         f"SELECT * FROM slides WHERE state=? ORDER BY {order}", (SlideState.QUEUED.value,)
     ).fetchall()

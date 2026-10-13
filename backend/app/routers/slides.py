@@ -26,6 +26,8 @@ def get_queue(sort: str = Query("risk", pattern="^(risk|time)$")):
 
 @router.get("/slides", response_model=list[SlideOut])
 def list_slides(state: str | None = None):
+    if state is not None and state not in {s.value for s in SlideState}:
+        raise HTTPException(422, f"unknown state: {state}")
     with db.session() as conn:
         return [SlideOut.from_row(r) for r in queue.list_all(conn, state)]
 

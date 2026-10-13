@@ -5,6 +5,9 @@ pydantic>=2.6
 pillow>=10.0
 opencv-python-headless>=4.9
 numpy>=1.26
+# The AI engine (../engine) runs inside this process, so its runtime is needed
+# here too (docs/PLAN.md step 8). Must match engine/requirements.txt.
+onnxruntime>=1.18
 # dev / test
 pytest>=8.0
 httpx>=0.27
