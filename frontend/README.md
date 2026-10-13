@@ -88,6 +88,9 @@ npm run test:desktop   # launches the Electron app: backend start, review flow, 
 # E2E_DESKTOP=1 E2E_DESKTOP_APP="release/mac-arm64/Pathology Triage.app/Contents/MacOS/Pathology Triage" npx playwright test e2e/desktop.spec.ts
 ```
 
+GitHub runs lint, unit tests, the build and the mocked browser tests on every pull request that touches
+`frontend/` (`.github/workflows/frontend-checks.yml`); if the PR shows ❌, open the run for the failing step.
+
 The mocked browser tests (`e2e/`) use an in-memory copy of the backend API, including its state machine.
 After a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays it step by step.
 
