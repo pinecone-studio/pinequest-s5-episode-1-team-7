@@ -1,0 +1,70 @@
+# Offline desktop installers (TDD 2.2, 5.1): Windows .exe, Linux .AppImage, macOS .dmg.
+# PyInstaller can't cross-compile, so each one is built on its own OS. Download them from the run's
+# "Artifacts". The installers are unsigned, so Windows SmartScreen and macOS Gatekeeper will warn.
+name: Desktop build
+
+on:
+  pull_request:
+    paths:
+      - frontend/**
+      - backend/**
+      - engine/**
+      - .github/workflows/desktop-build.yml
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows, os: windows-latest, backend: triage-backend.exe, installer: "*.exe" }
+          - { name: Linux, os: ubuntu-22.04, backend: triage-backend, installer: "*.AppImage" }
+          - { name: macOS, os: macos-latest, backend: triage-backend, installer: "*.dmg" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Build the backend (PyInstaller)
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt pyinstaller
+          pyinstaller --noconfirm backend.spec
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install front-end dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Packaged backend runs the AI engine, not the stub
+        working-directory: frontend
+        run: node scripts/smoke-backend.mjs ../backend/dist/${{ matrix.backend }}
+
+      - name: Build the installer
+        working-directory: frontend
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run desktop:build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pathology-triage-${{ matrix.name }}
+          path: frontend/release/${{ matrix.installer }}
+          if-no-files-found: error
+          retention-days: 14

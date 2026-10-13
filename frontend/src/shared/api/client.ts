@@ -10,11 +10,12 @@ import type {
 } from './types.ts'
 
 /**
- * Backend origin. In development Vite proxies /api to the backend (see vite.config.ts), so the dashboard
- * and API share an origin. A packaged build (Electron, static files) sets VITE_API_BASE, e.g.
- * http://127.0.0.1:8000, which the backend's CORS settings allow.
+ * Backend origin, in order of precedence:
+ * - the desktop app's backend, passed in by Electron (electron/preload.cts), on a free local port;
+ * - VITE_API_BASE at build time, e.g. http://127.0.0.1:8000 for a static build (the backend's CORS allows it);
+ * - /api in development, which Vite proxies to the backend (see vite.config.ts).
  */
-export const API_BASE = (import.meta.env.VITE_API_BASE ?? '/api').replace(/\/+$/, '')
+export const API_BASE = (window.triageDesktop?.apiBase ?? import.meta.env.VITE_API_BASE ?? '/api').replace(/\/+$/, '')
 
 /** A failed request. `status` is the HTTP status, or 0 when the backend could not be reached. */
 export class ApiError extends Error {

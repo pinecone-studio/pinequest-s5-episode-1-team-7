@@ -1,7 +1,8 @@
 {
   "name": "pathology-triage-dashboard",
+  "productName": "Pathology Triage",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +11,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:full": "E2E_FULL=1 playwright test",
-    "preview": "vite preview"
+    "test:e2e:full": "cross-env E2E_FULL=1 playwright test",
+    "test:desktop": "npm run desktop:compile && cross-env E2E_DESKTOP=1 playwright test e2e/desktop.spec.ts",
+    "preview": "vite preview",
+    "desktop:compile": "tsc -p tsconfig.electron.json && vite build --mode desktop",
+    "desktop:dev": "tsc -p tsconfig.electron.json && node scripts/desktop-dev.mjs",
+    "desktop:build": "npm run desktop:compile && electron-builder"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -38,11 +43,18 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "cross-env": "^10.1.0",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
     "jsdom": "^30.1.2",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^6.4.3",
     "vitest": "^5.0.4"
-  }
+  },
+  "description": "Pathologist dashboard and desktop app for the offline AI pathology triage system",
+  "main": "dist-electron/main.cjs",
+  "author": "pinecone-studio team 7",
+  "license": "MIT"
 }

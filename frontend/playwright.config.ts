@@ -13,12 +13,14 @@ import { defineConfig, devices } from '@playwright/test'
  *   (backend/.venv, see backend/README.md); set E2E_PYTHON to use another interpreter.
  */
 const FULL = !!process.env.E2E_FULL
+/** `npm run test:desktop`: launches the Electron app itself (e2e/desktop.spec.ts); no web server needed. */
+const DESKTOP = !!process.env.E2E_DESKTOP
 const UI_PORT = 5199
 const API_PORT = 8012
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: FULL ? [] : ['**/full-stack.spec.ts'],
+  testIgnore: [...(FULL ? [] : ['**/full-stack.spec.ts']), ...(DESKTOP ? [] : ['**/desktop.spec.ts'])],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -30,7 +32,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }],
-  webServer: [
+  webServer: DESKTOP
+    ? []
+    : [
     {
       command: `npx vite --port ${UI_PORT} --strictPort`,
       url: `http://localhost:${UI_PORT}`,
