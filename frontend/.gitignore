@@ -28,3 +28,8 @@ dist-ssr
 # Playwright
 /test-results/
 /playwright-report/
+
+# Desktop app
+/dist-desktop/
+/dist-electron/
+/release/
