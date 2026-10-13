@@ -67,6 +67,7 @@ Get the whole system running early, before the model exists.
 - Map S_slide to a Red / Yellow / Green risk flag (thresholds to agree with Member 3).
 - Tests: known probability arrays → expected score and flag.
 - Done: the formula is applied to patch log-odds, with w1 = 0 and k = 3 (the mean of the 3 highest patch log-odds), and S = sigmoid(z / 4). Red ≥ 0.82, yellow ≥ 0.72. All were chosen on slides simulated from PCam validation patches (`engine/training/tune_scoring.py`). On test, 0% of normal slides are flagged red and 3% yellow; slides with 5% tumour are flagged yellow or red 86% of the time, and slides with 10% tumour 98%. `analyze_slide` now returns `risk_flag`, so the backend's thresholds are no longer used. Details in `engine/README.md`. Re-tune on real captures.
+- Update: the shipped model is now the Hibou-B-distilled student (PCam test AUC 0.969), and the thresholds were re-tuned for it to **red ≥ 0.81, yellow ≥ 0.70**. With 5% tumour, 92% of simulated slides are flagged yellow or red; 5.8% of normal slides are flagged yellow (details in `engine/README.md`).
 
 ### Step 7 — Heatmap and Grad-CAM (TDD 2.3, 3.1 step 7) ✅ (#25; Grad-CAM deferred)
 - `pipeline/heatmap.py`: build a patch-probability grid → upsample to image size → Green/Yellow/Red colormap → save a PNG overlay to local storage.

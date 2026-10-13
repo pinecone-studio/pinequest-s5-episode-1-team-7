@@ -79,8 +79,11 @@ def main():
 
     metadata = {}
     if args.results:
-        test = json.loads(args.results.read_text())["test"]
+        results = json.loads(args.results.read_text())
+        test = results["test"]
         metadata = {"test_auc": f"{test['auc']:.4f}", "test_accuracy": f"{test['accuracy']:.4f}"}
+        if results.get("teacher"):
+            metadata["distilled_from"] = results["teacher"]
     export(args.checkpoint, args.out, {"dataset": "PCam", **metadata}, tta=args.tta)
 
 

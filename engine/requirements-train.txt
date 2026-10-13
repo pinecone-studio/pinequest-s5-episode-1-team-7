@@ -9,3 +9,6 @@ onnxscript>=0.4  # torch.onnx dynamo exporter
 h5py>=3.10
 pyarrow>=15.0
 scikit-learn>=1.4
+# Distillation teacher (training/teacher.py) and Hugging Face login
+transformers>=5.0  # converts the Hibou checkpoint into the built-in class; tested with 5.19
+huggingface_hub>=0.34

@@ -105,3 +105,14 @@ def test_tta_model_averages_orientations():
     with torch.no_grad():
         expected = torch.stack([net(v) for v in tta_views(x, 4)]).mean(0)
         torch.testing.assert_close(TTAModel(net, 4)(x), expected)
+
+
+def test_batches_include_teacher_logits_when_set(tmp_path):
+    _, labels = write_split(tmp_path, "train", 6)
+    data = PCamBatches.from_split("train", tmp_path)
+    data.soft = np.arange(6, dtype=np.float32)
+
+    x, y, soft = data[[4, 1]]
+
+    np.testing.assert_array_equal(soft.numpy(), [1.0, 4.0])  # same sorted order as images and labels
+    np.testing.assert_array_equal(y.numpy(), labels[[1, 4]].astype(np.float32))
