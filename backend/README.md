@@ -37,7 +37,13 @@ Expose `analyze_slide(image_path: str) -> dict` with `score` (0-1, required) and
 `engine.pipeline:analyze_slide` (override with `TRIAGE_ENGINE`). If it cannot be imported a stub scorer is used (logged as a warning).
 
 ## Configuration (env vars)
-`TRIAGE_DATA_DIR`, `TRIAGE_HASH_SALT`, `TRIAGE_ENGINE`, `TRIAGE_RED`, `TRIAGE_YELLOW`, `TRIAGE_MAX_INFERENCE`, `TRIAGE_MAX_UPLOAD_MB`, `TRIAGE_HOST`, `TRIAGE_PORT`.
+`TRIAGE_DATA_DIR`, `TRIAGE_HASH_SALT`, `TRIAGE_ENGINE`, `TRIAGE_RED`, `TRIAGE_YELLOW`, `TRIAGE_MAX_INFERENCE`, `TRIAGE_MAX_UPLOAD_MB`, `TRIAGE_HOST`, `TRIAGE_PORT`, `TRIAGE_SHARPNESS`.
+
+`TRIAGE_SHARPNESS` is the Laplacian-variance blur gate (TDD 8.1): captures scoring
+below it are rejected with 422 so the technician retakes them in focus. `<= 0`
+(default) disables the check. Sharp textured captures score in the hundreds+,
+heavily blurred ones in the single digits — `100` is a good starting value for
+clinics (solid-colour synthetic/test images score ~0, so keep it off for demos).
 
 ## Package (single offline executable)
 ```bash

@@ -17,6 +17,19 @@ class CaptureManager:
         self._lock = threading.Lock()
 
     @staticmethod
+    def _validate(source: str) -> None:
+        """Reject malformed source strings without touching any hardware."""
+        if source.startswith("uvc:"):
+            try:
+                int(source[4:] or 0)
+            except ValueError:
+                raise ValueError("uvc source must look like 'uvc:0'")
+        elif source.startswith(("rtsp://", "http://", "https://")):
+            return
+        else:
+            raise ValueError("source must be 'uvc:<index>' or an rtsp:// / http:// URL")
+
+    @staticmethod
     def _open(source: str) -> cv2.VideoCapture:
         if source.startswith("uvc:"):
             try:
@@ -37,6 +50,7 @@ class CaptureManager:
 
     def start(self, source: str) -> None:
         """Open a source (replacing any active one). ValueError: bad string, ConnectionError: unreachable."""
+        self._validate(source)  # fail fast on malformed strings, before touching hardware
         new_cap = self._open(source)
         with self._lock:
             self._release()

@@ -1,8 +1,9 @@
 """Shared ingestion used by POST /ingest and the capture snapshot (TDD 3.1 steps 1-2)."""
+import os
 import uuid
 from typing import Optional
 
-from . import anonymize, config, db, queue
+from . import anonymize, config, db, quality, queue
 
 ALLOWED_INDICATIONS = {"Routine", "Urgent"}
 
@@ -10,7 +11,8 @@ ALLOWED_INDICATIONS = {"Routine", "Urgent"}
 def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Routine") -> int:
     """Validate, anonymize and store an image, then create the slide record (state NEW). Returns slide id.
 
-    Raises ValueError for bad input (empty / too large / not an image / bad indication).
+    Raises ValueError for bad input (empty / too large / not an image / bad indication
+    / too blurry when TRIAGE_SHARPNESS > 0).
     """
     if indication not in ALLOWED_INDICATIONS:
         raise ValueError("indication must be 'Routine' or 'Urgent'")
@@ -19,9 +21,14 @@ def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Rout
     if len(data) > config.MAX_UPLOAD_MB * 1024 * 1024:
         raise ValueError(f"file larger than {config.MAX_UPLOAD_MB} MB")
     clean, ext = anonymize.strip_exif(data)
+    quality.check_sharpness(clean, config.SHARPNESS_THRESHOLD)
     config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     path = config.IMAGES_DIR / f"{uuid.uuid4().hex}.{ext}"
     path.write_bytes(clean)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
     try:
         with db.session() as conn:
             return queue.create_slide(conn, anonymize.hash_patient_id(patient_id), indication, str(path))
