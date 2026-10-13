@@ -27,7 +27,12 @@
     "disconnect": "Disconnect",
     "connected": "Connected to {{source}}",
     "disconnected": "Camera not connected",
-    "capture": "Capture slide photo"
+    "capture": "Capture slide photo",
+    "preview": "Live microscope view",
+    "previewHint": "Focus until the cells look sharp, then capture.",
+    "previewUnavailable": "The live view isn't available. You can still capture.",
+    "previewRetry": "Try again",
+    "previewPaused": "Live view paused while the window is hidden."
   },
   "error": {
     "offline": "Can't reach the triage engine. Check that it is running on this computer, then try again.",

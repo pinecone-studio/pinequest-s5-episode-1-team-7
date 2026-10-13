@@ -51,6 +51,8 @@ export class MockBackend {
   /** Every POST the dashboard sent: path and JSON or form body. */
   readonly posts: { path: string; body: Record<string, unknown> }[] = []
   capture = { active: false, source: null as string | null }
+  /** False mimics a backend from before GET /capture/preview existed (404). */
+  hasPreview = true
 
   constructor(slides: Slide[]) {
     this.slides = slides
@@ -123,6 +125,12 @@ export class MockBackend {
           return json(route, this.ingest(this.posts.at(-1)!.body as Record<string, string>), 202)
         }
         if (path === '/capture/status') return json(route, this.capture)
+        if (path === '/capture/preview') {
+          if (!this.hasPreview) return json(route, { detail: 'Not Found' }, 404)
+          if (!this.capture.active) return json(route, { detail: 'capture is not started' }, 409)
+          // One JPEG stands in for the MJPEG stream; the browser shows either the same way.
+          return route.fulfill({ status: 200, contentType: 'image/jpeg', body: PHOTO })
+        }
         if (path === '/capture/start') {
           this.capture = { active: true, source: String(this.posts.at(-1)!.body.source) }
           return json(route, this.capture)
