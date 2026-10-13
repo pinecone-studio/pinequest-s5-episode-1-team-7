@@ -110,4 +110,12 @@ The old `max(P)` rule scored a normal PCam-built slide 0.995 against 1.000 for t
 
 Limits: patches are sampled independently, which ignores within-slide correlation (stain, focus), and PCam's validation and test splits differ (normal slides flagged yellow or red: 25% on validation, 3% on test). Re-tune on real smartphone captures before relying on the thresholds.
 
+## Heatmap overlay (step 7)
+`pipeline/heatmap.py` writes an RGBA PNG the size of the photo, for the viewer's overlay:
+- **Colour:** patch P_malignant, green 0 → yellow 0.5 → red 1. It is interpolated between the centres of scored tiles, so the overlay is smooth rather than blocky, and unscored background tiles don't pull it towards green.
+- **Alpha:** only tissue pixels of scored tiles are opaque, using the tissue mask from step 2. White background and fat holes stay clear. The UI applies the opacity slider.
+- **Hotspots:** tiles with P ≥ 0.8 are outlined in bright cyan, clipped to tissue and with adjacent tiles merged, ignoring specks under a quarter tile (TDD 6.2 focus cues). The outline is part of the same PNG, so it fades with the opacity slider too.
+
+A 12 MP capture takes ~0.45 s for the heatmap and ~0.9 s for the whole `analyze_slide` (i5-13400F). Grad-CAM is not implemented: it needs gradients, meaning PyTorch (~2 GB) or a second gradient model on the clinic PC, and the patch map already shows where to look at tile resolution.
+
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.

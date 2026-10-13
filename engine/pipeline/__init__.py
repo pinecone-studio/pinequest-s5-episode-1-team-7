@@ -9,7 +9,7 @@ import time
 
 from .heatmap import render_heatmap, save_heatmap
 from .inference import get_classifier
-from .masking import filter_tissue_patches
+from .masking import filter_tissue_patches, tissue_mask
 from .scoring import risk_flag, slide_score
 from .tiling import load_image, tile_image
 
@@ -24,14 +24,15 @@ def analyze_slide(image_path: str) -> dict:
     start = time.perf_counter()
 
     image = load_image(image_path)
-    tiles = filter_tissue_patches(tile_image(image), image)
+    tissue = tissue_mask(image)
+    tiles = filter_tissue_patches(tile_image(image), image, mask=tissue)
 
     probs = get_classifier().predict(tiles.patches)
     score = slide_score(probs)
 
     fd, heatmap_path = tempfile.mkstemp(prefix="heatmap-", suffix=".png")
     os.close(fd)
-    save_heatmap(render_heatmap(tiles, probs), heatmap_path)
+    save_heatmap(render_heatmap(tiles, probs, tissue), heatmap_path)
 
     return {
         "score": score,
