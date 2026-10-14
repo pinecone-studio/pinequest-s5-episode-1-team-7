@@ -1,0 +1,280 @@
+{
+  "model": "model_fp32.onnx",
+  "organ": "colon",
+  "reference_scanner": "GT450",
+  "by_scale": {
+    "0.5": {
+      "GT450": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0013858340680599213,
+        "malignant_vs_normal_auc": 0.7358991191258404,
+        "normal_tissue_false_alarm": 0.17201426024955438,
+        "sharpness_median": 18.64186480092758,
+        "sharpness_p05": 7.585724984756235,
+        "organ": {
+          "normal_false_alarm": 0.04716981132075472,
+          "cancer_flagged": 0.6548672566371682,
+          "cancer_vs_normal_auc": 0.8918016363332777,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "images": 4454
+      },
+      "AT2": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0003975348954554647,
+        "malignant_vs_normal_auc": 0.7249363191396956,
+        "normal_tissue_false_alarm": 0.09982174688057041,
+        "sharpness_median": 88.42305930004659,
+        "sharpness_p05": 31.749903313417597,
+        "organ": {
+          "normal_false_alarm": 0.018867924528301886,
+          "cancer_flagged": 0.5530973451327433,
+          "cancer_vs_normal_auc": 0.885289697779262,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.10062143206596375,
+        "vs_reference_flip_rate": 0.10080826223619219,
+        "images": 4454
+      },
+      "S360": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0011255360441282392,
+        "malignant_vs_normal_auc": 0.743919343794047,
+        "normal_tissue_false_alarm": 0.1651812240047534,
+        "sharpness_median": 38.87853119817737,
+        "sharpness_p05": 13.889359260859056,
+        "organ": {
+          "normal_false_alarm": 0.05660377358490566,
+          "cancer_flagged": 0.6238938053097345,
+          "cancer_vs_normal_auc": 0.8918851227249958,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.08563805371522903,
+        "vs_reference_flip_rate": 0.0873372249663224,
+        "images": 4454
+      },
+      "S60": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0012230041902512312,
+        "malignant_vs_normal_auc": 0.7329174093879975,
+        "normal_tissue_false_alarm": 0.1265597147950089,
+        "sharpness_median": 27.192466404565494,
+        "sharpness_p05": 6.433650295613916,
+        "organ": {
+          "normal_false_alarm": 0.03773584905660377,
+          "cancer_flagged": 0.6238938053097345,
+          "cancer_vs_normal_auc": 0.8862915344798796,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.09194117039442062,
+        "vs_reference_flip_rate": 0.09003143242029636,
+        "images": 4454
+      },
+      "S210": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0010915949242189527,
+        "malignant_vs_normal_auc": 0.7445439957475041,
+        "normal_tissue_false_alarm": 0.14230540701128935,
+        "sharpness_median": 37.37827316362382,
+        "sharpness_p05": 14.02647664216056,
+        "organ": {
+          "normal_false_alarm": 0.02830188679245283,
+          "cancer_flagged": 0.6371681415929203,
+          "cancer_vs_normal_auc": 0.8928034730338956,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.08003956079483032,
+        "vs_reference_flip_rate": 0.07790749887741356,
+        "images": 4454
+      },
+      "SQ": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0013540848158299923,
+        "malignant_vs_normal_auc": 0.7464757373257769,
+        "normal_tissue_false_alarm": 0.1503267973856209,
+        "sharpness_median": 30.232437920865777,
+        "sharpness_p05": 9.153033277948271,
+        "organ": {
+          "normal_false_alarm": 0.02830188679245283,
+          "cancer_flagged": 0.6150442477876106,
+          "cancer_vs_normal_auc": 0.8963933878777759,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.08685272186994553,
+        "vs_reference_flip_rate": 0.08711270767849125,
+        "images": 4454
+      },
+      "P": {
+        "kind": "scanner",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0005709620891138911,
+        "malignant_vs_normal_auc": 0.7241353125024981,
+        "normal_tissue_false_alarm": 0.0962566844919786,
+        "sharpness_median": 11.009176202576782,
+        "sharpness_p05": 4.595041744887567,
+        "organ": {
+          "normal_false_alarm": 0.04716981132075472,
+          "cancer_flagged": 0.5663716814159292,
+          "cancer_vs_normal_auc": 0.8804057438637503,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.09846151620149612,
+        "vs_reference_flip_rate": 0.10148181409968568,
+        "images": 4454
+      },
+      "galaxy": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0013731629587709904,
+        "malignant_vs_normal_auc": 0.6886355642950209,
+        "normal_tissue_false_alarm": 0.10784313725490197,
+        "sharpness_median": 29.372450497779937,
+        "sharpness_p05": 6.097217797929625,
+        "organ": {
+          "normal_false_alarm": 0.05660377358490566,
+          "cancer_flagged": 0.5752212389380531,
+          "cancer_vs_normal_auc": 0.8528969777926199,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.1115950271487236,
+        "vs_reference_flip_rate": 0.11136057476425684,
+        "images": 4454
+      },
+      "iphone13": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0005514710792340338,
+        "malignant_vs_normal_auc": 0.7345102635428407,
+        "normal_tissue_false_alarm": 0.12982768865121808,
+        "sharpness_median": 90.02127409090463,
+        "sharpness_p05": 17.07281483284023,
+        "organ": {
+          "normal_false_alarm": 0.02830188679245283,
+          "cancer_flagged": 0.584070796460177,
+          "cancer_vs_normal_auc": 0.8943897144765403,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.10066185146570206,
+        "vs_reference_flip_rate": 0.09699146834306241,
+        "images": 4454
+      },
+      "iphone6": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.002613420132547617,
+        "malignant_vs_normal_auc": 0.7160886096523134,
+        "normal_tissue_false_alarm": 0.11942959001782531,
+        "sharpness_median": 67.70281239475298,
+        "sharpness_p05": 10.286182864386502,
+        "organ": {
+          "normal_false_alarm": 0.03773584905660377,
+          "cancer_flagged": 0.6592920353982301,
+          "cancer_vs_normal_auc": 0.8847679078310235,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.1049804762005806,
+        "vs_reference_flip_rate": 0.1037269869779973,
+        "images": 4454
+      },
+      "itel": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.009615384615384616,
+        "lymph_node_mean_p": 0.011319884099066257,
+        "malignant_vs_normal_auc": 0.6706169116647882,
+        "normal_tissue_false_alarm": 0.09387997623291741,
+        "sharpness_median": 17.004277482556063,
+        "sharpness_p05": 3.354783265342121,
+        "organ": {
+          "normal_false_alarm": 0.04716981132075472,
+          "cancer_flagged": 0.5265486725663717,
+          "cancer_vs_normal_auc": 0.8471781599599265,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.12648846209049225,
+        "vs_reference_flip_rate": 0.12370902559497081,
+        "images": 4454
+      },
+      "moto": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.004351416137069464,
+        "malignant_vs_normal_auc": 0.7205502665803378,
+        "normal_tissue_false_alarm": 0.13636363636363635,
+        "sharpness_median": 46.93267020145868,
+        "sharpness_p05": 8.862626359648857,
+        "organ": {
+          "normal_false_alarm": 0.03773584905660377,
+          "cancer_flagged": 0.6017699115044248,
+          "cancer_vs_normal_auc": 0.8820128569043246,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.0933537632226944,
+        "vs_reference_flip_rate": 0.09250112258643915,
+        "images": 4454
+      },
+      "redmi": {
+        "kind": "phone",
+        "lymph_node_false_alarm": 0.0,
+        "lymph_node_mean_p": 0.0004619199607986957,
+        "malignant_vs_normal_auc": 0.6904510683197045,
+        "normal_tissue_false_alarm": 0.12685680332739158,
+        "sharpness_median": 66.19273635766876,
+        "sharpness_p05": 13.84050314296328,
+        "organ": {
+          "normal_false_alarm": 0.02830188679245283,
+          "cancer_flagged": 0.5398230088495575,
+          "cancer_vs_normal_auc": 0.8985222908665887,
+          "patches": {
+            "normal": 106,
+            "cancer": 226
+          }
+        },
+        "vs_reference_mean_abs_dp": 0.10929646342992783,
+        "vs_reference_flip_rate": 0.11068702290076336,
+        "images": 4454
+      }
+    }
+  }
+}

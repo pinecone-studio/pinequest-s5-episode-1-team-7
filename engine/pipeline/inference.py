@@ -1,6 +1,7 @@
 """Patch classifier inference with ONNX Runtime (TDD 3.1 step 4, 5.2).
 
-Loads the model exported in step 3 (engine/model/model_fp32.onnx, or TRIAGE_MODEL_PATH) and
+Loads the organ's model exported in step 3 (pipeline/organs.py: engine/model/model_fp32.onnx
+for lymph node or TRIAGE_MODEL_PATH, engine/model/<organ>/model_fp32.onnx otherwise) and
 returns P_malignant per patch. ONNX graph contract (see engine/README.md):
   input  float32 (N, 3, S, S), RGB in [0, 1]    output  float32 (N,), P_malignant in [0, 1]
 
@@ -12,22 +13,24 @@ to its stub scorer).
 """
 import functools
 import logging
-import os
 import threading
 from pathlib import Path
 
 import cv2
 import numpy as np
 
+from .organs import get_organ
+
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[1] / "model" / "model_fp32.onnx"
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[1] / "model" / "model_fp32.onnx"  # lymph node
 PREFERRED_PROVIDERS = ("DmlExecutionProvider", "OpenVINOExecutionProvider", "CPUExecutionProvider")
 BATCH_SIZE = 16  # TDD 5.2: dynamic batching, N = 8 or 16
 
 
-def model_path() -> Path:
-    return Path(os.getenv("TRIAGE_MODEL_PATH") or DEFAULT_MODEL_PATH)
+def model_path(organ: str = None) -> Path:
+    """The organ's model file (None = the default organ). Raises ValueError for an unknown organ."""
+    return get_organ(organ).model_path
 
 
 def _create_session(path: Path, providers, threads: int):
@@ -98,12 +101,13 @@ class PatchClassifier:
 _load_lock = threading.Lock()
 
 
-@functools.lru_cache(maxsize=2)
+@functools.lru_cache(maxsize=8)
 def _cached_classifier(path: Path) -> PatchClassifier:
     return PatchClassifier(path)
 
 
-def get_classifier() -> PatchClassifier:
-    """The shared classifier for model_path(), loaded once (the backend may call from threads)."""
+def get_classifier(organ: str = None) -> PatchClassifier:
+    """The shared classifier for the organ's model, loaded once (the backend may call from threads)."""
+    path = model_path(organ)
     with _load_lock:
-        return _cached_classifier(model_path())
+        return _cached_classifier(path)

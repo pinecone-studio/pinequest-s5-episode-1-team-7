@@ -1,4 +1,4 @@
-"""Foundation-model teacher for distillation: frozen backbone + a linear head trained on PCam.
+"""Foundation-model teacher for distillation: frozen backbone + a linear head per dataset.
 
 The backbone turns a patch into a feature vector; a linear head on those features gives the
 teacher's P_malignant. train.py --teacher <name> then trains the small student (MobileNetV3)
@@ -10,7 +10,8 @@ Supported teachers (open licences, gated on Hugging Face: accept the terms and `
 Weights load into transformers' built-in Dinov2WithRegistersModel, so no repository code is
 executed. Downloads go to HF_HUB_CACHE (set it to a roomy disk, e.g. B:/pinequest-data/hf-cache/hub).
 
-    python -m training.teacher --teacher hibou-b     # features (cached) + head + teacher metrics
+    python -m training.teacher --teacher hibou-b                     # PCam (lymph node)
+    python -m training.teacher --teacher hibou-b --dataset nct_crc   # colon: its own head
 """
 import argparse
 import json
@@ -21,7 +22,7 @@ import torch
 from sklearn.metrics import roc_auc_score
 from torch import nn
 
-from training.pcam import DATA_DIR, PCamBatches, make_loader, to_input
+from training.pcam import DATASETS, PCamBatches, make_loader, to_input
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ENGINE_DIR / "data" / "cache"   # teacher features (large, not in git)
@@ -76,27 +77,38 @@ class Teacher(nn.Module):
         return self.head(self.features(x).float()).squeeze(1)
 
 
-def head_path(name: str) -> Path:
-    return MODEL_DIR / f"teacher_{name}_head.pt"
+def _suffix(name: str, dataset: str) -> str:
+    """File-name part for a teacher on a dataset; PCam keeps the original names (teacher_hibou-b_...)."""
+    return name if dataset == "pcam" else f"{name}_{dataset}"
 
 
-def load_teacher(name: str, device) -> Teacher:
+def head_path(name: str, dataset: str = "pcam") -> Path:
+    return MODEL_DIR / f"teacher_{_suffix(name, dataset)}_head.pt"
+
+
+def features_path(name: str, split: str, dataset: str = "pcam") -> Path:
+    return CACHE_DIR / f"teacher_{_suffix(name, dataset)}_{split}.npz"
+
+
+def load_teacher(name: str, device, dataset: str = "pcam") -> Teacher:
     """Teacher with its trained head, ready for distillation."""
-    path = head_path(name)
+    path = head_path(name, dataset)
     if not path.exists():
-        raise FileNotFoundError(f"no head for teacher {name!r}: run `python -m training.teacher --teacher {name}` first")
+        raise FileNotFoundError(
+            f"no head for teacher {name!r} on {dataset}: run `python -m training.teacher --teacher {name} --dataset {dataset}` first"
+        )
     head = nn.Linear(TEACHERS[name]["dim"], 1)
     head.load_state_dict(torch.load(path, map_location="cpu"))
     return Teacher(name, head).to(device).eval()
 
 
-def extract(teacher: Teacher, split: str, data_dir: Path, device, batch_size: int, workers: int) -> tuple:
-    """(features float16 (N, dim), labels) for a PCam split, cached on disk."""
-    cache = CACHE_DIR / f"teacher_{teacher.name}_{split}.npz"
+def extract(teacher: Teacher, split: str, data_dir: Path, device, batch_size: int, workers: int, dataset_name: str = "pcam") -> tuple:
+    """(features float16 (N, dim), labels) for a dataset split, cached on disk."""
+    cache = features_path(teacher.name, split, dataset_name)
     if cache.exists():
         data = np.load(cache)
         return data["features"], data["labels"]
-    dataset = PCamBatches.from_split(split, data_dir)
+    dataset = PCamBatches.from_split(split, data_dir, dataset=dataset_name)
     feats = []
     for i, (images, _) in enumerate(make_loader(dataset, batch_size, shuffle=False, workers=workers)):
         x = to_input(images, device, INPUT_SIZE)
@@ -135,30 +147,31 @@ def fit_head(train: tuple, valid: tuple, dim: int, device, epochs: int = 20) -> 
 
 
 def main():
-    p = argparse.ArgumentParser(description="Extract teacher features on PCam and train its linear head.")
+    p = argparse.ArgumentParser(description="Extract teacher features on a dataset and train its linear head.")
     p.add_argument("--teacher", choices=TEACHERS, default="hibou-b")
+    p.add_argument("--dataset", choices=DATASETS, default="pcam")
     p.add_argument("--batch-size", type=int, default=256)
     p.add_argument("--workers", type=int, default=4)
-    p.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    p.add_argument("--data-dir", type=Path, help="default: the dataset's folder (training/pcam.py DATASETS)")
     args = p.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     teacher = Teacher(args.teacher).to(device)
-    data = {s: extract(teacher, s, args.data_dir, device, args.batch_size, args.workers) for s in ("train", "valid", "test")}
+    data = {s: extract(teacher, s, args.data_dir, device, args.batch_size, args.workers, args.dataset) for s in ("train", "valid", "test")}
 
     head, val_auc = fit_head(data["train"], data["valid"], TEACHERS[args.teacher]["dim"], device)
-    torch.save(head.state_dict(), head_path(args.teacher))
+    torch.save(head.state_dict(), head_path(args.teacher, args.dataset))
     with torch.no_grad():
         test_p = torch.sigmoid(head(torch.from_numpy(data["test"][0].astype(np.float32))).squeeze(1)).numpy()
     test_y = data["test"][1]
     result = {
-        "teacher": args.teacher, "repo": TEACHERS[args.teacher]["repo"],
+        "teacher": args.teacher, "repo": TEACHERS[args.teacher]["repo"], "dataset": args.dataset,
         "valid_auc": float(val_auc), "test_auc": float(roc_auc_score(test_y, test_p)),
         "test_accuracy": float(((test_p >= 0.5) == (test_y == 1)).mean()),
     }
     print(json.dumps(result, indent=2))
     RESULTS_DIR.mkdir(exist_ok=True)
-    (RESULTS_DIR / f"teacher_{args.teacher}.json").write_text(json.dumps(result, indent=2))
+    (RESULTS_DIR / f"teacher_{_suffix(args.teacher, args.dataset)}.json").write_text(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

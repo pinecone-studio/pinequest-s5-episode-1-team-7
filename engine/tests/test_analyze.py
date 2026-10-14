@@ -32,7 +32,8 @@ def test_analyze_slide_scores_tissue_and_writes_heatmap(tmp_path, result_cleanup
     result_cleanup.append(result["heatmap_path"])
 
     assert set(result) == {"score", "risk_flag", "heatmap_path", "num_patches", "inference_ms",
-                            "um_per_px_used", "scale_warning"}
+                            "um_per_px_used", "scale_warning", "organ"}
+    assert result["organ"] == "lymph_node"  # the default organ
     assert result["um_per_px_used"] is None
     assert result["scale_warning"] == "no_scale_info"  # analysed at captured resolution
     assert result["risk_flag"] in {"red", "yellow", "green"}

@@ -4,12 +4,14 @@ __pycache__/
 .pytest_cache/
 
 # Datasets and teacher features are large and stay outside git (data/ can link to another drive).
-# Committed (~6 MB each): the runtime model, so the app works after a clone, and the 224 px training
+# Committed (~6 MB each): the runtime models (model/model_fp32.onnx, model/<organ>/), so the app works after a clone, and the 224 px training
 # checkpoints plus the teacher head, so fine-tuning or distilling again needs no retraining.
 model/*.onnx
 !model/model_fp32.onnx
 model/*.pt
 !model/pcam_mobilenet_v3_small_224.pt
 !model/pcam_mobilenet_v3_small_224_kd-hibou.pt
+!model/colon_mobilenet_v3_small_224.pt
+!model/colon_mobilenet_v3_small_224_kd-hibou.pt
 !model/teacher_*_head.pt
 data/

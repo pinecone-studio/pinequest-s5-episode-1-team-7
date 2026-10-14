@@ -8,6 +8,7 @@ changes, and commit the card with them::
 
     python -m training.make_model_card            # from engine/
     python -m training.make_model_card --check    # CI: exit 1 when the committed card is stale
+    python -m training.make_model_card --organ colon   # engine/model/colon/model_card.json (issue #53)
 
 Needs ``onnx`` (engine/requirements.txt, generator only) for the parameter
 count and the export metadata baked into model_fp32.onnx.
@@ -42,7 +43,7 @@ PLISM_GOOD_SCALE = "0.6"
 
 
 def _load(name: str) -> dict:
-    with open(RESULTS / name) as f:
+    with open(RESULTS / name, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -268,14 +269,200 @@ def build_card() -> dict:
     }
 
 
+# Other organs' models (issue #53): the evidence files for each, and its PLISM tissues.
+# Same card layout as lymph node, so the About page can show any organ's card.
+ORGAN_CARDS = {
+    "colon": {
+        "name": "Colon MobileNetV3-Small, Hibou-B-distilled",
+        "trained_on": "colorectal tissue: tumour epithelium vs 8 non-tumour classes (NCT-CRC-HE-100K)",
+        "test_split": "CRC-VAL-HE-7K test half",
+        "main": "colon_mobilenet_v3_small_224_kd-hibou.json",
+        "direct": "colon_mobilenet_v3_small_224.json",  # optional: same student without the teacher
+        "teacher": "teacher_hibou-b_nct_crc.json",
+        "scoring": "slide_scoring_colon.json",
+        "plism": "plism_colon_model_fp32.json",
+        "plism_scale": "0.5",  # PLISM ~0.25 µm/px -> the model's 0.5 µm/px
+        "plism_tissues": "normal right colon vs colon adenocarcinoma + metastatic colorectal cancer",
+    },
+}
+
+
+def build_organ_card(organ: str) -> dict:
+    """Card for another organ's model, from its own evidence files (same layout as build_card)."""
+    spec_files = ORGAN_CARDS[organ]
+    sys.path.insert(0, str(ENGINE_ROOT))
+    from pipeline.inference import PREFERRED_PROVIDERS
+    from pipeline.organs import get_organ
+    from pipeline.scoring import TEMPERATURE
+
+    spec = get_organ(organ)
+    main = _load(spec_files["main"])
+    teacher = _load(spec_files["teacher"])
+    scoring = _load(spec_files["scoring"])
+    plism = _load(spec_files["plism"])
+    direct = _load(spec_files["direct"]) if (RESULTS / spec_files["direct"]).exists() else None
+    int8 = _load(INT8_RESULTS)
+    model_path = spec.model_path
+    if not model_path.is_file():
+        raise SystemExit(f"{organ} model missing: {model_path}")
+    facts = _onnx_facts(model_path)
+
+    meta = facts["metadata"]
+    assert abs(float(meta["test_auc"]) - round(main["test"]["auc"], 4)) < 1e-9, \
+        f"ONNX test_auc {meta['test_auc']} != {spec_files['main']} test.auc {main['test']['auc']:.4f}"
+    assert meta.get("organ") == organ == main.get("organ"), f"ONNX / results organ is not {organ}"
+    assert meta.get("distilled_from") == main.get("teacher")
+    assert meta.get("input_size") == str(main["config"]["img_size"])
+    chosen = scoring["chosen"]
+    assert scoring.get("organ") == organ and scoring.get("model") == model_path.name
+    assert (spec.w_max, spec.top_k) == (chosen["w_max"], chosen["top_k"]), f"{organ}: scoring formula != tuned choice"
+    assert (round(chosen["red"], 2), round(chosen["yellow"], 2)) == (spec.red, spec.yellow), \
+        f"{organ}: thresholds in pipeline/organs.py != tuned choice"
+    assert plism.get("organ") == organ
+
+    test = main["test"]
+    at90 = main["evaluation"]["tta1"]["test_at_val_90_sensitivity"]
+    size_bytes = model_path.stat().st_size
+    by_device = plism["by_scale"][spec_files["plism_scale"]]
+    scanners = {d: round(r["organ"]["normal_false_alarm"], 4) for d, r in by_device.items() if r["kind"] == "scanner"}
+    phones = {d: round(r["organ"]["normal_false_alarm"], 4) for d, r in by_device.items() if r["kind"] == "phone"}
+    phone_auc = [r["organ"]["cancer_vs_normal_auc"] for r in by_device.values() if r["kind"] == "phone"]
+    phone_flagged = [r["organ"]["cancer_flagged"] for r in by_device.values() if r["kind"] == "phone"]
+    other_fa = [round(r["normal_tissue_false_alarm"], 4) for r in by_device.values() if r["kind"] == "phone"]
+    slide_test = scoring["test"]
+    fractions = {frac: {"auc": round(slide_test[frac]["auc"], 4), "red": slide_test[frac]["red"],
+                        "yellow_or_red": slide_test[frac]["yellow_or_red"]}
+                 for frac in ("tumour_1pct", "tumour_2pct", "tumour_5pct", "tumour_10pct", "tumour_25pct")}
+    try:
+        tuned_commit = subprocess.run(
+            ["git", "-C", str(ENGINE_ROOT.parent), "log", "-1", "--format=%H", "--", str(RESULTS / spec_files["scoring"])],
+            capture_output=True, text=True, check=True).stdout.strip() or None
+    except (OSError, subprocess.CalledProcessError):
+        tuned_commit = None
+
+    comparison = [
+        {"model": f"{spec_files['name']} (shipped)", "pcam_auc": None, "test_auc": round(test["auc"], 4),
+         "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
+         "note": f"{spec_files['test_split']}; same-graph speed reference, see runtime"},
+        {"model": "Hibou-B foundation-model teacher (head only)", "pcam_auc": None,
+         "test_auc": round(teacher["test_auc"], 4), "size_mb": None, "per_slide_s": None,
+         "note": "training-time teacher, too large for clinic PCs"},
+    ]
+    if direct:
+        comparison.insert(1, {"model": "Same student without the teacher", "pcam_auc": None,
+                              "test_auc": round(direct["test"]["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
+                              "per_slide_s": int8["fp32"]["seconds_per_slide"], "note": "not shipped"})
+
+    return {
+        "name": spec_files["name"],
+        "version": f"{organ}/{model_path.name}",
+        "organ": organ,
+        "file": {
+            "name": model_path.name,
+            "sha256": _sha256(model_path),
+            "size_bytes": size_bytes,
+            "size_mb": round(size_bytes / 1e6, 2),
+            "committed": _git_date(model_path),
+        },
+        "architecture": {
+            "name": "MobileNetV3-Small",
+            "params": facts["params"],
+            "input_px": main["config"]["img_size"],
+            "input_scale_um_per_px": spec.um_per_px,
+        },
+        "provenance": {
+            "dataset": main["dataset"],
+            "backbone": "ImageNet-pretrained MobileNetV3-Small",
+            "training": f"fine-tuned on {spec_files['trained_on']} ({main['config']['epochs']} epochs, best epoch "
+                        f"{main['best_epoch']}, strong augmentation + EMA, {main['config']['batch_size']}-batch)",
+            "distilled_from": f"{main['teacher']} (foundation model, histai/hibou-b; its own head trained on this dataset)",
+            "date_trained": _git_date(RESULTS / spec_files["main"]),
+            "export_metadata": {k: meta[k] for k in ("arch", "dataset", "organ", "val_auc", "test_auc", "test_accuracy",
+                                                     "distilled_from") if k in meta},
+        },
+        "runtime": {
+            "offline": True,
+            "runs_on": "this clinic PC only: no cloud, no data leaves the clinic (TDD 1.2, 7.1)",
+            "providers_preference": list(PREFERRED_PROVIDERS),
+            "measured_per_slide_s": {
+                "value": int8["fp32"]["seconds_per_slide"],
+                "context": "median warmed run, 150 patches, batch 16, 4 threads, i5-13400F "
+                           f"({int8['benchmark']}). Same-graph reference: every organ's model is the "
+                           "same MobileNetV3-Small graph as the measured lymph-node model.",
+            },
+        },
+        "patch_metrics": {
+            "split": f"{spec_files['test_split']} (n={test['n']:,})",
+            "threshold": test["threshold"],
+            "auc": round(test["auc"], 4),
+            "accuracy": round(test["accuracy"], 4),
+            "sensitivity": round(test["sensitivity"], 4),
+            "specificity": round(test["specificity"], 4),
+            "at_90_sensitivity": {
+                "threshold": round(at90["threshold"], 4),
+                "sensitivity": round(at90["sensitivity"], 4),
+                "specificity": round(at90["specificity"], 4),
+            },
+        },
+        "slide_metrics": {
+            "formula": f"sigmoid(mean(top-{spec.top_k} patch log-odds) / {TEMPERATURE:g})",
+            "thresholds": {"red": spec.red, "yellow": spec.yellow},
+            "tuned": _git_date(RESULTS / spec_files["scoring"]),
+            "tuned_commit": tuned_commit,
+            "normal_slides": {"red": slide_test["normal_slides"]["red"],
+                              "yellow_or_red": slide_test["normal_slides"]["yellow_or_red"]},
+            "tumour_fractions": fractions,
+        },
+        "plism": {
+            "at": f"{spec_files['plism_scale']}x (≈{spec.um_per_px} µm/px, the training magnification, issue #35)",
+            "source": spec_files["plism"],
+            "metric": f"share of normal {organ.replace('_', ' ')} patches flagged (P ≥ 0.5)",
+            "scanners": scanners,
+            "phones": phones,
+            "organ_cancer_on_phones": {"tissues": spec_files["plism_tissues"],
+                                       "flagged_min": round(min(phone_flagged), 4), "flagged_max": round(max(phone_flagged), 4),
+                                       "auc_min": round(min(phone_auc), 4), "auc_max": round(max(phone_auc), 4)},
+            "other_tissues_false_alarm": {"min": min(other_fa), "max": max(other_fa),
+                                          "note": f"normal tissue of all organs on phones: only valid for {organ}"},
+        },
+        "comparison": comparison,
+        "literature": {
+            "note": "Published baselines were not recorded with these runs, so none are quoted: "
+                    "numbers here come only from the evidence files above.",
+            "baselines": [],
+        },
+        "limitations": [
+            f"Trained only on {organ.replace('_', ' ')} tissue. Use it only for {organ.replace('_', ' ')} slides: normal tissue "
+            f"of all PLISM organs was flagged {min(other_fa):.0%}–{max(other_fa):.0%} on phones.",
+            f"Needs a calibrated magnification (issue #35): photos are resized to {spec.um_per_px} µm/px.",
+            "The test half shares patients with the validation half used for the epoch and threshold choices "
+            "(CRC-VAL-HE-7K has no patient IDs), and its tiles are stain-normalised, unlike training.",
+            "Slide thresholds were tuned on slides simulated from validation tiles; re-tune on real captures.",
+            "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a "
+            "pathologist (TDD 1.2).",
+        ],
+        "generated": {
+            "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "repo_commit": _git_head(),
+            "generator": "training/make_model_card.py",
+        },
+    }
+
+
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Generate engine/model/model_card.json from the evidence files.")
+    parser = argparse.ArgumentParser(description="Generate an organ model's model_card.json from the evidence files.")
     parser.add_argument("--check", action="store_true",
                         help="exit 1 when the committed card differs (ignoring the generation stamp)")
+    parser.add_argument("--organ", default="lymph_node", choices=["lymph_node", *ORGAN_CARDS])
     args = parser.parse_args(argv)
-    card = build_card()
+    if args.organ == "lymph_node":
+        card, card_path = build_card(), CARD_PATH
+    else:
+        sys.path.insert(0, str(ENGINE_ROOT))
+        from pipeline.organs import get_organ
+        card, card_path = build_organ_card(args.organ), get_organ(args.organ).card_path
     if args.check:
-        committed = json.loads(CARD_PATH.read_text())
+        committed = json.loads(card_path.read_text(encoding="utf-8"))
         skip = {"generated"}
         stale = [k for k in card if k not in skip and committed.get(k) != card[k]]
         if stale:
@@ -284,8 +471,9 @@ def main(argv=None) -> int:
             return 1
         print("model card matches the evidence")
         return 0
-    CARD_PATH.write_text(json.dumps(card, indent=2, ensure_ascii=False) + "\n")
-    print(f"wrote {CARD_PATH}")
+    card_path.parent.mkdir(parents=True, exist_ok=True)
+    card_path.write_text(json.dumps(card, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"wrote {card_path}")
     return 0
 
 

@@ -4,7 +4,7 @@ Owner: Member 1 (ML / AI Engine). See [../docs/PLAN.md](../docs/PLAN.md) for the
 
 ## Layout
 - `pipeline/`: tiling, background masking, inference, scoring, heatmaps
-- `model/`: model files. Committed: `model_fp32.onnx` (the runtime model), the 224 px training checkpoints (`.pt`, for fine-tuning) and the distillation teacher head. INT8 and older checkpoints are not
+- `model/`: model files. Committed: `model_fp32.onnx` (the lymph-node runtime model), `colon/` (the colon model and its card, issue #53), the 224 px training checkpoints (`.pt`, for fine-tuning) and the distillation teacher head. INT8 and older checkpoints are not
 - `training/`: fine-tuning and ONNX export scripts
 - `tests/`: pytest tests
 
@@ -182,3 +182,53 @@ At the right scale phones are about as good as scanners, so every capture must b
 The distilled model agrees better between phones and scanners and is better or equal on lymph node. **Neither model works on other organs**: 20–50% of normal patches from other organs are flagged, and malignant-vs-normal AUC is only ~0.6, because the training data is lymph node only. Each organ needs its own training data. Results: `training/results/plism_model_fp32*.json`.
 
 Caveat: PCam is scanner images of lymph node metastases at ~10× magnification, and the model sees them upsampled 2.3×. Smartphone-through-eyepiece captures look different (colour, blur, magnification), so expect accuracy on real captures to be lower than the PCam test score until we fine-tune on our own images.
+
+## Other organs: one model per organ (issue #53)
+The lymph-node model doesn't transfer to other organs (see PLISM above), so each organ gets its own model, trained on that organ's tissue only. The slide's organ chooses the model.
+
+**Engine contract** (backwards compatible: callers that pass no organ get lymph node, as before):
+- `analyze_slide(image_path, um_per_px=None, organ=None)`: `organ` is `"lymph_node"` (default) or `"colon"`. The result also returns `organ`. An unknown organ raises `ValueError`, and a missing model raises `FileNotFoundError`. There is no fallback to another organ's model.
+- `available_organs()`: organs whose model file is present, default first. Use it to fill the organ picker.
+- `model_info(organ=None)`: the organ's model card plus live file and provider, as before, with an extra `organ` key.
+
+Everything that belongs to one model lives in its entry in `pipeline/organs.py`: the folder (`model/` for lymph node, `model/<organ>/` otherwise), the training magnification (µm/px; captures are resized to it), and the slide-score settings and thresholds tuned on that model's scores. `TRIAGE_MODEL_PATH` still replaces the lymph-node model only.
+
+**Adding an organ.** Convert its dataset to the PCam HDF5 layout and add it to `DATASETS` in `training/pcam.py`. Then run the same steps as for lymph node with `--dataset <name>`, and add the organ to `pipeline/organs.py` and to `ORGAN_CARDS` in `training/make_model_card.py`.
+
+### Colon
+Data: [NCT-CRC-HE-100K](https://zenodo.org/record/1214456) (CC BY 4.0, 224 px tiles at 0.5 µm/px, 9 tissue classes; tumour epithelium vs everything else). `training/download_nct_crc.py` uses the non-normalised 100K set for training. It splits CRC-VAL-HE-7K (50 other patients) into validation and test halves, stratified by class.
+
+```bash
+python -m training.download_nct_crc                                    # ~14 GB download -> data/nct-crc/*.h5 (~16 GB)
+python -m training.teacher --teacher hibou-b --dataset nct_crc          # features + colon head (~5 min)
+python -m training.train --dataset nct_crc --teacher hibou-b --tag kd-hibou   # ~10 min on an RTX 4060
+python -m training.export_onnx --checkpoint model/colon_mobilenet_v3_small_224_kd-hibou.pt \
+    --out model/colon/model_fp32.onnx --results training/results/colon_mobilenet_v3_small_224_kd-hibou.json
+python -m training.tune_scoring --dataset nct_crc --model model/colon/model_fp32.onnx   # -> pipeline/organs.py
+python -m training.plism_eval --root B:/pinequest-data/plism/PLISM_sm --csv B:/pinequest-data/plism/PLISM_sm_en.csv \
+    --organ colon --model model/colon/model_fp32.onnx --scales 0.5
+python -m training.make_model_card --organ colon                        # -> model/colon/model_card.json
+```
+
+| CRC-VAL-HE-7K test half (3,593 tiles) | AUC | Accuracy | Sensitivity | Specificity |
+|---|---|---|---|---|
+| Hibou-B teacher (colon head) | 0.9996 | 99.6% | – | – |
+| **Distilled student (shipped, `model/colon/`)** | **0.990** | **95.9%** | **76.7%** | **99.8%** |
+| Same student without the teacher | 0.986 | 95.8% | 78.1% | 99.4% |
+
+At a threshold chosen on validation for 90% sensitivity (0.076), the distilled model gives 89.8% sensitivity and 97.2% specificity. At 0.5 it misses more tumour tiles because the test tiles are stain-normalised and the training tiles aren't, which lowers its scores.
+
+**PLISM, at 0.5× (≈ 0.5 µm/px):** normal right colon vs colon adenocarcinoma + metastatic colorectal cancer, ~106 normal and ~226 cancer tiles per device (1 point ≈ 1 tile):
+
+| | Scanners | Phones |
+|---|---|---|
+| Normal colon flagged (P ≥ 0.5) | 2–6% | 3–6% |
+| Colon cancer flagged | 55–66% | 53–66% |
+| Cancer vs normal colon AUC | 0.88–0.90 | 0.85–0.90 |
+| Normal tissue of *all* organs flagged | 10–17% | 9–14% |
+
+Phones are about as good as scanners. The last row is why the organ must be chosen correctly: the colon model flags other organs' normal tissue far more often.
+
+**Slide score:** `tune_scoring` preferred the single highest tile (`top_k = 1`), with red ≥ 0.54 and yellow ≥ 0.50. Simulated test slides with 1% tumour reach a slide AUC of 0.91, 2% reach 0.97, and 5% or more reach above 0.998. But **13.7% of normal test slides are flagged red** against the 5% target on validation. That number rests on a handful of debris tiles reused across many simulated slides, and with `top_k = 1` a single tile can flag a slide. Treat the colon thresholds as a starting point and re-tune them on real colon captures.
+
+Caveats: CRC-VAL-HE-7K has no patient IDs, so the validation and test halves share patients. The test set is independent of training, but not of the epoch and threshold choices.

@@ -1,16 +1,18 @@
-"""Fine-tune the patch classifier on PCam (step 3).
+"""Fine-tune the patch classifier on PCam (step 3) or another organ's dataset (issue #53).
 
 Trains with strong augmentation and an exponential moving average (EMA) of the weights,
 picks the epoch whose EMA weights score the best validation AUC, then evaluates that
 checkpoint once on the held-out test split, with and without test-time augmentation (TTA).
 Writes:
-  - model/pcam_<arch>_<size>[_<tag>].pt                best checkpoint (not committed)
-  - training/results/pcam_<arch>_<size>[_<tag>].json  config, history and test metrics
+  - model/<prefix>_<arch>_<size>[_<tag>].pt                best checkpoint (not committed)
+  - training/results/<prefix>_<arch>_<size>[_<tag>].json  config, history and test metrics
+where <prefix> is the dataset's (training/pcam.py DATASETS): pcam, colon, ...
 
     python -m training.download_pcam
     python -m training.train                       # MobileNetV3-Small, 224 px, 8 epochs (~25 min on an RTX 4060)
     python -m training.train --img-size 96         # native PCam size: 5x faster, lower AUC
     python -m training.train --limit 4096 --epochs 1   # quick smoke test
+    python -m training.train --dataset nct_crc --teacher hibou-b --tag kd-hibou   # colon
 """
 import argparse
 import json
@@ -24,7 +26,7 @@ from torch import nn
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 from training.model import ARCHS, ProbabilityModel, build_model, tta_views
-from training.pcam import DATA_DIR, PCamBatches, augment, make_loader, to_input
+from training.pcam import DATASETS, PCamBatches, augment, make_loader, to_input
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
 MODEL_DIR = ENGINE_DIR / "model"
@@ -33,9 +35,10 @@ TARGET_SENSITIVITY = 0.90  # reported operating point, for the step 6 threshold 
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Fine-tune the patch classifier on PCam.")
+    p = argparse.ArgumentParser(description="Fine-tune the patch classifier on PCam or another organ's dataset.")
+    p.add_argument("--dataset", choices=DATASETS, default="pcam")
     p.add_argument("--arch", choices=ARCHS, default="mobilenet_v3_small")
-    p.add_argument("--img-size", type=int, default=224, help="model input size; PCam patches (96 px) are upsampled to it")
+    p.add_argument("--img-size", type=int, default=224, help="model input size; patches are resized to it (PCam's 96 px are upsampled)")
     p.add_argument("--epochs", type=int, default=8)
     p.add_argument("--batch-size", type=int, default=256)
     p.add_argument("--lr", type=float, default=5e-4)
@@ -49,7 +52,7 @@ def parse_args():
     p.add_argument("--teacher", default="", help="distil from this teacher (training/teacher.py), e.g. hibou-b")
     p.add_argument("--kd-alpha", type=float, default=0.5, help="weight of the true labels; 1 - alpha goes to the teacher")
     p.add_argument("--kd-temp", type=float, default=2.0, help="softens teacher and student logits for the distillation loss")
-    p.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    p.add_argument("--data-dir", type=Path, help="default: the dataset's folder (training/pcam.py DATASETS)")
     p.add_argument("--seed", type=int, default=0)
     return p.parse_args()
 
@@ -86,13 +89,13 @@ def threshold_for_sensitivity(probs: np.ndarray, labels: np.ndarray, sensitivity
     return float(np.quantile(probs[labels == 1], 1.0 - sensitivity))
 
 
-def teacher_logits(name: str, limit: int = 0) -> np.ndarray:
+def teacher_logits(name: str, dataset: str = "pcam", limit: int = 0) -> np.ndarray:
     """Teacher logit for every training image, from its cached features and head."""
-    from training.teacher import CACHE_DIR, TEACHERS, head_path
+    from training.teacher import TEACHERS, features_path, head_path
 
-    features = np.load(CACHE_DIR / f"teacher_{name}_train.npz")["features"]
+    features = np.load(features_path(name, "train", dataset))["features"]
     head = nn.Linear(TEACHERS[name]["dim"], 1)
-    head.load_state_dict(torch.load(head_path(name), map_location="cpu"))
+    head.load_state_dict(torch.load(head_path(name, dataset), map_location="cpu"))
     with torch.no_grad():
         logits = head(torch.from_numpy(features.astype(np.float32))).squeeze(1).numpy()
     return logits[:limit] if limit else logits
@@ -104,7 +107,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {torch.cuda.get_device_name(0) if device.type == 'cuda' else 'cpu'}")
 
-    data = {s: PCamBatches.from_split(s, args.data_dir, args.limit) for s in ("train", "valid", "test")}
+    data = {s: PCamBatches.from_split(s, args.data_dir, args.limit, args.dataset) for s in ("train", "valid", "test")}
     train_loader = make_loader(data["train"], args.batch_size, shuffle=True, workers=args.workers)
     eval_loaders = {s: make_loader(data[s], args.batch_size * 2, False, args.workers) for s in ("valid", "test")}
     print({s: len(d) for s, d in data.items()})
@@ -118,11 +121,11 @@ def main():
     )
     loss_fn = nn.BCEWithLogitsLoss()
     if args.teacher:
-        data["train"].soft = teacher_logits(args.teacher, args.limit)
+        data["train"].soft = teacher_logits(args.teacher, args.dataset, args.limit)
         print(f"distilling from {args.teacher}: alpha {args.kd_alpha}, temperature {args.kd_temp}")
 
     # Smoke runs (--limit) never overwrite real results.
-    name = f"pcam_{args.arch}_{args.img_size}" + (f"_{args.tag}" if args.tag else "") + (f"_limit{args.limit}" if args.limit else "")
+    name = f"{DATASETS[args.dataset]['prefix']}_{args.arch}_{args.img_size}" + (f"_{args.tag}" if args.tag else "") + (f"_limit{args.limit}" if args.limit else "")
     MODEL_DIR.mkdir(exist_ok=True)
     checkpoint_path = MODEL_DIR / f"{name}.pt"
     history, best_auc = [], -1.0
@@ -184,7 +187,8 @@ def main():
 
     RESULTS_DIR.mkdir(exist_ok=True)
     result = {
-        "dataset": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+        "dataset": DATASETS[args.dataset]["description"],
+        "organ": DATASETS[args.dataset]["organ"],
         "teacher": args.teacher or None,
         "config": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items() if k != "data_dir"},
         "best_epoch": best["epoch"],

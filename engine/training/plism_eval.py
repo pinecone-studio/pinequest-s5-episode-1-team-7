@@ -12,6 +12,11 @@ Reported per device:
   - agreement with the reference scanner on the same spot: mean |dP| and P >= 0.5 flips
   - sharpness (Laplacian variance, as the backend's blur gate)
 
+With --organ (issue #53), also the organ's own PLISM tissues (ORGAN_TISSUES): false alarms on
+its normal tissue, the share of its cancer patches flagged, and their AUC. Each organ's model
+has its own scale: PLISM is ~0.25 µm/px, so --scales 0.6 for lymph node (0.42 µm/px) and
+0.5 for colon (0.5 µm/px).
+
 Labels are per tissue type only, so treat the numbers as a domain-shift check, not accuracy.
 
 Download (19 GB, Figshare+ article 23590791) and extract, e.g. on B:
@@ -20,6 +25,7 @@ Download (19 GB, Figshare+ article 23590791) and extract, e.g. on B:
     tar -xzf PLISM_sm.tar.gz
 then, from engine/:
     python -m training.plism_eval --root B:/pinequest-data/plism/PLISM_sm --csv B:/pinequest-data/plism/PLISM_sm_en.csv
+    python -m training.plism_eval --root ... --csv ... --organ colon --model model/colon/model_fp32.onnx --scales 0.5
 """
 import argparse
 import csv
@@ -42,6 +48,14 @@ NORMAL_LYMPH_NODE = "12_lymph_node"
 MALIGNANT = {"31_NEC", "32_ESCC", "33_RCCC", "34_colon_adenocarcionma", "36_GIST",
              "37_metastatic_colorectal_cancer", "38_EBVGC", "39_HCC", "41_dedifferentiated_liposarcoma"}
 EXCLUDED = {"30_myxofibroma", "35_thymoma"}
+# organ -> (its normal tissues, its cancers) in PLISM
+ORGAN_TISSUES = {
+    "lymph_node": ({NORMAL_LYMPH_NODE}, set()),
+    "colon": ({"04_right_colon"}, {"34_colon_adenocarcionma", "37_metastatic_colorectal_cancer"}),
+    "stomach": ({"43_stomach"}, {"38_EBVGC"}),
+    "liver": ({"18_liver"}, {"39_HCC"}),
+    "lung": ({"29_lung"}, set()),
+}
 PATCH = 224
 
 
@@ -77,12 +91,17 @@ def score_all(rows, root: Path, classifier: PatchClassifier, scale: float) -> di
     return out
 
 
-def summarise(rows, scores: dict) -> dict:
+def summarise(rows, scores: dict, organ: str = None) -> dict:
     tissue = {(r["stain"], r["device"], r["coordinate"]): r["tissue_type"] for r in rows}
-    per_device = defaultdict(lambda: {"lymph": [], "malig": [], "normal": [], "sharp": []})
+    organ_normal, organ_cancer = ORGAN_TISSUES[organ] if organ else (set(), set())
+    per_device = defaultdict(lambda: {"lymph": [], "malig": [], "normal": [], "sharp": [], "o_normal": [], "o_cancer": []})
     for key, (probs, sharp) in scores.items():
         d, t = per_device[key[1]], tissue[key]
         d["sharp"].append(sharp)
+        if t in organ_normal:
+            d["o_normal"].extend(probs)
+        if t in organ_cancer:
+            d["o_cancer"].extend(probs)
         if t == NORMAL_LYMPH_NODE:
             d["lymph"].extend(probs)
         if t in MALIGNANT:
@@ -106,6 +125,15 @@ def summarise(rows, scores: dict) -> dict:
             "sharpness_median": float(np.median(d["sharp"])),
             "sharpness_p05": float(np.quantile(d["sharp"], 0.05)),
         }
+        if organ:
+            o_normal, o_cancer = np.asarray(d["o_normal"]), np.asarray(d["o_cancer"])
+            entry["organ"] = {
+                "normal_false_alarm": float(np.mean(o_normal >= 0.5)) if len(o_normal) else None,
+                "cancer_flagged": float(np.mean(o_cancer >= 0.5)) if len(o_cancer) else None,
+                "cancer_vs_normal_auc": float(roc_auc_score(np.r_[np.zeros(len(o_normal)), np.ones(len(o_cancer))], np.r_[o_normal, o_cancer]))
+                if len(o_normal) and len(o_cancer) else None,
+                "patches": {"normal": len(o_normal), "cancer": len(o_cancer)},
+            }
         # Agreement with the reference scanner on the same spot and stain.
         diffs, flips = [], []
         for (stain, dev, coord), (probs, _) in scores.items():
@@ -123,9 +151,16 @@ def summarise(rows, scores: dict) -> dict:
 
 def print_table(report: dict, title: str) -> None:
     print(f"\n{title}")
+    fmt = lambda v, f: (f % v) if v is not None else "-"
+    if any("organ" in e for e in report.values()):
+        print(f"{'device':9s} {'kind':7s} {'organ normal FA':>15s} {'cancer flagged':>14s} {'AUC':>6s}")
+        for device, e in report.items():
+            o = e["organ"]
+            print(f"{device:9s} {e['kind']:7s} {fmt(o['normal_false_alarm'], '%15.3f')} "
+                  f"{fmt(o['cancer_flagged'], '%14.3f')} {fmt(o['cancer_vs_normal_auc'], '%6.3f')}")
+        print()
     print(f"{'device':9s} {'kind':7s} {'LN false':>9s} {'normal FA':>9s} {'malig AUC':>9s} {'|dP| ref':>9s} {'flips':>6s} {'sharp med':>9s} {'sharp p5':>8s}")
     for device, e in report.items():
-        fmt = lambda v, f: (f % v) if v is not None else "-"
         print(f"{device:9s} {e['kind']:7s} {fmt(e['lymph_node_false_alarm'], '%9.3f')} {fmt(e['normal_tissue_false_alarm'], '%9.3f')} "
               f"{fmt(e['malignant_vs_normal_auc'], '%9.3f')} {fmt(e.get('vs_reference_mean_abs_dp'), '%9.3f')} "
               f"{fmt(e.get('vs_reference_flip_rate'), '%6.3f')} {e['sharpness_median']:9.0f} {e['sharpness_p05']:8.0f}")
@@ -138,6 +173,7 @@ def main():
     p.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
     p.add_argument("--scales", type=float, nargs="+", default=[1.0], help="image rescale factors to test (1.0 = native)")
     p.add_argument("--limit", type=int, default=0, help="only the first N spots per device (quick check)")
+    p.add_argument("--organ", choices=ORGAN_TISSUES, help="also report the organ's own PLISM tissues")
     args = p.parse_args()
 
     rows = list(csv.DictReader(open(args.csv, encoding="utf-8-sig")))
@@ -146,14 +182,16 @@ def main():
         rows = [r for r in rows if r["coordinate"] in keep]
     classifier = PatchClassifier(args.model, batch_size=64)
 
-    results = {"model": args.model.name, "reference_scanner": REFERENCE, "by_scale": {}}
+    results = {"model": args.model.name, "organ": args.organ, "reference_scanner": REFERENCE, "by_scale": {}}
     for scale in args.scales:
         print(f"scale {scale}: scoring {len(rows)} images")
-        report = summarise(rows, score_all(rows, args.root, classifier, scale))
+        report = summarise(rows, score_all(rows, args.root, classifier, scale), args.organ)
         results["by_scale"][str(scale)] = report
         print_table(report, f"PLISM-sm, scale {scale} (LN = normal lymph node, FA = P >= 0.5, |dP| and flips vs {REFERENCE})")
 
-    out = RESULTS_DIR / f"plism_{args.model.stem}.json"  # e.g. plism_model_fp32.json
+    # e.g. plism_model_fp32.json; every organ's model has that file name, so prefix other organs.
+    prefix = f"{args.organ}_" if args.organ and args.organ != "lymph_node" else ""
+    out = RESULTS_DIR / f"plism_{prefix}{args.model.stem}.json"
     out.write_text(json.dumps(results, indent=2))
     print(f"\nresults: {out}")
 
