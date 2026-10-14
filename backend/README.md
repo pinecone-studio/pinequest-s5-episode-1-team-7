@@ -54,10 +54,13 @@ setup: photograph a few sharp and a few deliberately defocused captures, then ru
 (from `backend/`):
 
 ```bash
-python -m app.quality sharp_dir/ blurry_dir/   # prints both distributions + a suggestion
+python -m app.quality sharp_dir/ blurry_dir/ [--um-per-px 0.84]   # distributions + a suggestion
 ```
 
-and set `TRIAGE_SHARPNESS` to the suggested value. The desktop app will pass a
+and set `TRIAGE_SHARPNESS` to the suggested value. Pass the setup's µm/px
+when the folders hold one setup + objective: slides ingested with that
+setup are then scored at the model's scale, so the same physical defocus
+scores the same at any objective. The desktop app will pass a
 validated default (overridable by clinic IT) once calibration data exists.
 
 ## Package (single offline executable)

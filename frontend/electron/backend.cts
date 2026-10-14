@@ -93,6 +93,10 @@ export async function startBackend(options: BackendOptions, { timeoutMs = 120_00
       TRIAGE_HOST: '127.0.0.1',
       TRIAGE_PORT: String(port),
       TRIAGE_DATA_DIR: options.dataDir,
+      // Blur gate (TDD 8.1, issue #40): off until a per-setup threshold is validated
+      // with `python -m app.quality`. Clinic IT can enable it with a system-wide
+      // TRIAGE_SHARPNESS, the way TRIAGE_DATA_DIR above is overridden.
+      TRIAGE_SHARPNESS: options.env?.TRIAGE_SHARPNESS ?? process.env.TRIAGE_SHARPNESS ?? '0',
       PYTHONUNBUFFERED: '1',
     },
     // Own process group on macOS/Linux, so stop() also reaches the child a PyInstaller build spawns.

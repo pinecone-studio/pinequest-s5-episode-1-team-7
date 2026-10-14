@@ -160,3 +160,61 @@ def test_score_dir_skips_undecodable_files(tmp_path, capsys):
     scores = quality.score_dir(d)
     assert list(scores) == ["ok.jpg"] and scores["ok.jpg"] > 0
     assert "skipping" in capsys.readouterr().err
+
+
+def _same_slide_two_objectives(seed=41):
+    """Same field of view as a 40x capture (um 0.42, 2048 px) and a 10x one
+    (um 1.68, 512 px), sharp and with the same physical defocus (~2 µm)."""
+    fov = _tissue(1024, seed=seed)
+    hi = cv2.resize(fov, (2048, 2048), interpolation=cv2.INTER_CUBIC)
+    lo = cv2.resize(fov, (512, 512), interpolation=cv2.INTER_AREA)
+    return {
+        "sharp40": _encode(hi), "sharp10": _encode(lo),
+        "blur40": _encode(cv2.GaussianBlur(hi, (0, 0), 4.8)),
+        "blur10": _encode(cv2.GaussianBlur(lo, (0, 0), 1.2)),
+    }
+
+
+def test_same_defocus_scores_same_at_any_objective():
+    """Model-scale scoring (issue #35) makes one threshold work at any
+    objective; native scoring does not transfer between 40x and 10x."""
+    cap = _same_slide_two_objectives()
+    native = (quality.sharpness_score(cap["blur40"]), quality.sharpness_score(cap["blur10"]))
+    assert max(native) / min(native) > 2
+    scaled = (quality.sharpness_score(cap["blur40"], 0.42), quality.sharpness_score(cap["blur10"], 1.68))
+    assert max(scaled) / min(scaled) < 1.5
+
+
+def test_bad_um_per_px_rejected():
+    for bad in (0, -1.0, float("nan"), float("inf"), "wide"):
+        with pytest.raises(ValueError):
+            quality.sharpness_score(_textured_jpeg(), bad)
+
+
+def test_gate_uses_slide_scale(env, monkeypatch):
+    """Ingested with a setup, the gate scores at model scale: one threshold
+    rejects the same defocus at 40x and at 10x."""
+    from app import db, setups
+    monkeypatch.setattr(config, "SHARPNESS_THRESHOLD", 10)
+    with db.session() as conn:
+        sid = setups.create_setup(conn, "scope", 0.42, "40x")
+    cap = _same_slide_two_objectives()
+    assert ingest.ingest_bytes(cap["sharp40"], None, "Routine", sid, "40x") > 0
+    assert ingest.ingest_bytes(cap["sharp10"], None, "Routine", sid, "10x") > 0
+    with pytest.raises(ValueError, match="too blurry"):
+        ingest.ingest_bytes(cap["blur40"], None, "Routine", sid, "40x")
+    with pytest.raises(ValueError, match="too blurry"):
+        ingest.ingest_bytes(cap["blur10"], None, "Routine", sid, "10x")
+
+
+def test_calibration_cli_accepts_um_per_px(tmp_path, capsys):
+    sharp_d, blurry_d = _write_calibration_set(tmp_path)
+    assert quality.main([str(sharp_d), str(blurry_d), "--um-per-px", "0.84"]) == 0
+    assert "TRIAGE_SHARPNESS=" in capsys.readouterr().out
+
+
+def test_calibration_cli_rejects_bad_um(tmp_path):
+    sharp_d, blurry_d = _write_calibration_set(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        quality.main([str(sharp_d), str(blurry_d), "--um-per-px", "0"])
+    assert exc.value.code == 2

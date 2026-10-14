@@ -35,7 +35,7 @@ def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Rout
             except KeyError:
                 raise ValueError(f"unknown setup_id: {setup_id}")
     clean, ext = anonymize.strip_exif(data)
-    quality.check_sharpness(clean, config.SHARPNESS_THRESHOLD)
+    quality.check_sharpness(clean, config.SHARPNESS_THRESHOLD, um_per_px)
     config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     path = config.IMAGES_DIR / f"{uuid.uuid4().hex}.{ext}"
     path.write_bytes(clean)
