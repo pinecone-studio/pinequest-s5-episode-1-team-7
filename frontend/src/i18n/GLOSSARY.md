@@ -39,6 +39,10 @@ Use these terms consistently in `locales/mn/*.json`. If a term changes here, cha
 | retake photo | дахин зураг авах | |
 | stitch (photos) | нийлүүлэх | |
 | heatmap | дулааны зураг | |
+| model card / About the AI | загварын карт / Хиймэл оюуны тухай | generated model description page |
+| distillation (teacher → student) | нэрмэл загвар (багш → сурагч) | Hibou-B foundation model → MobileNetV3-Small |
+| foundation model | суурь загвар | large pretrained model used as distillation teacher |
+| AUC | AUC | area under the ROC curve, patch/slide separation |
 | tissue map | эдийн зураглал | |
 | tile (224 px square) | хавтанцар | |
 | eyepiece | окуляр | |

@@ -18,7 +18,8 @@ Data (DB, images, heatmaps) lives in `~/.pathology-triage` (override: `TRIAGE_DA
 |---|---|---|
 | POST | `/ingest` | multipart `file`, `patient_id`, `indication` (Routine/Urgent), `setup_id?`, `objective?` (`10x`/`20x`/`40x`) -> 202 `{id,state}` |
 | GET | `/queue?sort=risk\|time` | worklist (state=queued), descending S_slide (manual priority wins) |
-| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log (`Slide` carries `setup_id`, `objective`, `um_per_px`, `scale_warning`) |
+| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log (`Slide` carries `setup_id`, `objective`, `um_per_px`, `scale_warning`, `model_name`, `model_sha256`) |
+| GET | `/model` | model card + live model file (name, SHA-256, matches-card) + ONNX provider (About the AI) |
 | GET | `/slides/{id}/image`, `/slides/{id}/heatmap` | files |
 | POST | `/slides/{id}/open` | queued -> under_review |
 | POST | `/slides/{id}/action` | `confirm_malignancy` / `mark_benign` / `request_biopsy` (archive) or `reassign_priority` + `priority` 0-1 |

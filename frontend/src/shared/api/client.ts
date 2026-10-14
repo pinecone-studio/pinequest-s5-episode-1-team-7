@@ -3,6 +3,7 @@ import type {
   Decision,
   Indication,
   IngestResult,
+  ModelInfo,
   Objective,
   QueueSort,
   SetupProfile,
@@ -84,6 +85,8 @@ export const api = {
   captureStop: () => post<CaptureStatus>('/capture/stop'),
   captureSnapshot: (body: { patient_id?: string; indication: Indication; setup_id?: number; objective?: Objective }) =>
     post<IngestResult>('/capture/snapshot', body),
+  /** Model card + live model file/provider status (About the AI). */
+  model: () => request<ModelInfo>('/model'),
   /** Magnification-calibration setups (issue #35). */
   setups: () => request<SetupProfile[]>('/setups'),
   setup: (id: number) => request<SetupProfile>(`/setups/${id}`),

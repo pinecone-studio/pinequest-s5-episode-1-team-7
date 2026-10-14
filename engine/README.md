@@ -110,6 +110,17 @@ The old `max(P)` rule scored a normal PCam-built slide 0.995 against 1.000 for t
 
 Limits: patches are sampled independently, which ignores within-slide correlation (stain, focus), and PCam's validation and test splits differ (normal slides flagged yellow or red: 25% on validation, 6% on test). Re-tune on real smartphone captures before relying on the thresholds.
 
+## Model card (About the AI)
+
+[model/model_card.json](model/model_card.json) is the committed, machine-readable
+version of the above: identity, file hash, training, test and PLISM results, the
+comparison table and the limitations. It is generated from the evidence files by
+`python -m training.make_model_card` (re-run it, with `--check` in CI, whenever
+the model, the thresholds or any results file changes — the generator fails if
+the numbers disagree). `pipeline.model_info()` serves the card plus the live
+model file and ONNX provider; the backend's `GET /model` exposes it to the
+desktop app's About page, and every scored slide records the model name + hash.
+
 ## Heatmap overlay (step 7)
 `pipeline/heatmap.py` writes an RGBA PNG the size of the photo, for the viewer's overlay:
 - **Colour:** patch P_malignant, green 0 → yellow 0.5 → red 1. It is interpolated between the centres of scored tiles, so the overlay is smooth rather than blocky, and unscored background tiles don't pull it towards green.

@@ -5,3 +5,4 @@ onnxruntime>=1.18
 
 # Dev
 pytest>=8.0
+onnx>=1.15  # model-card generator (training/make_model_card.py) only; never imported at runtime

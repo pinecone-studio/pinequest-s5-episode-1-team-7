@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import config, db, queue
-from .engine_adapter import AnalysisResult, call_engine, load_engine
+from .engine_adapter import AnalysisResult, call_engine, get_model_info, load_engine
 from .states import SlideState
 
 log = logging.getLogger(__name__)
@@ -50,9 +50,16 @@ def process_slide(slide_id: int) -> None:
             raw = call_engine(load_engine(), image_path, um_per_px)
         result = AnalysisResult.from_dict(raw)
         heatmap = _store_heatmap(slide_id, result.heatmap_path)
+        info = get_model_info()
+        if info and isinstance(info.get("file"), dict):
+            model_name = info["file"].get("name") or "engine"
+            model_sha256 = info["file"].get("sha256")
+        else:  # stub scorer or an engine predating model_info(): label honestly
+            model_name, model_sha256 = "stub", None
         with db.session() as conn:
             queue.set_score(conn, slide_id, result.score, result.risk_flag, heatmap,
-                            result.num_patches, result.inference_ms, result.scale_warning)
+                            result.num_patches, result.inference_ms, result.scale_warning,
+                            model_name, model_sha256)
     except Exception as exc:
         log.exception("slide %s failed", slide_id)
         _mark_failed(slide_id, exc)

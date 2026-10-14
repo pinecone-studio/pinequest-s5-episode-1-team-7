@@ -40,6 +40,13 @@ export function ScoreCard({ slide }: { slide: Slide }) {
         )}
       </dl>
       <p className="mt-3 text-xs text-slate-500">{t('score.aidOnly')}</p>
+      {slide.model_name != null && (
+        <p className="mt-1 text-xs text-slate-500" title={slide.model_sha256 ?? undefined}>
+          {slide.model_name === 'stub'
+            ? t('score.demoStub')
+            : t('score.model', { name: slide.model_name, hash: slide.model_sha256?.slice(0, 12) ?? '?' })}
+        </p>
+      )}
     </section>
   )
 }
