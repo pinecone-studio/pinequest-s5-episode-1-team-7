@@ -7,7 +7,8 @@ from .states import InvalidTransition, SlideState, check_transition
 
 # Columns transition() is allowed to update besides `state` (guards the dynamic SQL).
 _UPDATABLE = {"risk_score", "risk_flag", "priority_override", "heatmap_path",
-              "num_patches", "inference_ms", "decision", "error", "scale_warning"}
+              "num_patches", "inference_ms", "decision", "error", "scale_warning",
+              "model_name", "model_sha256"}
 _NOW = "strftime('%Y-%m-%dT%H:%M:%fZ','now')"
 
 # Pathologist actions (TDD 6.2)
@@ -77,12 +78,13 @@ def transition(conn: sqlite3.Connection, slide_id: int, dst: SlideState,
 
 def set_score(conn: sqlite3.Connection, slide_id: int, score: float, flag: Optional[str],
               heatmap_path: Optional[str], num_patches: Optional[int] = None,
-              inference_ms: Optional[float] = None, scale_warning: Optional[str] = None) -> None:
+              inference_ms: Optional[float] = None, scale_warning: Optional[str] = None,
+              model_name: Optional[str] = None, model_sha256: Optional[str] = None) -> None:
     """AI_RUNNING -> SCORED -> QUEUED. Ordering of the worklist is done by list_queue()."""
     score = max(0.0, min(1.0, float(score)))
     transition(conn, slide_id, SlideState.SCORED, risk_score=score, risk_flag=flag or risk_flag(score),
                heatmap_path=heatmap_path, num_patches=num_patches, inference_ms=inference_ms,
-               scale_warning=scale_warning)
+               scale_warning=scale_warning, model_name=model_name, model_sha256=model_sha256)
     transition(conn, slide_id, SlideState.QUEUED)
 
 

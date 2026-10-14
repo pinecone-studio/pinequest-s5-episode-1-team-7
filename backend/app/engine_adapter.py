@@ -23,6 +23,12 @@ backend passes `um_per_px` only when the entry point accepts it (see call_engine
 If `risk_flag` is omitted the backend derives it from config thresholds.
 Until the engine exists (or if it fails to import) a deterministic STUB is used so the whole
 pipeline can be demoed. The stub is NOT a real model.
+
+Member 1 also exposes `model_info() -> dict` (About the AI): the committed model
+card plus the live model file (name, SHA-256, whether it matches the card) and
+the ONNX execution provider in use. `GET /model` serves it; every scored slide
+stores the model name + hash (stub scores are labelled `model_name="stub"`).
+Engines without `model_info` get `GET /model` 503.
 """
 import functools
 import importlib
@@ -110,6 +116,34 @@ def call_engine(fn: AnalyzeFn, image_path: str, um_per_px: Optional[float] = Non
         if "um_per_px" in params:
             return fn(image_path, um_per_px=um_per_px)
     return fn(image_path)
+
+
+def _ensure_repo_root() -> None:
+    """Make the sibling engine/ package importable (backend/app/ -> repo root)."""
+    try:
+        repo_root = str(Path(__file__).resolve().parents[2])
+        if repo_root not in sys.path:
+            sys.path.append(repo_root)
+    except IndexError:  # frozen executable layout
+        pass
+
+
+def get_model_info() -> Optional[dict]:
+    """The engine's model card plus live file/provider status (About the AI).
+
+    Returns None when the engine cannot be imported or predates model_info()
+    (the stub has no model to describe). Never raises.
+    """
+    try:
+        _ensure_repo_root()
+        module_name, _ = config.ENGINE_ENTRYPOINT.split(":")
+        fn = getattr(importlib.import_module(module_name), "model_info", None)
+        if not callable(fn):
+            return None
+        info = fn()
+        return info if isinstance(info, dict) else None
+    except Exception:
+        return None
 
 
 def _stub_analyze_slide(image_path: str, um_per_px: Optional[float] = None) -> dict:

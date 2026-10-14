@@ -15,6 +15,7 @@ export const queryKeys = {
   health: ['health'] as const,
   capture: ['capture'] as const,
   setups: ['setups'] as const,
+  model: ['model'] as const,
 }
 
 /** The pipeline is still working on the slide, so it will change on its own. */
@@ -127,4 +128,9 @@ export function useDeleteSetup() {
     mutationFn: api.deleteSetup,
     onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.setups }),
   })
+}
+
+/** The model card + live model status for the About page. Static per deployment: no polling. */
+export function useModelInfo() {
+  return useQuery({ queryKey: queryKeys.model, queryFn: api.model })
 }

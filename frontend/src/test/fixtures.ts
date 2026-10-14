@@ -18,6 +18,8 @@ export function slide(overrides: Partial<Slide> & Pick<Slide, 'id'>): Slide {
     objective: null,
     um_per_px: null,
     scale_warning: null,
+    model_name: null,
+    model_sha256: null,
     created_at: '2026-10-13T08:00:00.000Z',
     updated_at: '2026-10-13T08:01:00.000Z',
     ...overrides,

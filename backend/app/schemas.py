@@ -20,6 +20,8 @@ class SlideOut(BaseModel):
     objective: Optional[str] = None
     um_per_px: Optional[float] = None
     scale_warning: Optional[str] = None
+    model_name: Optional[str] = None
+    model_sha256: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -31,7 +33,7 @@ class SlideOut(BaseModel):
             has_heatmap=bool(row["heatmap_path"]), num_patches=row["num_patches"],
             inference_ms=row["inference_ms"], decision=row["decision"], error=row["error"],
             setup_id=row["setup_id"], objective=row["objective"], um_per_px=row["um_per_px"],
-            scale_warning=row["scale_warning"],
+            scale_warning=row["scale_warning"], model_name=row["model_name"], model_sha256=row["model_sha256"],
             created_at=row["created_at"], updated_at=row["updated_at"],
         )
 

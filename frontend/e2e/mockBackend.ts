@@ -40,6 +40,8 @@ export function makeSlide(id: number, overrides: Partial<Slide> = {}): Slide {
     objective: null,
     um_per_px: null,
     scale_warning: null,
+    model_name: null,
+    model_sha256: null,
     created_at: '2026-10-09T08:00:00.000Z',
     updated_at: '2026-10-09T08:01:00.000Z',
     ...overrides,
@@ -57,6 +59,61 @@ export interface MockSetup {
   calibration_objective: string
   phone_resolution: string | null
   created_at: string
+}
+
+/** Minimal model card for GET /model (backend/app/routers/model.py); the page renders labels from it. */
+export const mockModelInfo = {
+  card: {
+    name: 'PCam MobileNetV3-Small, Hibou-B-distilled',
+    version: 'model_fp32.onnx',
+    file: { name: 'model_fp32.onnx', sha256: 'abc123', size_bytes: 6421804, size_mb: 6.42, committed: null },
+    architecture: { name: 'MobileNetV3-Small', params: 1512836, input_px: 224, input_scale_um_per_px: 0.42 },
+    provenance: {
+      dataset: 'PatchCamelyon (PCam)',
+      backbone: 'ImageNet-pretrained MobileNetV3-Small',
+      training: 'fine-tuned on PCam',
+      distilled_from: 'hibou-b',
+      date_trained: null,
+      export_metadata: {},
+    },
+    runtime: {
+      offline: true,
+      runs_on: 'this clinic PC only',
+      providers_preference: ['CPUExecutionProvider'],
+      measured_per_slide_s: { value: 0.1, context: 'reference PC' },
+    },
+    patch_metrics: {
+      split: 'PCam test',
+      threshold: 0.5,
+      auc: 0.9687,
+      accuracy: 0.8777,
+      sensitivity: 0.773,
+      specificity: 0.9822,
+      at_90_sensitivity: { threshold: 0.1816, sensitivity: 0.8707, specificity: 0.9481 },
+    },
+    slide_metrics: {
+      formula: 'sigmoid(mean(top-3 patch log-odds) / 4)',
+      thresholds: { red: 0.81, yellow: 0.7 },
+      tuned: null,
+      tuned_commit: null,
+      normal_slides: { red: 0.004, yellow_or_red: 0.058 },
+      tumour_fractions: { tumour_5pct: { auc: 0.9759, red: 0.665, yellow_or_red: 0.9185 } },
+    },
+    plism: {
+      at: '0.6x',
+      source: 'plism results',
+      metric: 'share flagged',
+      scanners: { GT450: 0.019 },
+      phones: { redmi: 0.0 },
+      other_tissues_false_alarm: { min: 0.217, max: 0.354, note: 'not valid' },
+    },
+    comparison: [{ model: 'Direct model', pcam_auc: 0.9604, size_mb: 6.42, per_slide_s: 0.1, note: 'previous' }],
+    literature: { note: 'none recorded', baselines: [] },
+    limitations: ['Prioritisation aid only.'],
+    generated: { at: '2026-10-14T00:00:00+00:00', repo_commit: null, generator: 'make_model_card.py' },
+  },
+  file: { path: '/models/model_fp32.onnx', name: 'model_fp32.onnx', exists: true, sha256: 'abc123', matches_card: true },
+  provider: 'CPUExecutionProvider',
 }
 
 export class MockBackend {
@@ -141,6 +198,7 @@ export class MockBackend {
         }
 
         if (path === '/health') return json(route, { status: 'ok' })
+        if (path === '/model') return json(route, mockModelInfo)
         if (path === '/queue') return json(route, this.queue(url.searchParams.get('sort')))
         if (path === '/slides') {
           const state = url.searchParams.get('state')

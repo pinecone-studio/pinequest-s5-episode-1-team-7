@@ -60,6 +60,10 @@ export interface Slide {
   um_per_px: number | null
   /** Engine scale report, e.g. "no_scale_info" (shown as a warning, not an error). */
   scale_warning: string | null
+  /** Which model scored the slide (About the AI): file name, or "stub" for the demo scorer. */
+  model_name: string | null
+  /** SHA-256 of the model file that scored the slide; null for the stub. */
+  model_sha256: string | null
   created_at: string
   updated_at: string
 }
@@ -76,6 +80,63 @@ export interface SlideEvent {
 export interface IngestResult {
   id: number
   state: SlideState
+}
+
+/** The engine's model card (engine/model/model_card.json) with live file/provider status. */
+export interface ModelCard {
+  name: string
+  version: string
+  file: { name: string; sha256: string; size_bytes: number; size_mb: number; committed: string | null }
+  architecture: { name: string; params: number; input_px: number; input_scale_um_per_px: number }
+  provenance: {
+    dataset: string
+    backbone: string
+    training: string
+    distilled_from: string
+    date_trained: string | null
+    export_metadata: Record<string, string>
+  }
+  runtime: {
+    offline: boolean
+    runs_on: string
+    providers_preference: string[]
+    measured_per_slide_s: { value: number; context: string }
+  }
+  patch_metrics: {
+    split: string
+    threshold: number
+    auc: number
+    accuracy: number
+    sensitivity: number
+    specificity: number
+    at_90_sensitivity: { threshold: number; sensitivity: number; specificity: number }
+  }
+  slide_metrics: {
+    formula: string
+    thresholds: { red: number; yellow: number }
+    tuned: string | null
+    tuned_commit: string | null
+    normal_slides: { red: number; yellow_or_red: number }
+    tumour_fractions: Record<string, { auc: number | null; red: number; yellow_or_red: number }>
+  }
+  plism: {
+    at: string
+    source: string
+    metric: string
+    scanners: Record<string, number>
+    phones: Record<string, number>
+    other_tissues_false_alarm: { min: number; max: number; note: string }
+  }
+  comparison: { model: string; pcam_auc: number | null; size_mb: number | null; per_slide_s: number | null; note: string }[]
+  literature: { note: string; baselines: unknown[] }
+  limitations: string[]
+  generated: { at: string; repo_commit: string | null; generator: string }
+}
+
+export interface ModelInfo {
+  card: ModelCard | null
+  file: { path: string | null; name: string | null; exists: boolean; sha256: string | null; matches_card: boolean }
+  provider: string | null
 }
 
 export interface CaptureStatus {

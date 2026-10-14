@@ -11,7 +11,9 @@
     "manualPriority": "Manual priority: {{level}}",
     "patches": "Tissue patches analysed",
     "inference": "AI inference time",
-    "aidOnly": "Prioritisation aid only: the pathologist makes the diagnosis."
+    "aidOnly": "Prioritisation aid only: the pathologist makes the diagnosis.",
+    "model": "AI model {{name}} · {{hash}}",
+    "demoStub": "Demo scorer — not a real model"
   },
   "pipeline": {
     "title": "Analysis progress",

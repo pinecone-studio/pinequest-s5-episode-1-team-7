@@ -1,0 +1,177 @@
+{
+  "name": "PCam MobileNetV3-Small, Hibou-B-distilled",
+  "version": "model_fp32.onnx",
+  "file": {
+    "name": "model_fp32.onnx",
+    "sha256": "41013a50e406cf765d776b4d9a3d17b7b9c985d2e625d55621428dca12d1d76e",
+    "size_bytes": 6421804,
+    "size_mb": 6.42,
+    "committed": "2026-10-13T23:55:29+08:00"
+  },
+  "architecture": {
+    "name": "MobileNetV3-Small",
+    "params": 1512836,
+    "input_px": 224,
+    "input_scale_um_per_px": 0.42
+  },
+  "provenance": {
+    "dataset": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+    "backbone": "ImageNet-pretrained MobileNetV3-Small",
+    "training": "fine-tuned on PCam (8 epochs, best epoch 6, strong augmentation + EMA, 256-batch)",
+    "distilled_from": "hibou-b (foundation model, histai/hibou-b)",
+    "date_trained": "2026-10-13T20:38:36+08:00",
+    "export_metadata": {
+      "arch": "mobilenet_v3_small",
+      "dataset": "PCam",
+      "val_auc": "0.9733",
+      "test_auc": "0.9687",
+      "test_accuracy": "0.8777",
+      "distilled_from": "hibou-b"
+    }
+  },
+  "runtime": {
+    "offline": true,
+    "runs_on": "this clinic PC only: no cloud, no data leaves the clinic (TDD 1.2, 7.1)",
+    "providers_preference": [
+      "DmlExecutionProvider",
+      "OpenVINOExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "measured_per_slide_s": {
+      "value": 0.101,
+      "context": "median warmed run, 150 patches, batch 16, 4 threads, i5-13400F (150 patches, batch 16, 4 threads, onnxruntime 1.31.0). Same-graph reference: the distilled student is the same MobileNetV3-Small graph as the measured direct model."
+    }
+  },
+  "patch_metrics": {
+    "split": "PCam test (n=32,768)",
+    "threshold": 0.5,
+    "auc": 0.9687,
+    "accuracy": 0.8777,
+    "sensitivity": 0.773,
+    "specificity": 0.9822,
+    "at_90_sensitivity": {
+      "threshold": 0.1816,
+      "sensitivity": 0.8707,
+      "specificity": 0.9481
+    }
+  },
+  "slide_metrics": {
+    "formula": "sigmoid(mean(top-3 patch log-odds) / 4)",
+    "thresholds": {
+      "red": 0.81,
+      "yellow": 0.7
+    },
+    "tuned": "2026-10-13T23:55:29+08:00",
+    "tuned_commit": "0245cdd8604a9e1f2ea20fb53c9f4a99352f2c1a",
+    "normal_slides": {
+      "red": 0.004,
+      "yellow_or_red": 0.058
+    },
+    "tumour_fractions": {
+      "tumour_1pct": {
+        "auc": 0.7636,
+        "red": 0.046,
+        "yellow_or_red": 0.318
+      },
+      "tumour_2pct": {
+        "auc": 0.8763,
+        "red": 0.2335,
+        "yellow_or_red": 0.6325
+      },
+      "tumour_5pct": {
+        "auc": 0.9759,
+        "red": 0.665,
+        "yellow_or_red": 0.9185
+      },
+      "tumour_10pct": {
+        "auc": 0.9973,
+        "red": 0.9195,
+        "yellow_or_red": 0.994
+      },
+      "tumour_25pct": {
+        "auc": 0.9999,
+        "red": 0.999,
+        "yellow_or_red": 1.0
+      }
+    }
+  },
+  "plism": {
+    "at": "0.6x (≈0.42 µm/px, the training magnification, issue #35)",
+    "source": "plism_model_fp32_kd-hibou.json (evaluated as model_fp32_kd-hibou.onnx: the same distilled weights later shipped as model_fp32.onnx)",
+    "metric": "share of normal lymph-node patches flagged (P ≥ 0.5)",
+    "scanners": {
+      "GT450": 0.0192,
+      "AT2": 0.0096,
+      "S360": 0.0096,
+      "S60": 0.0865,
+      "S210": 0.0481,
+      "SQ": 0.0096,
+      "P": 0.0096
+    },
+    "phones": {
+      "galaxy": 0.0,
+      "iphone13": 0.0096,
+      "iphone6": 0.0,
+      "itel": 0.0865,
+      "moto": 0.0577,
+      "redmi": 0.0
+    },
+    "other_tissues_false_alarm": {
+      "min": 0.2172,
+      "max": 0.3535,
+      "note": "normal non-lymph tissue on phones: not valid, see limitations"
+    }
+  },
+  "comparison": [
+    {
+      "model": "MobileNetV3-Small, Hibou-B-distilled (shipped)",
+      "pcam_auc": 0.9687,
+      "size_mb": 6.42,
+      "per_slide_s": 0.101,
+      "note": "same-graph speed reference, see runtime"
+    },
+    {
+      "model": "MobileNetV3-Small, direct (previous release)",
+      "pcam_auc": 0.9604,
+      "size_mb": 6.42,
+      "per_slide_s": 0.101,
+      "note": "replaced: worse PLISM phone agreement"
+    },
+    {
+      "model": "Hibou-B foundation-model teacher (head only)",
+      "pcam_auc": 0.9842,
+      "size_mb": null,
+      "per_slide_s": null,
+      "note": "training-time teacher, too large for clinic PCs"
+    },
+    {
+      "model": "MobileNetV3-Small 96 px (study)",
+      "pcam_auc": 0.9224,
+      "size_mb": null,
+      "per_slide_s": null,
+      "note": "native-PCam-size study, never exported"
+    },
+    {
+      "model": "INT8-quantized direct model (study)",
+      "pcam_auc": 0.9628,
+      "size_mb": 1.79,
+      "per_slide_s": 0.152,
+      "note": "72% smaller but slower than FP32 on CPU → not shipped"
+    }
+  ],
+  "literature": {
+    "note": "Published PCam baselines were not recorded with these runs, so none are quoted: numbers here come only from the evidence files above.",
+    "baselines": []
+  },
+  "limitations": [
+    "Trained only on lymph-node metastases (breast cancer, PCam). Not valid for other organs: normal non-lymph tissue false alarms were 22%–35% on phones at the correct magnification (PLISM).",
+    "Needs a calibrated magnification (issue #35): at captured scale the same phones falsely flagged 42–74% of normal lymph-node patches; 0–9% at 0.6x. Always capture with a setup + objective.",
+    "Slide thresholds were tuned on slides simulated from PCam validation patches (normal slides: 0.4% red, 5.8% yellow-or-red on test); re-tune on real captures.",
+    "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
+  ],
+  "generated": {
+    "at": "2026-10-14T02:10:16+00:00",
+    "repo_commit": "8e81330f007c18bc82f38ac24fe7d8e49ebf27eb",
+    "generator": "training/make_model_card.py"
+  }
+}

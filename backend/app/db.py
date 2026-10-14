@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS slides (
     objective         TEXT,
     um_per_px         REAL,
     scale_warning     TEXT,
+    model_name        TEXT,
+    model_sha256      TEXT,
     created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
     updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
@@ -61,6 +63,8 @@ _SLIDES_MIGRATION = (
     ("objective", "TEXT"),
     ("um_per_px", "REAL"),
     ("scale_warning", "TEXT"),
+    ("model_name", "TEXT"),
+    ("model_sha256", "TEXT"),
 )
 
 
