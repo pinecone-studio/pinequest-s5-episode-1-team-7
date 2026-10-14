@@ -24,6 +24,9 @@ publish: null
 mac:
   target: [dmg]
   category: public.app-category.medical
+  # Ad-hoc signature: free, no Apple account. Apple Silicon refuses to run an app whose
+  # signature is missing or broken (unsigned builds crash at launch with a codesign error).
+  identity: "-"
 win:
   target: [nsis]
 nsis:
