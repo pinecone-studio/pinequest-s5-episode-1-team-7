@@ -111,7 +111,7 @@ At the right scale, phones are about as good as scanners. At the wrong scale, th
 4. **Later:** the engine estimates µm/px from nucleus size and warns when it disagrees with the selected setup (e.g. the wrong objective was picked). It is not accurate enough (±20–30%) to replace calibration.
 
 **Who does what**
-- **Engine (M1):** `analyze_slide(image_path, um_per_px=None)` resizes to `MODEL_UM_PER_PX = 0.42` before tiling and returns `um_per_px_used`. `None` keeps today's behaviour plus a warning. The heatmap stays the size of the original photo. Then the nucleus-size mismatch warning.
+- **Engine (M1):** ✅ `analyze_slide(image_path, um_per_px=None)` resizes to `MODEL_UM_PER_PX = 0.42` before tiling (`engine/pipeline/scale.py`) and returns `um_per_px_used` and `scale_warning`. `None` keeps today's behaviour and sets `scale_warning`. Values outside 0.05–2.0 µm/px raise `ValueError`, since they are almost certainly a calibration or objective mistake. The heatmap stays the size of the original photo. Still to do: the nucleus-size mismatch warning (it will reuse `scale_warning`).
 - **Backend (M2):** stores setup profiles (name, calibrated µm/px, objective calibrated at); `/ingest` and `/capture/snapshot` take `setup_id` + `objective`, compute µm/px, pass it to the engine and keep it on the slide record.
 - **Frontend (M3):** a calibration screen (micrometer photo, click two marks, enter the distance); setup and objective pickers on upload and capture; a clear warning when no calibrated setup exists or the engine reports a scale mismatch.
 

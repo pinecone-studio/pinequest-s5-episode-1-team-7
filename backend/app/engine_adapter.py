@@ -2,16 +2,23 @@
 
 Member 1 exposes ONE function (default TRIAGE_ENGINE="engine.pipeline:analyze_slide"):
 
-    def analyze_slide(image_path: str) -> dict:
+    def analyze_slide(image_path: str, um_per_px: float | None = None) -> dict:
         return {
             "score": 0.83,                 # S_slide in [0, 1]            (required)
             "risk_flag": "red",            # "red" | "yellow" | "green"   (optional)
             "heatmap_path": "/tmp/h.png",  # PNG overlay, backend moves it (optional)
             "num_patches": 142,            # (optional)
             "inference_ms": 1180.0,        # (optional)
+            "um_per_px_used": 0.25,        # µm/px the photo was resized from, None if not given
+            "scale_warning": None,         # str to show the user, e.g. no calibration (optional)
         }
 
 If `risk_flag` is omitted the backend derives it from config thresholds.
+
+Magnification (issue #35): pass the capture's calibrated `um_per_px` (setup calibration x
+objective, see docs/PLAN.md). The engine resizes the photo to the model's 0.42 µm/px before
+tiling; the heatmap keeps the original photo's size. Without it the photo is analysed as-is
+and `scale_warning` says so. An implausible value (outside 0.05-2.0) raises ValueError.
 Until the engine exists (or if it fails to import) a deterministic STUB is used so the whole
 pipeline can be demoed. The stub is NOT a real model.
 """
