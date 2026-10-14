@@ -73,9 +73,10 @@ def test_triage_model_path_only_replaces_the_default_organ(colon, tiny_model):
 
 
 def test_available_organs_lists_only_organs_with_a_model(colon, monkeypatch, tmp_path):
-    assert available_organs() == [DEFAULT_ORGAN, "colon"]
-    monkeypatch.setitem(organs.ORGANS, "stomach", OrganModel("stomach", tmp_path / "none", 0.5, 0.8, 0.7))
-    assert "stomach" not in available_organs()
+    organs_now = available_organs()
+    assert organs_now[0] == DEFAULT_ORGAN and "colon" in organs_now
+    monkeypatch.setitem(organs.ORGANS, "pancreas", OrganModel("pancreas", tmp_path / "none", 0.5, 0.8, 0.7))
+    assert "pancreas" in organs.ORGANS and "pancreas" not in available_organs()
 
 
 def test_model_info_per_organ(colon):
@@ -91,3 +92,16 @@ def test_model_info_never_raises_for_unknown_organ():
     assert info["card"] is None
     assert info["file"]["exists"] is False
     assert info["provider"] is None
+
+
+def test_experimental_organs_are_hidden_but_still_scorable(colon, monkeypatch, slide):
+    monkeypatch.setitem(organs.ORGANS, "colon", OrganModel("colon", colon.folder, 0.5, 0.0, 0.0, experimental=True))
+
+    assert "colon" not in available_organs()
+    assert "colon" in available_organs(include_experimental=True)
+    assert _analyze(slide, organ="colon")["organ"] == "colon"  # explicit use still works (testing)
+
+
+def test_stomach_ships_as_experimental():
+    assert get_organ("stomach").experimental
+    assert "stomach" not in available_organs()

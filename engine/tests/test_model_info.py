@@ -3,6 +3,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from pipeline import model_info
 from pipeline.scoring import RED_THRESHOLD, TOP_K, W_MAX, YELLOW_THRESHOLD
 
@@ -61,18 +63,19 @@ def test_committed_card_matches_evidence():
     assert card["slide_metrics"]["normal_slides"] == scoring["test"]["normal_slides"]
 
 
-def test_committed_colon_card_matches_its_model_and_settings():
+@pytest.mark.parametrize("organ", ["colon", "stomach"])
+def test_committed_organ_card_matches_its_model_and_settings(organ):
     """Each organ's card describes its own committed model and the settings in pipeline/organs.py."""
     from pipeline.organs import get_organ
 
-    colon = get_organ("colon")
-    card = json.loads(colon.card_path.read_text(encoding="utf-8"))
-    assert card["organ"] == "colon"
-    digest = hashlib.sha256(colon.model_path.read_bytes()).hexdigest()
+    spec = get_organ(organ)
+    card = json.loads(spec.card_path.read_text(encoding="utf-8"))
+    assert card["organ"] == organ
+    digest = hashlib.sha256(spec.model_path.read_bytes()).hexdigest()
     assert card["file"]["sha256"] == digest
-    assert card["architecture"]["input_scale_um_per_px"] == colon.um_per_px
-    assert card["slide_metrics"]["thresholds"] == {"red": colon.red, "yellow": colon.yellow}
+    assert card["architecture"]["input_scale_um_per_px"] == spec.um_per_px
+    assert card["slide_metrics"]["thresholds"] == {"red": spec.red, "yellow": spec.yellow}
 
-    scoring = json.loads((RESULTS / "slide_scoring_colon.json").read_text())
-    assert (colon.w_max, colon.top_k) == (scoring["chosen"]["w_max"], scoring["chosen"]["top_k"])
-    assert (round(scoring["chosen"]["red"], 2), round(scoring["chosen"]["yellow"], 2)) == (colon.red, colon.yellow)
+    scoring = json.loads((RESULTS / f"slide_scoring_{organ}.json").read_text())
+    assert (spec.w_max, spec.top_k) == (scoring["chosen"]["w_max"], scoring["chosen"]["top_k"])
+    assert (round(scoring["chosen"]["red"], 2), round(scoring["chosen"]["yellow"], 2)) == (spec.red, spec.yellow)

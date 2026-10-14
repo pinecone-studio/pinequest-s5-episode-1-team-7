@@ -283,6 +283,29 @@ ORGAN_CARDS = {
         "plism": "plism_colon_model_fp32.json",
         "plism_scale": "0.5",  # PLISM ~0.25 µm/px -> the model's 0.5 µm/px
         "plism_tissues": "normal right colon vs colon adenocarcinoma + metastatic colorectal cancer",
+        "split_caveat": "The test half shares patients with the validation half used for the epoch and threshold "
+                        "choices (CRC-VAL-HE-7K has no patient IDs), and its tiles are stain-normalised, unlike training.",
+    },
+    "stomach": {
+        "name": "Stomach MobileNetV3-Small, Hibou-B-distilled",
+        "trained_on": "gastric tissue: tumour epithelium vs 7 non-tumour classes (HMU-GC-HE-30K)",
+        "test_split": "HMU-GC-HE-30K test block (tiles 3311-3887 of each class)",
+        "main": "stomach_mobilenet_v3_small_224_kd-hibou.json",
+        "direct": "stomach_mobilenet_v3_small_224.json",
+        "teacher": "teacher_hibou-b_hmu_gc.json",
+        "scoring": "slide_scoring_stomach.json",
+        "plism": "plism_stomach_model_fp32.json",
+        "plism_scale": "0.5",
+        "plism_tissues": "normal stomach vs EBV-associated gastric cancer (one subtype only)",
+        "split_caveat": "HMU-GC-HE-30K has no slide or patient IDs. Train, validation and test are contiguous blocks "
+                        "of the tile numbering, which follows slide order, so some slides may still be split across them. "
+                        "Normal gastric mucosa is the main source of false alarms (12% of its tiles flagged on test).",
+        "extra_limitations": [
+            "Trained on mostly gland-forming (intestinal-type) adenocarcinoma: 266 of the 300 patients have "
+            "tubular or mucinous adenocarcinoma, 19 are Lauren diffuse type and none EBV-associated. It likely "
+            "misses diffuse, signet-ring and EBV-associated gastric cancer: on PLISM's EBV-associated gastric "
+            "cancer it flagged only 3-7% of cancer patches on phones (AUC ~0.5, chance level).",
+        ],
     },
 }
 
@@ -357,6 +380,7 @@ def build_organ_card(organ: str) -> dict:
         "name": spec_files["name"],
         "version": f"{organ}/{model_path.name}",
         "organ": organ,
+        "experimental": spec.experimental,
         "file": {
             "name": model_path.name,
             "sha256": _sha256(model_path),
@@ -435,8 +459,8 @@ def build_organ_card(organ: str) -> dict:
             f"Trained only on {organ.replace('_', ' ')} tissue. Use it only for {organ.replace('_', ' ')} slides: normal tissue "
             f"of all PLISM organs was flagged {min(other_fa):.0%}–{max(other_fa):.0%} on phones.",
             f"Needs a calibrated magnification (issue #35): photos are resized to {spec.um_per_px} µm/px.",
-            "The test half shares patients with the validation half used for the epoch and threshold choices "
-            "(CRC-VAL-HE-7K has no patient IDs), and its tiles are stain-normalised, unlike training.",
+            spec_files["split_caveat"],
+            *spec_files.get("extra_limitations", []),
             "Slide thresholds were tuned on slides simulated from validation tiles; re-tune on real captures.",
             "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a "
             "pathologist (TDD 1.2).",

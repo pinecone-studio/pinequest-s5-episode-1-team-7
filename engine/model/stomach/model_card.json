@@ -1,0 +1,178 @@
+{
+  "name": "Stomach MobileNetV3-Small, Hibou-B-distilled",
+  "version": "stomach/model_fp32.onnx",
+  "organ": "stomach",
+  "experimental": true,
+  "file": {
+    "name": "model_fp32.onnx",
+    "sha256": "8c24432d9b7a0e0dee94e04ed11b65c61c3c1c5a6e1b6af4bce25d5cb9a1058f",
+    "size_bytes": 6421831,
+    "size_mb": 6.42,
+    "committed": null
+  },
+  "architecture": {
+    "name": "MobileNetV3-Small",
+    "params": 1512836,
+    "input_px": 224,
+    "input_scale_um_per_px": 0.5
+  },
+  "provenance": {
+    "dataset": "HMU-GC-HE-30K (gastric cancer, 300 slides), contiguous-block train / valid / test split, CC BY 4.0, via figshare 10.6084/m9.figshare.25954813",
+    "backbone": "ImageNet-pretrained MobileNetV3-Small",
+    "training": "fine-tuned on gastric tissue: tumour epithelium vs 7 non-tumour classes (HMU-GC-HE-30K) (30 epochs, best epoch 28, strong augmentation + EMA, 256-batch)",
+    "distilled_from": "hibou-b (foundation model, histai/hibou-b; its own head trained on this dataset)",
+    "date_trained": null,
+    "export_metadata": {
+      "arch": "mobilenet_v3_small",
+      "dataset": "HMU-GC-HE-30K",
+      "organ": "stomach",
+      "val_auc": "0.9428",
+      "test_auc": "0.9560",
+      "test_accuracy": "0.9227",
+      "distilled_from": "hibou-b"
+    }
+  },
+  "runtime": {
+    "offline": true,
+    "runs_on": "this clinic PC only: no cloud, no data leaves the clinic (TDD 1.2, 7.1)",
+    "providers_preference": [
+      "DmlExecutionProvider",
+      "OpenVINOExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "measured_per_slide_s": {
+      "value": 0.101,
+      "context": "median warmed run, 150 patches, batch 16, 4 threads, i5-13400F (150 patches, batch 16, 4 threads, onnxruntime 1.31.0). Same-graph reference: every organ's model is the same MobileNetV3-Small graph as the measured lymph-node model."
+    }
+  },
+  "patch_metrics": {
+    "split": "HMU-GC-HE-30K test block (tiles 3311-3887 of each class) (n=4,616)",
+    "threshold": 0.5,
+    "auc": 0.956,
+    "accuracy": 0.9227,
+    "sensitivity": 0.6308,
+    "specificity": 0.9643,
+    "at_90_sensitivity": {
+      "threshold": 0.1531,
+      "sensitivity": 0.9359,
+      "specificity": 0.8505
+    }
+  },
+  "slide_metrics": {
+    "formula": "sigmoid(mean(top-5 patch log-odds) / 4)",
+    "thresholds": {
+      "red": 0.6,
+      "yellow": 0.57
+    },
+    "tuned": null,
+    "tuned_commit": null,
+    "normal_slides": {
+      "red": 0.0045,
+      "yellow_or_red": 0.185
+    },
+    "tumour_fractions": {
+      "tumour_1pct": {
+        "auc": 0.6213,
+        "red": 0.0415,
+        "yellow_or_red": 0.352
+      },
+      "tumour_2pct": {
+        "auc": 0.7093,
+        "red": 0.1145,
+        "yellow_or_red": 0.489
+      },
+      "tumour_5pct": {
+        "auc": 0.8741,
+        "red": 0.399,
+        "yellow_or_red": 0.7695
+      },
+      "tumour_10pct": {
+        "auc": 0.9566,
+        "red": 0.6885,
+        "yellow_or_red": 0.92
+      },
+      "tumour_25pct": {
+        "auc": 0.9974,
+        "red": 0.952,
+        "yellow_or_red": 0.9965
+      }
+    }
+  },
+  "plism": {
+    "at": "0.5x (≈0.5 µm/px, the training magnification, issue #35)",
+    "source": "plism_stomach_model_fp32.json",
+    "metric": "share of normal stomach patches flagged (P ≥ 0.5)",
+    "scanners": {
+      "GT450": 0.0333,
+      "AT2": 0.0778,
+      "S360": 0.1778,
+      "S60": 0.0444,
+      "S210": 0.1222,
+      "SQ": 0.1333,
+      "P": 0.0333
+    },
+    "phones": {
+      "galaxy": 0.0778,
+      "iphone13": 0.1111,
+      "iphone6": 0.0889,
+      "itel": 0.0889,
+      "moto": 0.0556,
+      "redmi": 0.1
+    },
+    "organ_cancer_on_phones": {
+      "tissues": "normal stomach vs EBV-associated gastric cancer (one subtype only)",
+      "flagged_min": 0.0263,
+      "flagged_max": 0.0702,
+      "auc_min": 0.3943,
+      "auc_max": 0.5506
+    },
+    "other_tissues_false_alarm": {
+      "min": 0.0398,
+      "max": 0.0609,
+      "note": "normal tissue of all organs on phones: only valid for stomach"
+    }
+  },
+  "comparison": [
+    {
+      "model": "Stomach MobileNetV3-Small, Hibou-B-distilled (shipped)",
+      "pcam_auc": null,
+      "test_auc": 0.956,
+      "size_mb": 6.42,
+      "per_slide_s": 0.101,
+      "note": "HMU-GC-HE-30K test block (tiles 3311-3887 of each class); same-graph speed reference, see runtime"
+    },
+    {
+      "model": "Same student without the teacher",
+      "pcam_auc": null,
+      "test_auc": 0.954,
+      "size_mb": 6.42,
+      "per_slide_s": 0.101,
+      "note": "not shipped"
+    },
+    {
+      "model": "Hibou-B foundation-model teacher (head only)",
+      "pcam_auc": null,
+      "test_auc": 0.9462,
+      "size_mb": null,
+      "per_slide_s": null,
+      "note": "training-time teacher, too large for clinic PCs"
+    }
+  ],
+  "literature": {
+    "note": "Published baselines were not recorded with these runs, so none are quoted: numbers here come only from the evidence files above.",
+    "baselines": []
+  },
+  "limitations": [
+    "Trained only on stomach tissue. Use it only for stomach slides: normal tissue of all PLISM organs was flagged 4%–6% on phones.",
+    "Needs a calibrated magnification (issue #35): photos are resized to 0.5 µm/px.",
+    "HMU-GC-HE-30K has no slide or patient IDs. Train, validation and test are contiguous blocks of the tile numbering, which follows slide order, so some slides may still be split across them. Normal gastric mucosa is the main source of false alarms (12% of its tiles flagged on test).",
+    "Trained on mostly gland-forming (intestinal-type) adenocarcinoma: 266 of the 300 patients have tubular or mucinous adenocarcinoma, 19 are Lauren diffuse type and none EBV-associated. It likely misses diffuse, signet-ring and EBV-associated gastric cancer: on PLISM's EBV-associated gastric cancer it flagged only 3-7% of cancer patches on phones (AUC ~0.5, chance level).",
+    "Slide thresholds were tuned on slides simulated from validation tiles; re-tune on real captures.",
+    "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
+  ],
+  "generated": {
+    "at": "2026-10-14T14:39:04+00:00",
+    "repo_commit": "2cb230e83f078f054b269b471c7bb08076987822",
+    "generator": "training/make_model_card.py"
+  }
+}

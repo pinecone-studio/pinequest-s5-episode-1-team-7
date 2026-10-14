@@ -40,6 +40,15 @@ DATASETS = {
         "description": "NCT-CRC-HE-100K-NONORM (train) + CRC-VAL-HE-7K halves (valid / test), CC BY 4.0, "
                        "via Hugging Face 1aurent/NCT-CRC-HE",
     },
+    "hmu_gc": {  # training/download_hmu_gc.py
+        "dir": DATA_ROOT / "hmu-gc",
+        "stem": "hmu_gc_split_{split}",
+        "organ": "stomach",
+        "prefix": "stomach",
+        "short": "HMU-GC-HE-30K",
+        "description": "HMU-GC-HE-30K (gastric cancer, 300 slides), contiguous-block train / valid / test split, "
+                       "CC BY 4.0, via figshare 10.6084/m9.figshare.25954813",
+    },
 }
 
 

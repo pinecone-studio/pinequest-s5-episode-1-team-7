@@ -101,3 +101,38 @@ def test_plism_summary_reports_the_organs_own_tissues():
     assert organ["patches"] == {"normal": 4, "cancer": 4}
     assert 0.5 < organ["cancer_vs_normal_auc"] <= 1.0
     assert "organ" not in plism_eval.summarise(rows, scores)["GT450"]  # unchanged without --organ
+
+
+def test_hmu_gc_splits_are_disjoint_number_ranges_with_gaps():
+    from training import download_hmu_gc as hmu
+
+    members = {s: hmu.split_members(s) for s in hmu.RANGES}
+    numbers = {s: {n for _, n in m} for s, m in members.items()}
+    assert max(numbers["train"]) + hmu.GAP < min(numbers["valid"])
+    assert max(numbers["valid"]) + hmu.GAP < min(numbers["test"])
+    assert max(numbers["test"]) == hmu.PER_CLASS
+    for split, m in members.items():  # every class gets the same number range
+        per_class = np.bincount([c for c, _ in m], minlength=len(hmu.CLASSES))
+        assert len(set(per_class)) == 1, split
+
+
+def test_shuffle_split_keeps_extra_label_arrays_aligned(tmp_path):
+    from training import download_hmu_gc as hmu
+
+    n = 6
+    images = np.zeros((n, nct.TILE, nct.TILE, 3), dtype=np.uint8)
+    images[:, 0, 0, 0] = np.arange(n)
+    classes = np.array([7, 0, 7, 1, 2, 3], dtype=np.uint8)
+    nct.write_split("valid", [(images, classes)], n, tmp_path, "hmu_gc", hmu.CLASSES)
+    with h5py.File(split_paths("valid", tmp_path, "hmu_gc")[1], "a") as f:
+        f.create_dataset("idx", data=np.arange(100, 100 + n))
+
+    nct.shuffle_split("valid", tmp_path, dataset="hmu_gc")
+
+    x, y = PCamBatches.from_split("valid", tmp_path, dataset="hmu_gc")[list(range(n))]
+    original = x.numpy()[:, 0, 0, 0]
+    with h5py.File(split_paths("valid", tmp_path, "hmu_gc")[1]) as f:
+        np.testing.assert_array_equal(f["idx"][:], 100 + original)
+        np.testing.assert_array_equal(f["cls"][:], classes[original])
+        assert f.attrs["classes"].split(",") == list(hmu.CLASSES)
+    np.testing.assert_array_equal(y.numpy(), (classes[original] == 7).astype(np.float32))  # TUM is index 7

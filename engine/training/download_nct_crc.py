@@ -90,9 +90,13 @@ def read_source(source: str, data_dir: Path, shards: list):
             yield images, batch.column("label").to_numpy(zero_copy_only=False).astype(np.uint8)
 
 
-def write_split(split: str, batches, n: int, data_dir: Path) -> None:
-    """Write one split from an iterable of (images, classes) batches with n rows in total."""
-    x_path, y_path = split_paths(split, data_dir, "nct_crc")
+def write_split(split: str, batches, n: int, data_dir: Path, dataset: str = "nct_crc", class_names=CLASSES) -> None:
+    """Write one split from an iterable of (images, classes) batches with n rows in total.
+
+    y is 1 for the "TUM" class; cls keeps the class index into class_names.
+    """
+    tumour = class_names.index("TUM")
+    x_path, y_path = split_paths(split, data_dir, dataset)
     x_tmp, y_tmp = (p.with_name(p.name + ".tmp") for p in (x_path, y_path))
     classes = np.zeros(n, dtype=np.uint8)
     i = 0
@@ -109,12 +113,12 @@ def write_split(split: str, batches, n: int, data_dir: Path) -> None:
         x_tmp.unlink()
         raise RuntimeError(f"{split}: expected {n} images, got {i}")
     with h5py.File(y_tmp, "w") as fy:
-        fy.create_dataset("y", data=(classes == TUMOUR).astype(np.uint8))
+        fy.create_dataset("y", data=(classes == tumour).astype(np.uint8))
         fy.create_dataset("cls", data=classes)
-        fy.attrs["classes"] = ",".join(CLASSES)
+        fy.attrs["classes"] = ",".join(class_names)
     x_tmp.replace(x_path)
     y_tmp.replace(y_path)
-    print(f"  {split}: {n} tiles, {np.mean(classes == TUMOUR):.1%} tumour")
+    print(f"  {split}: {n} tiles, {np.mean(classes == tumour):.1%} tumour")
 
 
 def convert_train(data_dir: Path) -> None:
@@ -156,19 +160,20 @@ def convert_heldout(data_dir: Path) -> None:
         shard.unlink()
 
 
-def shuffle_split(split: str, data_dir: Path, seed: int = SEED, chunk: int = 2048) -> None:
+def shuffle_split(split: str, data_dir: Path, seed: int = SEED, chunk: int = 2048, dataset: str = "nct_crc") -> None:
     """Rewrite a split in a fixed random order, once (marked in the y file).
 
     The sources are sorted by class, so without this the first N tiles (--limit smoke runs,
     quick checks) would all be one tissue class.
     """
-    x_path, y_path = split_paths(split, data_dir, "nct_crc")
+    x_path, y_path = split_paths(split, data_dir, dataset)
     with h5py.File(y_path, "r") as fy:
         if fy.attrs.get("order") == f"shuffled, seed {seed}":
             return
-        y, classes, names = fy["y"][:], fy["cls"][:], fy.attrs["classes"]
+        labels = {name: fy[name][:] for name in fy}  # y, cls and any other per-tile arrays
+        attrs = dict(fy.attrs)
     print(f"  shuffling {split}", flush=True)
-    order = np.random.default_rng(seed).permutation(len(y))
+    order = np.random.default_rng(seed).permutation(len(labels["y"]))
     x_tmp, y_tmp = (p.with_name(p.name + ".tmp") for p in (x_path, y_path))
     with h5py.File(x_path, "r") as fx, h5py.File(x_tmp, "w") as out:
         src = fx["x"]
@@ -179,9 +184,9 @@ def shuffle_split(split: str, data_dir: Path, seed: int = SEED, chunk: int = 204
             x[i:i + chunk] = images[order[i:i + chunk]]
         del images
     with h5py.File(y_tmp, "w") as fy:
-        fy.create_dataset("y", data=y[order])
-        fy.create_dataset("cls", data=classes[order])
-        fy.attrs["classes"] = names
+        for name, values in labels.items():
+            fy.create_dataset(name, data=values[order])
+        fy.attrs.update(attrs)
         fy.attrs["order"] = f"shuffled, seed {seed}"
     x_tmp.replace(x_path)
     y_tmp.replace(y_path)

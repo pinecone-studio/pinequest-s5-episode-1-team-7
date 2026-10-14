@@ -2,6 +2,7 @@
   "name": "Colon MobileNetV3-Small, Hibou-B-distilled",
   "version": "colon/model_fp32.onnx",
   "organ": "colon",
+  "experimental": false,
   "file": {
     "name": "model_fp32.onnx",
     "sha256": "7b810a365e0880536e866cc32f92451c74761002de6f56eac18e0dd7a51b4b38",
@@ -169,8 +170,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-14T13:59:11+00:00",
-    "repo_commit": "b948a2fdb658be7db2579f6bf5a2fa9c11d7bf11",
+    "at": "2026-10-14T14:39:03+00:00",
+    "repo_commit": "2cb230e83f078f054b269b471c7bb08076987822",
     "generator": "training/make_model_card.py"
   }
 }

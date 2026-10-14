@@ -8,7 +8,9 @@ on that model's scores (training/tune_scoring.py).
 
 The lymph-node model keeps its original place, engine/model/model_fp32.onnx (the backend's
 packaging and the start scripts expect it there). Other organs live in engine/model/<organ>/.
-Add an organ here once its model is trained, tuned and its card generated.
+Add an organ here once its model is trained, tuned and its card generated. An experimental
+organ can be scored by name (for testing) but is not offered by available_organs(), so the
+organ picker hides it until it is validated on real captures.
 """
 import os
 from dataclasses import dataclass
@@ -31,6 +33,7 @@ class OrganModel:
     yellow: float
     top_k: int = scoring.TOP_K
     w_max: float = scoring.W_MAX
+    experimental: bool = False  # hidden from available_organs()
 
     @property
     def model_path(self) -> Path:
@@ -50,6 +53,11 @@ ORGANS = {
     # NCT-CRC-HE tiles are 0.5 µm/px. Settings from training/results/slide_scoring_colon.json:
     # the search preferred the single highest tile (top_k = 1).
     "colon": OrganModel("colon", MODEL_DIR / "colon", um_per_px=0.5, red=0.54, yellow=0.50, top_k=1, w_max=0.0),
+    # HMU-GC-HE-30K: Aperio AT2 at 20x, ~0.5 µm/px. Settings from training/results/slide_scoring_stomach.json.
+    # Experimental: trained on mostly gland-forming adenocarcinoma and at chance on PLISM's
+    # EBV-associated gastric cancer (engine/README.md), so not offered until validated.
+    "stomach": OrganModel("stomach", MODEL_DIR / "stomach", um_per_px=0.5, red=0.60, yellow=0.57, top_k=5, w_max=0.25,
+                          experimental=True),
 }
 
 
@@ -62,6 +70,10 @@ def get_organ(organ: str = None) -> OrganModel:
         raise ValueError(f"no AI model for organ {organ!r}; available: {sorted(ORGANS)}") from None
 
 
-def available_organs() -> list:
-    """Organs whose model file is present, default first (for the organ picker)."""
-    return [name for name, spec in ORGANS.items() if spec.model_path.is_file()]
+def available_organs(include_experimental: bool = False) -> list:
+    """Organs whose model file is present, default first (for the organ picker).
+
+    Experimental organs are left out unless include_experimental is set.
+    """
+    return [name for name, spec in ORGANS.items()
+            if spec.model_path.is_file() and (include_experimental or not spec.experimental)]

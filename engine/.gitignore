@@ -13,5 +13,7 @@ model/*.pt
 !model/pcam_mobilenet_v3_small_224_kd-hibou.pt
 !model/colon_mobilenet_v3_small_224.pt
 !model/colon_mobilenet_v3_small_224_kd-hibou.pt
+!model/stomach_mobilenet_v3_small_224.pt
+!model/stomach_mobilenet_v3_small_224_kd-hibou.pt
 !model/teacher_*_head.pt
 data/

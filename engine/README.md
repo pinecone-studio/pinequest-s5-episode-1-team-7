@@ -188,7 +188,7 @@ The lymph-node model doesn't transfer to other organs (see PLISM above), so each
 
 **Engine contract** (backwards compatible: callers that pass no organ get lymph node, as before):
 - `analyze_slide(image_path, um_per_px=None, organ=None)`: `organ` is `"lymph_node"` (default) or `"colon"`. The result also returns `organ`. An unknown organ raises `ValueError`, and a missing model raises `FileNotFoundError`. There is no fallback to another organ's model.
-- `available_organs()`: organs whose model file is present, default first. Use it to fill the organ picker.
+- `available_organs(include_experimental=False)`: organs whose model file is present, default first. Use it to fill the organ picker. Experimental organs (currently stomach) are left out: they can be scored by name for testing, but aren't offered until validated on real captures.
 - `model_info(organ=None)`: the organ's model card plus live file and provider, as before, with an extra `organ` key.
 
 Everything that belongs to one model lives in its entry in `pipeline/organs.py`: the folder (`model/` for lymph node, `model/<organ>/` otherwise), the training magnification (µm/px; captures are resized to it), and the slide-score settings and thresholds tuned on that model's scores. `TRIAGE_MODEL_PATH` still replaces the lymph-node model only.
@@ -232,3 +232,41 @@ Phones are about as good as scanners. The last row is why the organ must be chos
 **Slide score:** `tune_scoring` preferred the single highest tile (`top_k = 1`), with red ≥ 0.54 and yellow ≥ 0.50. Simulated test slides with 1% tumour reach a slide AUC of 0.91, 2% reach 0.97, and 5% or more reach above 0.998. But **13.7% of normal test slides are flagged red** against the 5% target on validation. That number rests on a handful of debris tiles reused across many simulated slides, and with `top_k = 1` a single tile can flag a slide. Treat the colon thresholds as a starting point and re-tune them on real colon captures.
 
 Caveats: CRC-VAL-HE-7K has no patient IDs, so the validation and test halves share patients. The test set is independent of training, but not of the epoch and threshold choices.
+
+### Stomach (experimental: hidden from `available_organs()`)
+Data: [HMU-GC-HE-30K](https://doi.org/10.6084/m9.figshare.25954813) (CC BY 4.0). It has 31,096 tiles of 224 px from 300 gastric cancer slides, scanned on an Aperio AT2 at 20× (~0.5 µm/px, the same as colon), with 3,887 tiles in each of 8 classes. Tumour epithelium is the positive class; fat, debris, lymphocytes, mucus, muscle, normal mucosa and stroma are negative.
+
+The file names carry no slide or patient IDs, but neighbouring tile numbers look alike for ~10–20 tiles (about one slide's share of a class). So `training/download_hmu_gc.py` splits every class by tile number, with a 20-tile gap at each boundary: train 1–2700, valid 2721–3290, test 3311–3887. GasHisSDB (CC BY 4.0) was not used, because its crops were renamed and shuffled, so a split can't keep crops of the same source image apart.
+
+```bash
+python -m training.download_hmu_gc                                       # 3.25 GB -> data/hmu-gc/*.h5
+python -m training.teacher --teacher hibou-b --dataset hmu_gc
+python -m training.train --dataset hmu_gc --teacher hibou-b --tag kd-hibou --epochs 30   # 21,600 tiles: 30 epochs, ~7 min
+python -m training.export_onnx --checkpoint model/stomach_mobilenet_v3_small_224_kd-hibou.pt \
+    --out model/stomach/model_fp32.onnx --results training/results/stomach_mobilenet_v3_small_224_kd-hibou.json
+python -m training.tune_scoring --dataset hmu_gc --model model/stomach/model_fp32.onnx
+python -m training.plism_eval ... --organ stomach --model model/stomach/model_fp32.onnx --scales 0.5
+python -m training.make_model_card --organ stomach
+```
+
+| HMU-GC test block (4,616 tiles) | AUC | Accuracy | Sensitivity | Specificity |
+|---|---|---|---|---|
+| Hibou-B teacher (stomach head) | 0.946 | 91.5% | – | – |
+| **Distilled student (`model/stomach/`)** | **0.956** | **92.3%** | **63.1%** | **96.4%** |
+| Same student without the teacher | 0.954 | 92.1% | 71.1% | 95.2% |
+| Colon model, no stomach training | 0.92* | – | – | – |
+
+\*On every 15th tile of all 3,887 per class, not the test block alone.
+
+At a threshold chosen on validation for 90% sensitivity (0.153), the student gives 93.6% sensitivity and 85.0% specificity. Normal gastric mucosa causes most of the false alarms: 12% of its tiles are flagged. Slide score: mean of the top 5 tile log-odds with 0.25 weight on the maximum, red ≥ 0.60, yellow ≥ 0.57. On simulated test slides, 0.45% of normal slides are flagged red. Slide AUC is 0.62 at 1% tumour, 0.87 at 5% and 0.96 at 10%: weaker than colon.
+
+**It likely misses non-glandular gastric cancer.** HMU's 300 patients are mostly gland-forming cancers: 195 tubular, 71 mucinous, 28 poorly differentiated. By Lauren type, 180 are intestinal, 46 mixed and 19 diffuse (55 not recorded), and there are no EBV-associated cases. PLISM's only gastric cancer is EBV-associated, and on it the model is at chance. The colon model is no better (AUC 0.44 on the same tissues, GT450 scanner + iPhone 13), so the problem is the cancer type the model learned, not this model's training:
+
+| PLISM at 0.5×, ~90 normal and ~114 cancer tiles per device | Scanners | Phones |
+|---|---|---|
+| Normal stomach flagged | 3–18% | 6–11% |
+| EBV-associated gastric cancer flagged | 0–9% | 3–7% |
+| Cancer vs normal AUC | 0.41–0.50 | 0.39–0.55 |
+| Normal tissue of *all* organs flagged | 3–9% | 4–6% |
+
+So PLISM can't confirm that the stomach model works on phone captures. Before clinical use, it needs testing on real phone captures of gastric cancer, including diffuse and signet-ring cases, and probably training data with those types.
