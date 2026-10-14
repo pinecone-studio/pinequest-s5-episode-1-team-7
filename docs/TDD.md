@@ -7,11 +7,11 @@ A lightweight, local machine learning model scans the image feed, identifies cel
 +------------------+         USB / Local Wi-Fi RTSP          +-----------------------------------+
 |  Smartphone +    | -------------------------------------->     |       Local Clinic PC            |
 | Microscope Clip  | (High-Res Image / Optical Feed) |                                           |+------------------+                                               	  |  +-----------------------------+  |
-                                                             | React/Electron Front-End |  
+                                                             | React/Electron Front-End |
                                                              |  +-----------------------------+  |
                                                              |                     |                     |
                                                              |  +-----------------------------+  |
-                                                             |  | FastAPI Core Backend  |  
+                                                             |  | FastAPI Core Backend  |
                                                              |  +-----------------------------+  |
                                                              |                     |                     |
                                                              |  +-----------------------------+  |
@@ -48,6 +48,7 @@ Transmission Protocol:
 Option A (Wired USB): Android ADB/Media Transport Protocol (MTP) / Direct WebCam Emulation (UVC) for zero-latency frame streaming.
 Option B (Local Wireless): Local RTSP/HTTP video stream over an isolated, offline Wi-Fi router (no WAN access required).
 Resolution Requirement: Minimum 1080p resolution at 30fps or still image capture at 12MP.
+Note: live capture (UVC / RTSP streaming and snapshots) was later dropped in favour of photo upload — technicians photograph the slide with the phone and upload the file, which flows through the same ingest, blur check, calibration and AI scoring. The streaming protocol above is kept for reference only.
 2.2 Local Desktop Core Application
 Front-End Framework: Electron + React + TailwindCSS (packaged for offline installation via .exe/.AppImage).
 Back-End Application Service: FastAPI (Python 3.11+) packaged as an offline executable via PyInstaller.
@@ -97,7 +98,7 @@ Selected Technology
 Rationale / Trade-offs
 Mobile Capture
 Native WebRTC / Android UVC / RTSP
-Low latency, wide device compatibility across cheap phones.
+Low latency, wide device compatibility across cheap phones. Note: dropped — photo upload only (see 2.1).
 Desktop Shell
 Electron
 Cross-platform desktop executable with native file-system access.

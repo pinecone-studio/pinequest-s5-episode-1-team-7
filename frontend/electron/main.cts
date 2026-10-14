@@ -36,7 +36,7 @@ function lockDownNetwork() {
     return hostname === '127.0.0.1' || (DEV_SERVER_URL != null && hostname === 'localhost')
   }
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => callback({ cancel: !allowed(details.url) }))
-  // The dashboard needs no camera, microphone, location or notifications; capture runs in the backend.
+  // The dashboard needs no camera, microphone, location or notifications.
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
 }
 

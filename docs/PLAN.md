@@ -7,7 +7,7 @@ Source of truth: [TDD.md](TDD.md). This plan splits the TDD across the team and 
 | Member | Role | Owns (folder) | TDD sections |
 |---|---|---|---|
 | 1 | ML / AI Engine Engineer | `engine/` | 2.3, 5.2, 3.1 (steps 3, 4, 5, 7) |
-| 2 | Backend & System Integration | `backend/` | 2.1, 2.2 (Backend), 3.1 (steps 1, 2, 6), 3.2 |
+| 2 | Backend & System Integration | `backend/` | 2.1 (photo upload only; live capture dropped), 2.2 (Backend), 3.1 (steps 1, 2, 6), 3.2 |
 | 3 | Front-End UI/UX & Packaging | `frontend/` | 2.2 (Front-End), 6.1, 6.2, 7.2, 8.1 / 8.2 |
 
 Rule: each member changes only their own folder. Cross-folder changes go through the interface contract below.
@@ -112,8 +112,8 @@ At the right scale, phones are about as good as scanners. At the wrong scale, th
 
 **Who does what**
 - **Engine (M1):** ✅ `analyze_slide(image_path, um_per_px=None)` resizes to `MODEL_UM_PER_PX = 0.42` before tiling (`engine/pipeline/scale.py`) and returns `um_per_px_used` + `scale_warning` (`"no_scale_info"` when `None`, in which case the photo is analysed as-is). Values outside 0.05–2.0 µm/px raise `ValueError`, since they are almost certainly a calibration or objective mistake. The heatmap stays the size of the original photo. Open: the nucleus-size mismatch warning (it will reuse `scale_warning`).
-- **Backend (M2):** ✅ stores setup profiles (`GET/POST/DELETE /setups`: name, calibrated µm/px, objective calibrated at, phone resolution); `/ingest` and `/capture/snapshot` take `setup_id` + `objective`, compute µm/px (`um_per_px(obj) = um_per_px(calibrated) × obj_calibrated / obj`), pass it to the engine when it accepts the parameter, and keep `setup_id`/`objective`/`um_per_px`/`scale_warning` on the slide record for the audit trail (old databases migrate on startup).
-- **Frontend (M3):** ✅ `/calibrate` screen (micrometer photo, click two marks, enter the distance, µm/px preview, setup list + delete); setup and objective pickers on upload and capture (persisted, sent only when a setup is picked); a warning on the slide page when no calibrated setup exists or the engine reports a scale mismatch; en+mn strings.
+- **Backend (M2):** ✅ stores setup profiles (`GET/POST/DELETE /setups`: name, calibrated µm/px, objective calibrated at, phone resolution); `/ingest` takes `setup_id` + `objective`, computes µm/px (`um_per_px(obj) = um_per_px(calibrated) × obj_calibrated / obj`), passes it to the engine when it accepts the parameter, and keeps `setup_id`/`objective`/`um_per_px`/`scale_warning` on the slide record for the audit trail (old databases migrate on startup). (Live capture was dropped in favour of photo upload, so there is no `/capture/snapshot` anymore.)
+- **Frontend (M3):** ✅ `/calibrate` screen (micrometer photo, click two marks, enter the distance, µm/px preview, setup list + delete); setup and objective pickers on upload (persisted, sent only when a setup is picked); a warning on the slide page when no calibrated setup exists or the engine reports a scale mismatch; en+mn strings.
 
 **Done when** the same slide photographed at 10× and at 40× gets similar scores and heatmaps after calibration, and normal lymph-node false alarms stay under ~10% on phone captures.
 

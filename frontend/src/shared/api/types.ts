@@ -138,8 +138,3 @@ export interface ModelInfo {
   file: { path: string | null; name: string | null; exists: boolean; sha256: string | null; matches_card: boolean }
   provider: string | null
 }
-
-export interface CaptureStatus {
-  active: boolean
-  source: string | null
-}

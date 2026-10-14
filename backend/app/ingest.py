@@ -1,4 +1,4 @@
-"""Shared ingestion used by POST /ingest and the capture snapshot (TDD 3.1 steps 1-2)."""
+"""Shared ingestion used by POST /ingest (TDD 3.1 steps 1-2)."""
 import os
 import uuid
 from typing import Optional

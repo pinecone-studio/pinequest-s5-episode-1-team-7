@@ -59,17 +59,6 @@ class ActionIn(BaseModel):
     priority: Optional[float] = Field(default=None, ge=0.0, le=1.0)
 
 
-class CaptureStartIn(BaseModel):
-    source: str
-
-
-class SnapshotIn(BaseModel):
-    patient_id: Optional[str] = None
-    indication: Literal["Routine", "Urgent"] = "Routine"
-    setup_id: Optional[int] = None
-    objective: Optional[str] = None
-
-
 class SetupIn(BaseModel):
     """A calibrated microscope + phone + adapter setup (issue #35)."""
 

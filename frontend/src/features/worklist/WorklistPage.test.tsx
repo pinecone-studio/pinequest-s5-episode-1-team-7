@@ -19,7 +19,6 @@ const backend = () =>
   mockFetch((url) => {
     if (url.startsWith('/api/queue')) return queue
     if (url.startsWith('/api/slides')) return all
-    if (url.startsWith('/api/capture/status')) return { active: false, source: null }
     return {}
   })
 

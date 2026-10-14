@@ -59,7 +59,7 @@ runs the real AI engine and not the stub scorer (`scripts/smoke-backend.mjs`).
 | --- | --- | --- |
 | Worklist: AI risk flag (red / yellow / green), score 0–100, Routine/Urgent, "Sort by AI risk score" toggle (off = urgent first, then oldest) | `GET /queue?sort=risk` | 6.1 |
 | Processing / failed strip, "Under review" and "Archived" tabs | `GET /slides` | 3.2 |
-| New slide: upload a photo, or capture from the phone on the microscope (`uvc:0` or an `rtsp://` / `http://` stream) with a **live view** for framing and focusing (paused while the window is hidden) | `POST /ingest`, `/capture/*`, `GET /capture/preview` | 2.1, 3.1 |
+| New slide: upload a photo taken with the phone on the microscope, with microscope-setup and objective pickers | `POST /ingest` | 2.1, 3.1 |
 | Slide viewer: zoomable photo with the engine heatmap, 0–100% opacity, hotspot legend | `GET /slides/{id}/image`, `/heatmap` | 6.2 |
 | Review: Start review, then Confirm malignancy / Mark benign / Request formal biopsy (each asks to confirm), Re-assign priority, Retry | `POST /slides/{id}/open`, `/action`, `/retry` | 6.2, 3.2 |
 | Pipeline progress and audit history | `GET /slides/{id}/events` | 3.2 |
@@ -102,7 +102,7 @@ After a failure, `npx playwright show-trace test-results/<test>/trace.zip` repla
 electron/       desktop shell (main process, backend manager, preload)
 scripts/        desktop dev launcher, packaged-backend smoke test
 src/app/        shell: providers, header, engine status, language switch, safety banner, error boundary
-src/features/   worklist (list, sorting), upload (photo + camera), slide (page, score, review, history),
+src/features/   worklist (list, sorting), upload (photo), slide (page, score, review, history),
                 viewer (Leaflet photo + heatmap), triage (risk flags, badges, priority levels)
 src/shared/     api (client, types, TanStack Query hooks), lib (formatting, hooks), ui (primitives)
 src/i18n/       i18next setup, locales/{mn,en}/*.json, GLOSSARY.md
