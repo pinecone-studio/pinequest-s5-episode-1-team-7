@@ -17,6 +17,9 @@ const FULL = !!process.env.E2E_FULL
 const DESKTOP = !!process.env.E2E_DESKTOP
 const UI_PORT = 5199
 const API_PORT = 8012
+// Windows keeps the virtualenv interpreter at .venv\Scripts\python.exe (same rule as electron/backend.cts).
+const venvPython =
+  process.platform === 'win32' ? join('.venv', 'Scripts', 'python.exe') : '.venv/bin/python'
 
 export default defineConfig({
   testDir: './e2e',
@@ -44,7 +47,7 @@ export default defineConfig({
     ...(FULL
       ? [
           {
-            command: `${process.env.E2E_PYTHON ?? '.venv/bin/python'} run_server.py`,
+            command: `${process.env.E2E_PYTHON ?? venvPython} run_server.py`,
             cwd: '../backend',
             url: `http://127.0.0.1:${API_PORT}/health`,
             reuseExistingServer: false,
