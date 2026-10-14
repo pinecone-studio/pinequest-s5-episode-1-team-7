@@ -7,7 +7,7 @@
     "sha256": "7b810a365e0880536e866cc32f92451c74761002de6f56eac18e0dd7a51b4b38",
     "size_bytes": 6421826,
     "size_mb": 6.42,
-    "committed": null
+    "committed": "2026-10-14T20:57:49+08:00"
   },
   "architecture": {
     "name": "MobileNetV3-Small",
@@ -20,7 +20,7 @@
     "backbone": "ImageNet-pretrained MobileNetV3-Small",
     "training": "fine-tuned on colorectal tissue: tumour epithelium vs 8 non-tumour classes (NCT-CRC-HE-100K) (8 epochs, best epoch 8, strong augmentation + EMA, 256-batch)",
     "distilled_from": "hibou-b (foundation model, histai/hibou-b; its own head trained on this dataset)",
-    "date_trained": null,
+    "date_trained": "2026-10-14T20:57:49+08:00",
     "export_metadata": {
       "arch": "mobilenet_v3_small",
       "dataset": "NCT-CRC-HE",
@@ -63,8 +63,8 @@
       "red": 0.54,
       "yellow": 0.5
     },
-    "tuned": null,
-    "tuned_commit": null,
+    "tuned": "2026-10-14T20:57:49+08:00",
+    "tuned_commit": "b948a2fdb658be7db2579f6bf5a2fa9c11d7bf11",
     "normal_slides": {
       "red": 0.137,
       "yellow_or_red": 0.2095
@@ -169,8 +169,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-14T12:55:21+00:00",
-    "repo_commit": "4ab5d905ef70092f8113d3cf4f37204275cbe74d",
+    "at": "2026-10-14T13:59:11+00:00",
+    "repo_commit": "b948a2fdb658be7db2579f6bf5a2fa9c11d7bf11",
     "generator": "training/make_model_card.py"
   }
 }
