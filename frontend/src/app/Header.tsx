@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { EngineStatus } from './EngineStatus.tsx'
 import { LanguageSwitcher } from './LanguageSwitcher.tsx'
+import { ThemeMenu } from './ThemeMenu.tsx'
 
 export function Header() {
   const { t } = useTranslation()
@@ -25,6 +26,7 @@ export function Header() {
         <div className="ml-auto flex min-w-0 items-center gap-2">
           <EngineStatus />
           <LanguageSwitcher />
+          <ThemeMenu />
         </div>
       </div>
     </header>
