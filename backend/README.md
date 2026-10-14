@@ -42,9 +42,19 @@ Expose `analyze_slide(image_path: str) -> dict` with `score` (0-1, required) and
 
 `TRIAGE_SHARPNESS` is the Laplacian-variance blur gate (TDD 8.1): captures scoring
 below it are rejected with 422 so the technician retakes them in focus. `<= 0`
-(default) disables the check. Sharp textured captures score in the hundreds+,
-heavily blurred ones in the single digits — `100` is a good starting value for
-clinics (solid-colour synthetic/test images score ~0, so keep it off for demos).
+(default) disables the check. Scores are measured at a fixed working size so one
+value works across capture resolutions, but absolute scores still depend on the
+setup (microscope + phone + adapter + objective) — sharp real tiles range from
+~10 to ~600 (issue #40), so there is no good universal default. Calibrate per
+setup: photograph a few sharp and a few deliberately defocused captures, then run
+(from `backend/`):
+
+```bash
+python -m app.quality sharp_dir/ blurry_dir/   # prints both distributions + a suggestion
+```
+
+and set `TRIAGE_SHARPNESS` to the suggested value. The desktop app will pass a
+validated default (overridable by clinic IT) once calibration data exists.
 
 ## Package (single offline executable)
 ```bash

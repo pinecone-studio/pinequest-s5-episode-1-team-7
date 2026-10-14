@@ -24,9 +24,10 @@ MAX_CONCURRENT_INFERENCE = max(1, int(os.getenv("TRIAGE_MAX_INFERENCE", "1")))
 MAX_UPLOAD_MB = int(os.getenv("TRIAGE_MAX_UPLOAD_MB", "40"))
 
 # Laplacian-variance blur gate, TDD 8.1 (see app/quality.py). <= 0 disables
-# the check. Solid-colour synthetic images score ~0, so the default stays off
-# for tests/demos; clinics should set e.g. TRIAGE_SHARPNESS=100 to reject
-# out-of-focus captures at /ingest and /capture/snapshot time.
+# the check. There is no universal value (sharp real tiles score anywhere
+# from ~10 to ~600 depending on setup), so calibrate per setup with
+# `python -m app.quality sharp_dir/ blurry_dir/` and set what it suggests.
+# The default stays off until a validated value is configured (issue #40).
 SHARPNESS_THRESHOLD = float(os.getenv("TRIAGE_SHARPNESS", "0"))
 
 HOST = os.getenv("TRIAGE_HOST", "127.0.0.1")  # localhost only: offline-first
