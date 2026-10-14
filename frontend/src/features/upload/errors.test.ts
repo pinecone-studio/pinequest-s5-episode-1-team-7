@@ -9,9 +9,6 @@ describe('ingestErrorKey', () => {
     [new ApiError('image is too blurry (sharpness 12.0 < 100); retake the capture in focus', 422), 'blurry'],
     [new ApiError('not a valid image', 422), 'unreadable'],
     [new ApiError('file larger than 40 MB', 422), 'tooLarge'],
-    [new ApiError("source must be 'uvc:<index>' or an rtsp:// / http:// URL", 422), 'badSource'],
-    [new ApiError('cannot open source rtsp://phone', 502), 'cameraUnavailable'],
-    [new ApiError('capture is not started', 409), 'cameraOff'],
     [new ApiError('unknown setup_id: 7', 422), 'unknownSetup'],
   ])('%s -> %s', (error, key) => {
     expect(ingestErrorKey(error)).toBe(key)

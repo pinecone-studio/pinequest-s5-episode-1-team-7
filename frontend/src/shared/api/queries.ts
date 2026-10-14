@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client.ts'
-import { type Decision, type Indication, type Objective, PROCESSING_STATES, type QueueSort, type Slide } from './types.ts'
+import { type Decision, PROCESSING_STATES, type QueueSort, type Slide } from './types.ts'
 
 /** Polling intervals (ms). Queries pause while the tab is hidden. */
-const POLL = { queue: 4000, slide: 2500, health: 15000, capture: 5000 } as const
+const POLL = { queue: 4000, slide: 2500, health: 15000 } as const
 
 export const queryKeys = {
   slides: ['slides'] as const,
@@ -13,7 +13,6 @@ export const queryKeys = {
   slide: (id: number | string) => ['slides', 'detail', String(id)] as const,
   events: (id: number | string) => ['slides', 'events', String(id)] as const,
   health: ['health'] as const,
-  capture: ['capture'] as const,
   setups: ['setups'] as const,
   model: ['model'] as const,
 }
@@ -88,25 +87,6 @@ export function useReassignPriority(id: number) {
 export function useRetry(id: number) {
   const write = useSlideWriter()
   return useMutation({ mutationFn: () => api.retry(id), onSuccess: write })
-}
-
-export function useCaptureStatus() {
-  return useQuery({ queryKey: queryKeys.capture, queryFn: api.captureStatus, refetchInterval: POLL.capture })
-}
-
-export function useCaptureControl() {
-  const client = useQueryClient()
-  const store = (status: Awaited<ReturnType<typeof api.captureStatus>>) => client.setQueryData(queryKeys.capture, status)
-  const refresh = useInvalidateSlides()
-  return {
-    start: useMutation({ mutationFn: api.captureStart, onSuccess: store }),
-    stop: useMutation({ mutationFn: api.captureStop, onSuccess: store }),
-    snapshot: useMutation({
-      mutationFn: (body: { patient_id?: string; indication: Indication; setup_id?: number; objective?: Objective }) =>
-        api.captureSnapshot(body),
-      onSuccess: refresh,
-    }),
-  }
 }
 
 /** Calibrated microscope + phone setups for the magnification pickers (issue #35). */

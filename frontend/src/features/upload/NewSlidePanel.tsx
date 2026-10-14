@@ -2,23 +2,19 @@ import { type DragEvent, type FormEvent, useEffect, useId, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
-import { useCaptureControl, useCaptureStatus, useIngest, useSetups } from '../../shared/api/queries.ts'
+import { useIngest, useSetups } from '../../shared/api/queries.ts'
 import { OBJECTIVES, type Indication, type Objective } from '../../shared/api/types.ts'
 import { cn } from '../../shared/lib/cn.ts'
 import { useStoredState } from '../../shared/lib/hooks.ts'
 import { Button } from '../../shared/ui/Button.tsx'
 import { fieldClass } from '../../shared/ui/field.ts'
 import { SegmentedControl } from '../../shared/ui/SegmentedControl.tsx'
-import { CameraPreview } from './CameraPreview.tsx'
 import { ingestErrorKey } from './errors.ts'
 
-type Mode = 'upload' | 'camera'
-
-/** Adds a slide: upload a photo, or capture a frame from the phone on the microscope (TDD 2.1, 3.1). */
+/** Adds a slide by uploading a photo taken with the phone on the microscope (TDD 2.1, 3.1). */
 export function NewSlidePanel() {
   const { t } = useTranslation(['upload', 'common'])
   const ids = useId()
-  const [mode, setMode] = useStoredState<Mode>('pathtriage.newSlideMode', 'upload')
   const [patientId, setPatientId] = useState('')
   const [indication, setIndication] = useState<Indication>('Routine')
   const [done, setDone] = useState<number | null>(null)
@@ -33,19 +29,6 @@ export function NewSlidePanel() {
 
   return (
     <div className="space-y-3">
-      <SegmentedControl
-        label={t('mode.label')}
-        value={mode}
-        onChange={(m) => {
-          setMode(m)
-          setDone(null)
-        }}
-        options={[
-          { value: 'upload', label: t('mode.upload') },
-          { value: 'camera', label: t('mode.camera') },
-        ]}
-      />
-
       <label className="block">
         <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('field.patient')}</span>
         <input
@@ -76,11 +59,7 @@ export function NewSlidePanel() {
 
       <ScaleFields setupId={setupId} onSetupChange={setSetupId} objective={objective} onObjectiveChange={setObjective} />
 
-      {mode === 'upload' ? (
-        <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
-      ) : (
-        <CameraForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
-      )}
+      <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
       {done != null && (
         <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
           {t('added', { id: done })}
@@ -99,7 +78,7 @@ interface FormProps {
   objective: Objective
 }
 
-/** Microscope setup + objective pickers, shared by the upload and camera forms. */
+/** Microscope setup + objective pickers for the upload form. */
 function ScaleFields({
   setupId,
   onSetupChange,
@@ -270,73 +249,5 @@ function UploadForm({ patientId, indication, onDone, setupId, objective }: FormP
         {ingest.isPending ? t('submitting') : t('submit')}
       </Button>
     </form>
-  )
-}
-
-/** Phone on the eyepiece, streamed over USB (UVC) or local Wi-Fi (RTSP/HTTP); see backend/app/capture. */
-function CameraForm({ patientId, indication, onDone, setupId, objective }: FormProps) {
-  const { t } = useTranslation('upload')
-  const status = useCaptureStatus()
-  const { start, stop, snapshot } = useCaptureControl()
-  const [source, setSource] = useStoredState('pathtriage.captureSource', 'uvc:0')
-  const active = !!status.data?.active
-  const error = useErrorText(start.error ?? stop.error ?? snapshot.error ?? status.error)
-
-  return (
-    <div className="space-y-3">
-      <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('camera.source')}</span>
-        <div className="flex gap-2">
-          <input
-            className={fieldClass}
-            value={source}
-            disabled={active}
-            onChange={(e) => setSource(e.target.value)}
-            placeholder="uvc:0 · rtsp://192.168.1.20:8554/live"
-            spellCheck={false}
-          />
-          {active ? (
-            <Button disabled={stop.isPending} onClick={() => stop.mutate()}>
-              {t('camera.disconnect')}
-            </Button>
-          ) : (
-            <Button disabled={!source.trim() || start.isPending} onClick={() => start.mutate(source.trim())}>
-              {start.isPending ? t('camera.connecting') : t('camera.connect')}
-            </Button>
-          )}
-        </div>
-        <span className="mt-1 block text-[11px] text-slate-500">{t('camera.sourceHint')}</span>
-      </label>
-
-      <p role="status" className="flex items-center gap-2 text-sm">
-        <span className={cn('size-2 rounded-full', active ? 'bg-emerald-500' : 'bg-slate-400')} />
-        {active ? t('camera.connected', { source: status.data?.source }) : t('camera.disconnected')}
-      </p>
-
-      {active && <CameraPreview source={status.data?.source ?? null} />}
-
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-      <Button
-        variant="primary"
-        block
-        disabled={!active || snapshot.isPending}
-        onClick={() =>
-          snapshot.mutate(
-            {
-              patient_id: patientId.trim() || undefined,
-              indication,
-              ...(setupId != null ? { setup_id: setupId, objective } : {}),
-            },
-            { onSuccess: ({ id }) => onDone(id) },
-          )
-        }
-      >
-        {snapshot.isPending ? t('submitting') : t('camera.capture')}
-      </Button>
-    </div>
   )
 }

@@ -56,40 +56,6 @@ test.describe('priority worklist', () => {
     await expect(page.getByLabel('Patient ID (optional)')).toHaveValue('')
   })
 
-  test('captures from the microscope camera', async ({ page, backend }) => {
-    await useLanguage(page, 'en')
-    await page.goto('/')
-    await page.getByRole('radio', { name: 'Microscope camera' }).click()
-    await page.getByLabel('Camera source').fill('rtsp://192.168.1.20:8554/live')
-    await page.getByRole('button', { name: 'Connect' }).click()
-    await expect(page.getByText('Connected to rtsp://192.168.1.20:8554/live')).toBeVisible()
-
-    // Live view for framing and focusing, before the capture.
-    const live = page.getByRole('img', { name: 'Live microscope view' })
-    await expect(live).toBeVisible()
-    await expect.poll(() => live.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
-
-    await page.getByRole('button', { name: 'Capture slide photo' }).click()
-    await expect(page.getByText('Slide #4 added.')).toBeVisible()
-    expect(backend.posts.map((p) => p.path)).toEqual(['/capture/start', '/capture/snapshot'])
-    expect(backend.posts[1].body).toEqual({ indication: 'Routine' })
-
-    await page.getByRole('button', { name: 'Disconnect' }).click()
-    await expect(page.getByText('Camera not connected')).toBeVisible()
-    await expect(live).toHaveCount(0) // stream closed
-  })
-
-  test('without a live-view endpoint the camera still captures', async ({ page, backend }) => {
-    backend.hasPreview = false
-    await useLanguage(page, 'en')
-    await page.goto('/')
-    await page.getByRole('radio', { name: 'Microscope camera' }).click()
-    await page.getByRole('button', { name: 'Connect' }).click()
-    await expect(page.getByText("The live view isn't available. You can still capture.")).toBeVisible()
-    await page.getByRole('button', { name: 'Capture slide photo' }).click()
-    await expect(page.getByText('Slide #4 added.')).toBeVisible()
-  })
-
   test('slides under review and archived slides have their own tabs', async ({ page, backend }) => {
     backend.slides.push(makeSlide(5, { state: 'under_review' }), makeSlide(6, { state: 'archived', decision: 'mark_benign' }))
     await useLanguage(page, 'en')

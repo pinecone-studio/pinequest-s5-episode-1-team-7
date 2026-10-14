@@ -1,6 +1,6 @@
 # Backend (FastAPI) - Team Member 2
 
-Local, offline-first API: image ingestion, SQLite slide records, triage-queue state machine and phone-capture transport.
+Local, offline-first API: image ingestion, SQLite slide records, triage-queue state machine and magnification calibration.
 TDD sections: 2.1, 2.2 (backend), 3.1 steps 1/2/6, 3.2.
 
 ## Run
@@ -28,10 +28,6 @@ Data (DB, images, heatmaps) lives in `~/.pathology-triage` (override: `TRIAGE_DA
 | POST | `/setups` | `{name, um_per_px, calibration_objective, phone_resolution?}` -> 201 |
 | GET | `/setups/{id}` | one setup |
 | DELETE | `/setups/{id}` | delete an unused setup (409 while slides use it) |
-| POST | `/capture/start` `{source}` | `uvc:0` or `rtsp://...` |
-| POST | `/capture/snapshot` | grab a frame -> same ingest pipeline (`patient_id?`, `indication`, `setup_id?`, `objective?` as JSON) |
-| POST | `/capture/stop`, GET `/capture/status` | |
-| GET | `/capture/preview` | live MJPEG preview (≤960 px, ~8 fps) for framing/focusing; `<img src>`-ready; 409 if not started |
 
 ## State machine (TDD 3.2)
 `new -> image_processing -> ai_running -> scored -> queued -> under_review -> archived` (`failed` on error; `retry` goes back to `new`).

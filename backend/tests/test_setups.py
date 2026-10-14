@@ -196,32 +196,3 @@ def test_ingest_api_with_setup(env, monkeypatch):
         bad = client.post("/ingest", files={"file": ("s.jpg", make_jpeg(), "image/jpeg")},
                           data={"setup_id": "999"})
         assert bad.status_code == 422
-
-
-def test_snapshot_api_with_setup(env, monkeypatch):
-    pytest.importorskip("fastapi")
-    pytest.importorskip("httpx")
-    import numpy as np
-    from fastapi.testclient import TestClient
-    from app import engine_adapter
-    from app.capture.source import CaptureManager, capture_manager
-    from app.main import app
-
-    class FakeCap:
-        def isOpened(self): return True
-        def set(self, *a): return True
-        def read(self): return True, np.full((48, 64, 3), (160, 40, 120), dtype=np.uint8)
-        def release(self): pass
-
-    monkeypatch.setattr(CaptureManager, "_open", staticmethod(lambda source: FakeCap()))
-    monkeypatch.setattr(pipeline, "load_engine", lambda: engine_adapter._stub_analyze_slide)
-    with TestClient(app) as client:
-        sid = client.post("/setups", json={"name": "S", "um_per_px": 1.0,
-                                           "calibration_objective": "10x"}).json()["id"]
-        assert client.post("/capture/start", json={"source": "uvc:0"}).json()["active"] is True
-        r = client.post("/capture/snapshot", json={"setup_id": sid, "objective": "40x"})
-        assert r.status_code == 202
-        slide = client.get(f"/slides/{r.json()['id']}").json()
-        assert slide["um_per_px"] == pytest.approx(0.25)
-        assert client.post("/capture/stop").json()["active"] is False
-    capture_manager.stop()
