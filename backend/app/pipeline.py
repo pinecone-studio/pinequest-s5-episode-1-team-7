@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import config, db, queue
-from .engine_adapter import AnalysisResult, load_engine
+from .engine_adapter import AnalysisResult, call_engine, load_engine
 from .states import SlideState
 
 log = logging.getLogger(__name__)
@@ -42,16 +42,17 @@ def process_slide(slide_id: int) -> None:
     try:
         with db.session() as conn:
             queue.transition(conn, slide_id, SlideState.IMAGE_PROCESSING)
-            image_path = queue.get_slide(conn, slide_id)["image_path"]
+            row = queue.get_slide(conn, slide_id)
+            image_path, um_per_px = row["image_path"], row["um_per_px"]
         with db.session() as conn:
             queue.transition(conn, slide_id, SlideState.AI_RUNNING)
         with _inference_slots:
-            raw = load_engine()(image_path)
+            raw = call_engine(load_engine(), image_path, um_per_px)
         result = AnalysisResult.from_dict(raw)
         heatmap = _store_heatmap(slide_id, result.heatmap_path)
         with db.session() as conn:
             queue.set_score(conn, slide_id, result.score, result.risk_flag, heatmap,
-                            result.num_patches, result.inference_ms)
+                            result.num_patches, result.inference_ms, result.scale_warning)
     except Exception as exc:
         log.exception("slide %s failed", slide_id)
         _mark_failed(slide_id, exc)

@@ -44,6 +44,10 @@ Use these terms consistently in `locales/mn/*.json`. If a term changes here, cha
 | eyepiece | окуляр | |
 | focus | фокус | |
 | resolution | нягтрал | |
+| calibration / calibrated setup | калибровк / калибровк хийсэн тохиргоо | stage-micrometer µm/px per microscope + phone |
+| objective (10x / 20x / 40x) | объектив | microscope objective; µm/px scales with its power |
+| stage micrometer | тайзны микрометр | printed-scale slide for calibration |
+| magnification (µm/px) | өсгөлт (мкм/пиксел) | model training scale is 0.42 µm/px |
 | H&E staining | H&E будалт | |
 
 ## Review decisions

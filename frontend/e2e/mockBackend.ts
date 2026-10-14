@@ -36,6 +36,10 @@ export function makeSlide(id: number, overrides: Partial<Slide> = {}): Slide {
     inference_ms: 290,
     decision: null,
     error: null,
+    setup_id: null,
+    objective: null,
+    um_per_px: null,
+    scale_warning: null,
     created_at: '2026-10-09T08:00:00.000Z',
     updated_at: '2026-10-09T08:01:00.000Z',
     ...overrides,
@@ -46,8 +50,18 @@ const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 
 /** In-memory stand-in for the team FastAPI backend (backend/README.md), installed with page.route. */
+export interface MockSetup {
+  id: number
+  name: string
+  um_per_px: number
+  calibration_objective: string
+  phone_resolution: string | null
+  created_at: string
+}
+
 export class MockBackend {
   slides: Slide[]
+  setups: MockSetup[] = []
   /** Every POST the dashboard sent: path and JSON or form body. */
   readonly posts: { path: string; body: Record<string, unknown> }[] = []
   capture = { active: false, source: null as string | null }
@@ -81,6 +95,15 @@ export class MockBackend {
   }
 
   private ingest(fields: Record<string, string>) {
+    const setupId = fields.setup_id === undefined || fields.setup_id === '' ? null : Number(fields.setup_id)
+    const objective = fields.objective || null
+    let umPerPx: number | null = null
+    if (objective && setupId == null) throw new Error('objective needs a setup_id (calibrate a setup first)')
+    if (setupId != null) {
+      const setup = this.setups.find((s) => s.id === setupId)
+      if (!setup) throw new Error(`unknown setup_id: ${setupId}`)
+      umPerPx = objective ? (setup.um_per_px * parseMag(setup.calibration_objective)) / parseMag(objective) : setup.um_per_px
+    }
     const slide = makeSlide(Math.max(0, ...this.slides.map((s) => s.id)) + 1, {
       local_hash: 'feedc0ffee123456',
       indication: fields.indication === 'Urgent' ? 'Urgent' : 'Routine',
@@ -90,6 +113,9 @@ export class MockBackend {
       has_heatmap: false,
       num_patches: null,
       inference_ms: null,
+      setup_id: setupId,
+      objective,
+      um_per_px: umPerPx,
       created_at: new Date().toISOString(),
     })
     this.slides.push(slide)
@@ -122,7 +148,43 @@ export class MockBackend {
           return json(route, [...list].sort((a, b) => b.created_at.localeCompare(a.created_at)))
         }
         if (path === '/ingest' && method === 'POST') {
-          return json(route, this.ingest(this.posts.at(-1)!.body as Record<string, string>), 202)
+          try {
+            return json(route, this.ingest(this.posts.at(-1)!.body as Record<string, string>), 202)
+          } catch (err) {
+            return json(route, { detail: (err as Error).message }, 422)
+          }
+        }
+        if (path === '/setups' && method === 'GET') return json(route, this.setups)
+        if (path === '/setups' && method === 'POST') {
+          const body = this.posts.at(-1)!.body as { name?: string; um_per_px?: number; calibration_objective?: string; phone_resolution?: string }
+          if (!body.name?.trim() || !(body.um_per_px! > 0) || !parseMag(body.calibration_objective ?? '')) {
+            return json(route, { detail: 'invalid setup' }, 422)
+          }
+          if (this.setups.some((s) => s.name === body.name!.trim())) {
+            return json(route, { detail: `a setup named '${body.name!.trim()}' already exists` }, 422)
+          }
+          const setup: MockSetup = {
+            id: Math.max(0, ...this.setups.map((s) => s.id)) + 1,
+            name: body.name.trim(),
+            um_per_px: body.um_per_px!,
+            calibration_objective: body.calibration_objective!.trim(),
+            phone_resolution: body.phone_resolution?.trim() || null,
+            created_at: new Date().toISOString(),
+          }
+          this.setups.push(setup)
+          return json(route, setup, 201)
+        }
+        if (path.startsWith('/setups/') && sub === undefined) {
+          const setup = this.setups.find((s) => s.id === Number(idText))
+          if (!setup) return json(route, { detail: 'setup not found' }, 404)
+          if (method === 'GET') return json(route, setup)
+          if (method === 'DELETE') {
+            if (this.slides.some((s) => s.setup_id === setup.id)) {
+              return json(route, { detail: 'setup is still used by existing slides' }, 409)
+            }
+            this.setups = this.setups.filter((s) => s.id !== setup.id)
+            return route.fulfill({ status: 204, body: '' })
+          }
         }
         if (path === '/capture/status') return json(route, this.capture)
         if (path === '/capture/preview') {
@@ -141,7 +203,11 @@ export class MockBackend {
         }
         if (path === '/capture/snapshot') {
           if (!this.capture.active) return json(route, { detail: 'capture is not started' }, 409)
-          return json(route, this.ingest(this.posts.at(-1)!.body as Record<string, string>), 202)
+          try {
+            return json(route, this.ingest(this.posts.at(-1)!.body as Record<string, string>), 202)
+          } catch (err) {
+            return json(route, { detail: (err as Error).message }, 422)
+          }
         }
 
         if (path.startsWith('/slides/')) {
@@ -176,6 +242,12 @@ export class MockBackend {
       },
     )
   }
+}
+
+/** "40x" -> 40, mirroring backend/app/setups.py (NaN when unparseable). */
+function parseMag(objective: string): number {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*x\s*$/i.exec(objective ?? '')
+  return m ? Number(m[1]) : NaN
 }
 
 /** Text fields of a multipart body (the file part is left out). */

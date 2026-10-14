@@ -1,6 +1,7 @@
 {
   "app": {
-    "tagline": "AI pathology triage"
+    "tagline": "AI pathology triage",
+    "calibration": "Calibration"
   },
   "language": {
     "label": "Language"

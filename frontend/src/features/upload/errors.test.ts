@@ -12,6 +12,7 @@ describe('ingestErrorKey', () => {
     [new ApiError("source must be 'uvc:<index>' or an rtsp:// / http:// URL", 422), 'badSource'],
     [new ApiError('cannot open source rtsp://phone', 502), 'cameraUnavailable'],
     [new ApiError('capture is not started', 409), 'cameraOff'],
+    [new ApiError('unknown setup_id: 7', 422), 'unknownSetup'],
   ])('%s -> %s', (error, key) => {
     expect(ingestErrorKey(error)).toBe(key)
   })

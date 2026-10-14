@@ -15,11 +15,10 @@ MODEL_UM_PER_PX = 0.42
 # this range are almost certainly a calibration or objective mistake; above the upper bound
 # the image would also be enlarged more than ~5×, which invents detail and uses a lot of RAM.
 UM_PER_PX_RANGE = (0.05, 2.0)
-NO_CALIBRATION_WARNING = (
-    "No magnification calibration: the photo was analysed at its original size. "
-    "Scores are unreliable unless it is already at ~0.42 µm/px; calibrate the setup "
-    "and choose the objective."
-)
+# scale_warning code when no um_per_px was given: the photo was analysed at its original
+# size, so scores are unreliable unless it is already at ~0.42 µm/px. A short code rather
+# than a sentence, so the app can show it in its own language (MN/EN).
+NO_SCALE_INFO = "no_scale_info"
 
 
 def rescale_factor(um_per_px: float) -> float:

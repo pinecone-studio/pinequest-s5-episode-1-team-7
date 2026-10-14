@@ -7,7 +7,7 @@ from .states import InvalidTransition, SlideState, check_transition
 
 # Columns transition() is allowed to update besides `state` (guards the dynamic SQL).
 _UPDATABLE = {"risk_score", "risk_flag", "priority_override", "heatmap_path",
-              "num_patches", "inference_ms", "decision", "error"}
+              "num_patches", "inference_ms", "decision", "error", "scale_warning"}
 _NOW = "strftime('%Y-%m-%dT%H:%M:%fZ','now')"
 
 # Pathologist actions (TDD 6.2)
@@ -32,10 +32,13 @@ def _log(conn: sqlite3.Connection, slide_id: int, src: Optional[str], dst: str, 
     )
 
 
-def create_slide(conn: sqlite3.Connection, local_hash: str, indication: str, image_path: str) -> int:
+def create_slide(conn: sqlite3.Connection, local_hash: str, indication: str, image_path: str,
+                 setup_id: Optional[int] = None, objective: Optional[str] = None,
+                 um_per_px: Optional[float] = None) -> int:
     cur = conn.execute(
-        "INSERT INTO slides (local_hash, indication, state, image_path) VALUES (?,?,?,?)",
-        (local_hash, indication, SlideState.NEW.value, image_path),
+        "INSERT INTO slides (local_hash, indication, state, image_path, setup_id, objective, um_per_px)"
+        " VALUES (?,?,?,?,?,?,?)",
+        (local_hash, indication, SlideState.NEW.value, image_path, setup_id, objective, um_per_px),
     )
     slide_id = cur.lastrowid
     _log(conn, slide_id, None, SlideState.NEW.value, None)
@@ -74,11 +77,12 @@ def transition(conn: sqlite3.Connection, slide_id: int, dst: SlideState,
 
 def set_score(conn: sqlite3.Connection, slide_id: int, score: float, flag: Optional[str],
               heatmap_path: Optional[str], num_patches: Optional[int] = None,
-              inference_ms: Optional[float] = None) -> None:
+              inference_ms: Optional[float] = None, scale_warning: Optional[str] = None) -> None:
     """AI_RUNNING -> SCORED -> QUEUED. Ordering of the worklist is done by list_queue()."""
     score = max(0.0, min(1.0, float(score)))
     transition(conn, slide_id, SlideState.SCORED, risk_score=score, risk_flag=flag or risk_flag(score),
-               heatmap_path=heatmap_path, num_patches=num_patches, inference_ms=inference_ms)
+               heatmap_path=heatmap_path, num_patches=num_patches, inference_ms=inference_ms,
+               scale_warning=scale_warning)
     transition(conn, slide_id, SlideState.QUEUED)
 
 

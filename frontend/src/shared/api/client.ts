@@ -1,9 +1,11 @@
 import type {
   CaptureStatus,
   Decision,
-  IngestResult,
   Indication,
+  IngestResult,
+  Objective,
   QueueSort,
+  SetupProfile,
   Slide,
   SlideEvent,
   SlideState,
@@ -80,6 +82,12 @@ export const api = {
   captureStatus: () => request<CaptureStatus>('/capture/status'),
   captureStart: (source: string) => post<CaptureStatus>('/capture/start', { source }),
   captureStop: () => post<CaptureStatus>('/capture/stop'),
-  captureSnapshot: (body: { patient_id?: string; indication: Indication }) =>
+  captureSnapshot: (body: { patient_id?: string; indication: Indication; setup_id?: number; objective?: Objective }) =>
     post<IngestResult>('/capture/snapshot', body),
+  /** Magnification-calibration setups (issue #35). */
+  setups: () => request<SetupProfile[]>('/setups'),
+  setup: (id: number) => request<SetupProfile>(`/setups/${id}`),
+  createSetup: (body: { name: string; um_per_px: number; calibration_objective: string; phone_resolution?: string }) =>
+    request<SetupProfile>('/setups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+  deleteSetup: (id: number) => request<void>(`/setups/${id}`, { method: 'DELETE' }),
 }

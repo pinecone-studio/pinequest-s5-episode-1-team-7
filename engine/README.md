@@ -156,7 +156,7 @@ The student recovers 37% of the AUC gap to the teacher, which is typical for dis
 
 At the right scale phones are about as good as scanners, so every capture must be resized to the model's scale (issue #35).
 
-**Magnification calibration.** `analyze_slide(image_path, um_per_px=...)` takes the capture's calibrated µm per pixel (from the setup's stage-micrometer calibration and the chosen objective) and resizes the photo by `um_per_px / 0.42` before tiling (`pipeline/scale.py`). The heatmap is resized back, so it still matches the original photo. The result includes `um_per_px_used`. Without `um_per_px`, the photo is analysed as-is and `scale_warning` explains that scores are unreliable. Values outside 0.05–2.0 µm/px raise `ValueError`.
+**Magnification calibration.** `analyze_slide(image_path, um_per_px=...)` takes the capture's calibrated µm per pixel (from the setup's stage-micrometer calibration and the chosen objective) and resizes the photo by `um_per_px / 0.42` before tiling (`pipeline/scale.py`). The heatmap is resized back, so it still matches the original photo. The result includes `um_per_px_used`. Without `um_per_px`, the photo is analysed as-is and `scale_warning` is `"no_scale_info"` (scores are unreliable; the app shows a warning). The heatmap's colour is resized smoothly, but its transparency uses nearest-neighbour so tissue edges stay crisp. Values outside 0.05–2.0 µm/px raise `ValueError`.
 
 **Distilled (shipped) vs first model at scale 0.6** (mean over devices; ~520 lymph-node patches per device, so 1 percentage point ≈ 5 patches):
 
