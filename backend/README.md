@@ -16,15 +16,19 @@ Data (DB, images, heatmaps) lives in `~/.pathology-triage` (override: `TRIAGE_DA
 ## API
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/ingest` | multipart `file`, `patient_id`, `indication` (Routine/Urgent) -> 202 `{id,state}` |
+| POST | `/ingest` | multipart `file`, `patient_id`, `indication` (Routine/Urgent), `setup_id?`, `objective?` (`10x`/`20x`/`40x`) -> 202 `{id,state}` |
 | GET | `/queue?sort=risk\|time` | worklist (state=queued), descending S_slide (manual priority wins) |
-| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log |
+| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log (`Slide` carries `setup_id`, `objective`, `um_per_px`, `scale_warning`) |
 | GET | `/slides/{id}/image`, `/slides/{id}/heatmap` | files |
 | POST | `/slides/{id}/open` | queued -> under_review |
 | POST | `/slides/{id}/action` | `confirm_malignancy` / `mark_benign` / `request_biopsy` (archive) or `reassign_priority` + `priority` 0-1 |
 | POST | `/slides/{id}/retry` | failed -> re-run pipeline |
+| GET | `/setups` | calibrated microscope + phone setups (issue #35) |
+| POST | `/setups` | `{name, um_per_px, calibration_objective, phone_resolution?}` -> 201 |
+| GET | `/setups/{id}` | one setup |
+| DELETE | `/setups/{id}` | delete an unused setup (409 while slides use it) |
 | POST | `/capture/start` `{source}` | `uvc:0` or `rtsp://...` |
-| POST | `/capture/snapshot` | grab a frame -> same ingest pipeline |
+| POST | `/capture/snapshot` | grab a frame -> same ingest pipeline (`patient_id?`, `indication`, `setup_id?`, `objective?` as JSON) |
 | POST | `/capture/stop`, GET `/capture/status` | |
 | GET | `/capture/preview` | live MJPEG preview (≤960 px, ~8 fps) for framing/focusing; `<img src>`-ready; 409 if not started |
 

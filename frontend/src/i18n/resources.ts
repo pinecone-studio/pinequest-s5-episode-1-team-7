@@ -1,9 +1,11 @@
 import enCommon from './locales/en/common.json'
+import enCalibrate from './locales/en/calibrate.json'
 import enSlide from './locales/en/slide.json'
 import enUpload from './locales/en/upload.json'
 import enViewer from './locales/en/viewer.json'
 import enWorklist from './locales/en/worklist.json'
 import mnCommon from './locales/mn/common.json'
+import mnCalibrate from './locales/mn/calibrate.json'
 import mnSlide from './locales/mn/slide.json'
 import mnUpload from './locales/mn/upload.json'
 import mnViewer from './locales/mn/viewer.json'
@@ -20,6 +22,7 @@ export const defaultNS = 'common'
 export const resources = {
   en: {
     common: enCommon,
+    calibrate: enCalibrate,
     worklist: enWorklist,
     upload: enUpload,
     slide: enSlide,
@@ -27,6 +30,7 @@ export const resources = {
   },
   mn: {
     common: mnCommon,
+    calibrate: mnCalibrate,
     worklist: mnWorklist,
     upload: mnUpload,
     slide: mnSlide,

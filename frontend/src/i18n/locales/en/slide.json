@@ -49,5 +49,10 @@
       "retry": "retried",
       "interrupted_by_restart": "interrupted by a restart"
     }
+  },
+  "scale": {
+    "uncalibrated": "No microscope setup was picked, so the AI read this photo at its captured resolution. Scores may be off if the magnification differs from training.",
+    "engineNote": "Scale note from the AI engine: {{detail}}",
+    "calibrated": "Analysed at {{value}} µm/px ({{objective}}) — the AI's training magnification."
   }
 }

@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS slides (
     inference_ms      REAL,
     decision          TEXT,
     error             TEXT,
+    setup_id          INTEGER REFERENCES setups(id),
+    objective         TEXT,
+    um_per_px         REAL,
+    scale_warning     TEXT,
     created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
     updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
@@ -40,7 +44,24 @@ CREATE TABLE IF NOT EXISTS slide_events (
     at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_events_slide ON slide_events(slide_id);
+CREATE TABLE IF NOT EXISTS setups (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                  TEXT NOT NULL UNIQUE,
+    um_per_px             REAL NOT NULL,
+    calibration_objective TEXT NOT NULL,
+    phone_resolution      TEXT,
+    created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+    updated_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
 """
+
+# Columns added to slides after the first release; applied by init_db to old databases.
+_SLIDES_MIGRATION = (
+    ("setup_id", "INTEGER REFERENCES setups(id)"),
+    ("objective", "TEXT"),
+    ("um_per_px", "REAL"),
+    ("scale_warning", "TEXT"),
+)
 
 
 def connect(path: Optional[Path] = None) -> sqlite3.Connection:
@@ -68,6 +89,10 @@ def session(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
 def init_db(path: Optional[Path] = None) -> None:
     with session(path) as conn:
         conn.executescript(SCHEMA)
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(slides)")}
+        for column, ddl in _SLIDES_MIGRATION:
+            if column not in existing:  # databases created before magnification calibration (#35)
+                conn.execute(f"ALTER TABLE slides ADD COLUMN {column} {ddl}")
     try:  # patient data: keep other local users out (best effort)
         os.chmod(str(path or config.DB_PATH), 0o600)
     except OSError:

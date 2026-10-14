@@ -6,6 +6,7 @@ import { useSlide } from '../../shared/api/queries.ts'
 import type { Slide } from '../../shared/api/types.ts'
 import { useDocumentTitle } from '../../shared/lib/hooks.ts'
 import { useFormat } from '../../shared/lib/useFormat.ts'
+import { Alert } from '../../shared/ui/Alert.tsx'
 import { IndicationBadge, StateLabel } from '../triage/TriageBadges.tsx'
 import { SlideViewer } from '../viewer/SlideViewer.tsx'
 import { EventLog } from './EventLog.tsx'
@@ -46,12 +47,30 @@ function SlideWorkspace({ slide }: { slide: Slide }) {
       <aside className="border-l border-slate-200 bg-white lg:overflow-y-auto dark:border-slate-800 dark:bg-slate-900">
         <div className="space-y-5 p-5">
           <Heading slide={slide} />
+          <ScaleNotice slide={slide} />
           {scored ? <ScoreCard slide={slide} /> : <PipelineProgress slide={slide} />}
           <ReviewPanel slide={slide} />
           <EventLog slide={slide} />
         </div>
       </aside>
     </main>
+  )
+}
+
+/** Magnification audit trail, issue #35: warn when the AI read the photo at an
+ * uncalibrated scale, and show the calibrated scale otherwise. */
+function ScaleNotice({ slide }: { slide: Slide }) {
+  const { t } = useTranslation('slide')
+  if (slide.scale_warning) {
+    return <Alert tone="warning">{t('scale.engineNote', { detail: slide.scale_warning })}</Alert>
+  }
+  if (slide.um_per_px == null) {
+    return <Alert tone="warning">{t('scale.uncalibrated')}</Alert>
+  }
+  return (
+    <p className="text-xs text-slate-500">
+      {t('scale.calibrated', { value: slide.um_per_px.toFixed(2), objective: slide.objective ?? '?' })}
+    </p>
   )
 }
 

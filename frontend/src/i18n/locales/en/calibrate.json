@@ -1,0 +1,36 @@
+{
+  "title": "Microscope calibration",
+  "intro": "Photograph a stage micrometer once per microscope + phone + adapter, then click two marks a known distance apart. Every later capture, at any objective, is resized to the AI's training magnification from this one calibration.",
+  "setups": {
+    "title": "Calibrated setups",
+    "empty": "No calibrated setup yet. Add the first one below.",
+    "umPerPx": "{{value}} µm/px at {{objective}}",
+    "resolution": "Photo: {{value}}",
+    "delete": "Delete",
+    "confirmDelete": "Delete the “{{name}}” setup? Slides already analysed keep their stored scale."
+  },
+  "form": {
+    "title": "Calibrate a setup",
+    "name": "Setup name",
+    "namePlaceholder": "Lab scope + Redmi 12",
+    "objective": "Objective used for the micrometer photo",
+    "resolution": "Phone photo size (optional)",
+    "resolutionPlaceholder": "4000x3000",
+    "photo": "Micrometer photo",
+    "photoHint": "Tap to choose the stage-micrometer photo.",
+    "changePhoto": "Choose a different photo",
+    "marks": "Click two marks a known distance apart",
+    "marksHint": "First click sets A, second sets B. Click again to start over.",
+    "distance": "Distance between the marks (µm)",
+    "result": "This setup sees {{value}} µm per pixel.",
+    "needMarks": "Click two marks and enter their distance to compute µm/px.",
+    "save": "Save setup",
+    "saving": "Saving…",
+    "saved": "Setup “{{name}}” saved at {{value}} µm/px."
+  },
+  "error": {
+    "duplicate": "A setup with this name already exists.",
+    "inUse": "This setup is still used by existing slides and can't be deleted.",
+    "rejected": "The setup was rejected: {{detail}}"
+  }
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client.ts'
-import { type Decision, type Indication, PROCESSING_STATES, type QueueSort, type Slide } from './types.ts'
+import { type Decision, type Indication, type Objective, PROCESSING_STATES, type QueueSort, type Slide } from './types.ts'
 
 /** Polling intervals (ms). Queries pause while the tab is hidden. */
 const POLL = { queue: 4000, slide: 2500, health: 15000, capture: 5000 } as const
@@ -14,6 +14,7 @@ export const queryKeys = {
   events: (id: number | string) => ['slides', 'events', String(id)] as const,
   health: ['health'] as const,
   capture: ['capture'] as const,
+  setups: ['setups'] as const,
 }
 
 /** The pipeline is still working on the slide, so it will change on its own. */
@@ -100,8 +101,30 @@ export function useCaptureControl() {
     start: useMutation({ mutationFn: api.captureStart, onSuccess: store }),
     stop: useMutation({ mutationFn: api.captureStop, onSuccess: store }),
     snapshot: useMutation({
-      mutationFn: (body: { patient_id?: string; indication: Indication }) => api.captureSnapshot(body),
+      mutationFn: (body: { patient_id?: string; indication: Indication; setup_id?: number; objective?: Objective }) =>
+        api.captureSnapshot(body),
       onSuccess: refresh,
     }),
   }
+}
+
+/** Calibrated microscope + phone setups for the magnification pickers (issue #35). */
+export function useSetups() {
+  return useQuery({ queryKey: queryKeys.setups, queryFn: api.setups })
+}
+
+export function useCreateSetup() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: api.createSetup,
+    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.setups }),
+  })
+}
+
+export function useDeleteSetup() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: api.deleteSetup,
+    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.setups }),
+  })
 }

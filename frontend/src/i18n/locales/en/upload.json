@@ -42,6 +42,17 @@
     "badSource": "Use uvc:0 for a USB phone, or an rtsp:// or http:// address.",
     "cameraUnavailable": "Can't open that camera. Check the cable or the phone's streaming app.",
     "cameraOff": "Connect the camera first.",
-    "rejected": "The slide was rejected: {{detail}}"
+    "rejected": "The slide was rejected: {{detail}}",
+    "unknownSetup": "That microscope setup is gone. Pick a calibrated setup first."
+  },
+  "setup": {
+    "label": "Microscope setup",
+    "none": "Captured resolution (uncalibrated)",
+    "hint": "Calibrate once per microscope + phone: every capture is then analysed at the AI's magnification.",
+    "calibrate": "Calibrate a setup"
+  },
+  "objective": {
+    "label": "Objective",
+    "hint": "µm/px is scaled from the setup's calibration — 40x sees 4× finer than 10x."
   }
 }

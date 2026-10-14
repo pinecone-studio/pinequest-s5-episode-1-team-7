@@ -14,6 +14,11 @@ export function Header() {
           <span>PathTriage</span>
           <span className="hidden text-sm font-normal text-slate-500 md:inline">{t('app.tagline')}</span>
         </Link>
+        <nav aria-label={t('app.calibration')} className="ml-2">
+          <Link to="/calibrate" className="text-sm text-slate-600 hover:text-slate-900 hover:underline dark:text-slate-300 dark:hover:text-white">
+            {t('app.calibration')}
+          </Link>
+        </nav>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           <EngineStatus />
           <LanguageSwitcher />

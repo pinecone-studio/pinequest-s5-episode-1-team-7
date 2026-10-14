@@ -15,12 +15,14 @@ def ingest_image(
     file: UploadFile = File(...),
     patient_id: Optional[str] = Form(None),
     indication: str = Form("Routine"),
+    setup_id: Optional[int] = Form(None),
+    objective: Optional[str] = Form(None),
 ):
     """Accept an image (multipart), anonymize + store it, and process it in the background."""
     # Sync endpoint -> FastAPI runs it in a worker thread, so PIL/SQLite never block the event loop.
     data = file.file.read(config.MAX_UPLOAD_MB * 1024 * 1024 + 1)
     try:
-        slide_id = ingest.ingest_bytes(data, patient_id, indication)
+        slide_id = ingest.ingest_bytes(data, patient_id, indication, setup_id, objective)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     background.add_task(pipeline.process_slide, slide_id)

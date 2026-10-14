@@ -75,7 +75,7 @@ def snapshot(body: SnapshotIn, background: BackgroundTasks):
     except RuntimeError as exc:
         raise HTTPException(409, str(exc))
     try:
-        slide_id = ingest.ingest_bytes(frame, body.patient_id, body.indication)
+        slide_id = ingest.ingest_bytes(frame, body.patient_id, body.indication, body.setup_id, body.objective)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     background.add_task(pipeline.process_slide, slide_id)

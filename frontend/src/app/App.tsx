@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Route, Routes } from 'react-router-dom'
 
 import { WorklistPage } from '../features/worklist/WorklistPage.tsx'
+import { CalibratePage } from '../features/calibration/CalibratePage.tsx'
 import { DisclaimerBanner } from './DisclaimerBanner.tsx'
 import { ErrorBoundary } from './ErrorBoundary.tsx'
 import { Header } from './Header.tsx'
@@ -24,6 +25,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<WorklistPage />} />
               <Route path="/slides/:id" element={<SlidePage />} />
+              <Route path="/calibrate" element={<CalibratePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

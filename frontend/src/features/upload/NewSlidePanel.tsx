@@ -1,8 +1,9 @@
 import { type DragEvent, type FormEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
-import { useCaptureControl, useCaptureStatus, useIngest } from '../../shared/api/queries.ts'
-import type { Indication } from '../../shared/api/types.ts'
+import { useCaptureControl, useCaptureStatus, useIngest, useSetups } from '../../shared/api/queries.ts'
+import { OBJECTIVES, type Indication, type Objective } from '../../shared/api/types.ts'
 import { cn } from '../../shared/lib/cn.ts'
 import { useStoredState } from '../../shared/lib/hooks.ts'
 import { Button } from '../../shared/ui/Button.tsx'
@@ -21,6 +22,8 @@ export function NewSlidePanel() {
   const [patientId, setPatientId] = useState('')
   const [indication, setIndication] = useState<Indication>('Routine')
   const [done, setDone] = useState<number | null>(null)
+  const [setupId, setSetupId] = useStoredState<number | null>('pathtriage.setupId', null)
+  const [objective, setObjective] = useStoredState<Objective>('pathtriage.objective', '40x')
 
   const reset = (id: number) => {
     setPatientId('')
@@ -71,10 +74,12 @@ export function NewSlidePanel() {
         />
       </div>
 
+      <ScaleFields setupId={setupId} onSetupChange={setSetupId} objective={objective} onObjectiveChange={setObjective} />
+
       {mode === 'upload' ? (
-        <UploadForm patientId={patientId} indication={indication} onDone={reset} />
+        <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
       ) : (
-        <CameraForm patientId={patientId} indication={indication} onDone={reset} />
+        <CameraForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
       )}
       {done != null && (
         <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
@@ -89,6 +94,74 @@ interface FormProps {
   patientId: string
   indication: Indication
   onDone: (slideId: number) => void
+  /** Calibrated setup + objective, issue #35. Null setup means captured resolution. */
+  setupId: number | null
+  objective: Objective
+}
+
+/** Microscope setup + objective pickers, shared by the upload and camera forms. */
+function ScaleFields({
+  setupId,
+  onSetupChange,
+  objective,
+  onObjectiveChange,
+}: {
+  setupId: number | null
+  onSetupChange: (id: number | null) => void
+  objective: Objective
+  onObjectiveChange: (o: Objective) => void
+}) {
+  const { t } = useTranslation('upload')
+  const setups = useSetups()
+  const list = Array.isArray(setups.data) ? setups.data : []
+  const selected = list.find((s) => s.id === setupId) ?? null
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('setup.label')}</span>
+        <select
+          className={fieldClass}
+          value={setupId ?? ''}
+          onChange={(e) => {
+            const id = e.target.value === '' ? null : Number(e.target.value)
+            onSetupChange(id)
+            // A fresh setup starts at the objective it was calibrated at.
+            const next = list.find((s) => s.id === id)
+            if (next && (OBJECTIVES as readonly string[]).includes(next.calibration_objective)) {
+              onObjectiveChange(next.calibration_objective as Objective)
+            }
+          }}
+        >
+          <option value="">{t('setup.none')}</option>
+          {list.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('objective.label')}</span>
+        <select
+          className={fieldClass}
+          value={objective}
+          disabled={selected == null}
+          title={selected == null ? t('setup.hint') : t('objective.hint')}
+          onChange={(e) => onObjectiveChange(e.target.value as Objective)}
+        >
+          {OBJECTIVES.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="col-span-2 text-[11px] text-slate-500">
+        {t('setup.hint')} <Link to="/calibrate" className="text-cyan-700 underline dark:text-cyan-400">{t('setup.calibrate')}</Link>
+      </p>
+    </div>
+  )
 }
 
 function useErrorText(error: unknown) {
@@ -98,7 +171,7 @@ function useErrorText(error: unknown) {
   return key ? t(`error.${key}`) : t('error.rejected', { detail: error instanceof Error ? error.message : String(error) })
 }
 
-function UploadForm({ patientId, indication, onDone }: FormProps) {
+function UploadForm({ patientId, indication, onDone, setupId, objective }: FormProps) {
   const { t } = useTranslation('upload')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState('')
@@ -130,6 +203,10 @@ function UploadForm({ patientId, indication, onDone }: FormProps) {
     form.append('file', file)
     if (patientId.trim()) form.append('patient_id', patientId.trim())
     form.append('indication', indication)
+    if (setupId != null) {
+      form.append('setup_id', String(setupId))
+      form.append('objective', objective)
+    }
     ingest.mutate(form, {
       onSuccess: ({ id }) => {
         setFile(null)
@@ -197,7 +274,7 @@ function UploadForm({ patientId, indication, onDone }: FormProps) {
 }
 
 /** Phone on the eyepiece, streamed over USB (UVC) or local Wi-Fi (RTSP/HTTP); see backend/app/capture. */
-function CameraForm({ patientId, indication, onDone }: FormProps) {
+function CameraForm({ patientId, indication, onDone, setupId, objective }: FormProps) {
   const { t } = useTranslation('upload')
   const status = useCaptureStatus()
   const { start, stop, snapshot } = useCaptureControl()
@@ -249,7 +326,11 @@ function CameraForm({ patientId, indication, onDone }: FormProps) {
         disabled={!active || snapshot.isPending}
         onClick={() =>
           snapshot.mutate(
-            { patient_id: patientId.trim() || undefined, indication },
+            {
+              patient_id: patientId.trim() || undefined,
+              indication,
+              ...(setupId != null ? { setup_id: setupId, objective } : {}),
+            },
             { onSuccess: ({ id }) => onDone(id) },
           )
         }

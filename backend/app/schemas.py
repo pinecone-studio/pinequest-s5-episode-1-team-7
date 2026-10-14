@@ -16,6 +16,10 @@ class SlideOut(BaseModel):
     inference_ms: Optional[float] = None
     decision: Optional[str] = None
     error: Optional[str] = None
+    setup_id: Optional[int] = None
+    objective: Optional[str] = None
+    um_per_px: Optional[float] = None
+    scale_warning: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -26,6 +30,8 @@ class SlideOut(BaseModel):
             risk_score=row["risk_score"], risk_flag=row["risk_flag"], priority_override=row["priority_override"],
             has_heatmap=bool(row["heatmap_path"]), num_patches=row["num_patches"],
             inference_ms=row["inference_ms"], decision=row["decision"], error=row["error"],
+            setup_id=row["setup_id"], objective=row["objective"], um_per_px=row["um_per_px"],
+            scale_warning=row["scale_warning"],
             created_at=row["created_at"], updated_at=row["updated_at"],
         )
 
@@ -58,3 +64,31 @@ class CaptureStartIn(BaseModel):
 class SnapshotIn(BaseModel):
     patient_id: Optional[str] = None
     indication: Literal["Routine", "Urgent"] = "Routine"
+    setup_id: Optional[int] = None
+    objective: Optional[str] = None
+
+
+class SetupIn(BaseModel):
+    """A calibrated microscope + phone + adapter setup (issue #35)."""
+
+    name: str
+    um_per_px: float = Field(gt=0.0)
+    calibration_objective: str
+    phone_resolution: Optional[str] = None
+
+
+class SetupOut(BaseModel):
+    id: int
+    name: str
+    um_per_px: float
+    calibration_objective: str
+    phone_resolution: Optional[str] = None
+    created_at: str
+
+    @classmethod
+    def from_row(cls, row) -> "SetupOut":
+        return cls(
+            id=row["id"], name=row["name"], um_per_px=row["um_per_px"],
+            calibration_objective=row["calibration_objective"],
+            phone_resolution=row["phone_resolution"], created_at=row["created_at"],
+        )
