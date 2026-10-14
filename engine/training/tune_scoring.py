@@ -12,9 +12,11 @@ The formula of pipeline/scoring.py, z = w_max * max(logit P) + (1 - w_max) * mea
 logit P), is grid-searched on the validation split by mean slide AUC over all tumour
 fractions. The flag thresholds are percentiles of the negative-slide scores S = to_score(z)
 (red: RED_FALSE_ALARM of normal slides, yellow-or-red: YELLOW_FALSE_ALARM). Then everything
-is reported once on the test split. Copy the chosen values into pipeline/scoring.py.
+is reported once on the test split. Copy the chosen values into the organ's entry in
+pipeline/organs.py (lymph node: the constants in pipeline/scoring.py).
 
     python -m training.tune_scoring
+    python -m training.tune_scoring --dataset nct_crc --model model/colon/model_fp32.onnx   # colon
 """
 import argparse
 import hashlib
@@ -26,11 +28,11 @@ from sklearn.metrics import roc_auc_score
 
 from pipeline.inference import DEFAULT_MODEL_PATH, PatchClassifier
 from pipeline.scoring import logit, to_score
-from training.pcam import DATA_DIR, PCamBatches
+from training.pcam import DATASETS, PCamBatches
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ENGINE_DIR / "data" / "cache"
-RESULTS_PATH = ENGINE_DIR / "training" / "results" / "slide_scoring.json"
+RESULTS_DIR = ENGINE_DIR / "training" / "results"
 
 FRACTIONS = (0.01, 0.02, 0.05, 0.10, 0.25, 0.50)
 W_MAX_GRID = (0.0, 0.25, 0.5, 0.75, 1.0)
@@ -40,14 +42,19 @@ RED_FALSE_ALARM = 0.05     # share of normal slides flagged red
 YELLOW_FALSE_ALARM = 0.25  # share of normal slides flagged yellow or red
 
 
-def patch_probs(model_path: Path, split: str, data_dir: Path) -> tuple:
+def results_path(dataset: str) -> Path:
+    """slide_scoring.json for PCam (lymph node), slide_scoring_<organ>.json otherwise."""
+    return RESULTS_DIR / ("slide_scoring.json" if dataset == "pcam" else f"slide_scoring_{DATASETS[dataset]['organ']}.json")
+
+
+def patch_probs(model_path: Path, split: str, data_dir: Path, dataset_name: str = "pcam") -> tuple:
     """(P_malignant, labels) for every patch of the split, cached per model file."""
     digest = hashlib.sha256(model_path.read_bytes()).hexdigest()[:12]
-    cache = CACHE_DIR / f"pcam_{split}_probs_{digest}.npz"
+    cache = CACHE_DIR / f"{DATASETS[dataset_name]['prefix']}_{split}_probs_{digest}.npz"
     if cache.exists():
         data = np.load(cache)
         return data["probs"], data["labels"]
-    dataset = PCamBatches.from_split(split, data_dir)
+    dataset = PCamBatches.from_split(split, data_dir, dataset=dataset_name)
     classifier = PatchClassifier(model_path, batch_size=256)
     probs = []
     for start in range(0, len(dataset), 4096):
@@ -94,11 +101,12 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
     p.add_argument("--slides", type=int, default=2000, help="simulated slides per tumour fraction")
-    p.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    p.add_argument("--dataset", choices=DATASETS, default="pcam", help="the model's training dataset")
+    p.add_argument("--data-dir", type=Path, help="default: the dataset's folder (training/pcam.py DATASETS)")
     args = p.parse_args()
 
-    valid = build_slides(*patch_probs(args.model, "valid", args.data_dir), args.slides, seed=0)
-    test = build_slides(*patch_probs(args.model, "test", args.data_dir), args.slides, seed=1)
+    valid = build_slides(*patch_probs(args.model, "valid", args.data_dir, args.dataset), args.slides, seed=0)
+    test = build_slides(*patch_probs(args.model, "test", args.data_dir, args.dataset), args.slides, seed=1)
 
     grid = []
     for w_max in W_MAX_GRID:
@@ -130,6 +138,7 @@ def main():
     baseline = {f"tumour_{int(f * 100)}pct": slide_auc(scores(test[0.0], 1.0, 1), scores(test[f], 1.0, 1)) for f in FRACTIONS}
     result = {
         "model": args.model.name,
+        "organ": DATASETS[args.dataset]["organ"],
         "chosen": {"w_max": w_max, "top_k": k, "red": round(red, 4), "yellow": round(yellow, 4)},
         "test": report(test),
         "test_auc_max_only": baseline,
@@ -137,8 +146,9 @@ def main():
         "setup": {"slides_per_fraction": args.slides, "patches_per_slide": "50-250", "red_false_alarm": RED_FALSE_ALARM, "yellow_false_alarm": YELLOW_FALSE_ALARM},
     }
     print(json.dumps(result["test"], indent=1))
-    RESULTS_PATH.write_text(json.dumps(result, indent=2))
-    print(f"results: {RESULTS_PATH}")
+    out = results_path(args.dataset)
+    out.write_text(json.dumps(result, indent=2))
+    print(f"results: {out}")
 
 
 if __name__ == "__main__":

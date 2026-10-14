@@ -16,7 +16,8 @@ def _card():
 
 def test_model_info_reports_live_file_and_provider():
     info = model_info()
-    assert set(info) == {"card", "file", "provider"}
+    assert set(info) == {"organ", "card", "file", "provider"}
+    assert info["organ"] == "lymph_node"
     assert set(info["file"]) == {"path", "name", "exists", "sha256", "matches_card"}
     # Tests run against the tiny fixture model (conftest), not the shipped one.
     assert info["file"]["exists"] is True
@@ -58,3 +59,20 @@ def test_committed_card_matches_evidence():
     assert card["slide_metrics"]["thresholds"] == {"red": RED_THRESHOLD, "yellow": YELLOW_THRESHOLD}
     assert (W_MAX, TOP_K) == (scoring["chosen"]["w_max"], scoring["chosen"]["top_k"])
     assert card["slide_metrics"]["normal_slides"] == scoring["test"]["normal_slides"]
+
+
+def test_committed_colon_card_matches_its_model_and_settings():
+    """Each organ's card describes its own committed model and the settings in pipeline/organs.py."""
+    from pipeline.organs import get_organ
+
+    colon = get_organ("colon")
+    card = json.loads(colon.card_path.read_text(encoding="utf-8"))
+    assert card["organ"] == "colon"
+    digest = hashlib.sha256(colon.model_path.read_bytes()).hexdigest()
+    assert card["file"]["sha256"] == digest
+    assert card["architecture"]["input_scale_um_per_px"] == colon.um_per_px
+    assert card["slide_metrics"]["thresholds"] == {"red": colon.red, "yellow": colon.yellow}
+
+    scoring = json.loads((RESULTS / "slide_scoring_colon.json").read_text())
+    assert (colon.w_max, colon.top_k) == (scoring["chosen"]["w_max"], scoring["chosen"]["top_k"])
+    assert (round(scoring["chosen"]["red"], 2), round(scoring["chosen"]["yellow"], 2)) == (colon.red, colon.yellow)

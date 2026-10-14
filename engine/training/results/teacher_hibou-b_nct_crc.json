@@ -1,0 +1,8 @@
+{
+  "teacher": "hibou-b",
+  "repo": "histai/hibou-b",
+  "dataset": "nct_crc",
+  "valid_auc": 0.9997819834154401,
+  "test_auc": 0.9996236776981928,
+  "test_accuracy": 0.9961035346507097
+}

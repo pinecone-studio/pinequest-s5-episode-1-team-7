@@ -3,7 +3,8 @@
 The model only works at about 0.42 µm per pixel (PCam's ~0.97 µm/px patches enlarged from
 96 to 224 px), and it cannot tell magnification from the photo. The caller passes the
 setup's calibrated µm/px (stage micrometer + objective); the photo is resized by
-um_per_px / MODEL_UM_PER_PX before tiling.
+um_per_px / model µm/px before tiling. MODEL_UM_PER_PX is the lymph-node model's scale;
+each organ's model has its own (pipeline/organs.py, e.g. 0.5 for colon).
 """
 import math
 
@@ -21,7 +22,7 @@ UM_PER_PX_RANGE = (0.05, 2.0)
 NO_SCALE_INFO = "no_scale_info"
 
 
-def rescale_factor(um_per_px: float) -> float:
+def rescale_factor(um_per_px: float, model_um_per_px: float = MODEL_UM_PER_PX) -> float:
     """How much to resize a photo taken at um_per_px to reach the model's scale."""
     low, high = UM_PER_PX_RANGE
     try:
@@ -30,12 +31,12 @@ def rescale_factor(um_per_px: float) -> float:
         value = math.nan
     if isinstance(um_per_px, bool) or not math.isfinite(value) or not low <= value <= high:
         raise ValueError(f"um_per_px must be between {low} and {high} µm/px, got {um_per_px!r}")
-    return value / MODEL_UM_PER_PX
+    return value / model_um_per_px
 
 
-def to_model_scale(image: np.ndarray, um_per_px: float) -> np.ndarray:
-    """Resize an RGB image taken at um_per_px to MODEL_UM_PER_PX."""
-    factor = rescale_factor(um_per_px)
+def to_model_scale(image: np.ndarray, um_per_px: float, model_um_per_px: float = MODEL_UM_PER_PX) -> np.ndarray:
+    """Resize an RGB image taken at um_per_px to model_um_per_px."""
+    factor = rescale_factor(um_per_px, model_um_per_px)
     height, width = image.shape[:2]
     size = (max(1, round(width * factor)), max(1, round(height * factor)))
     if size == (width, height):

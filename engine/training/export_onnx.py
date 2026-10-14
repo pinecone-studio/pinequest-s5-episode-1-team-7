@@ -8,6 +8,7 @@ averages each patch over N orientations (metadata "tta_views"); same contract, N
 
     python -m training.export_onnx
     python -m training.export_onnx --checkpoint model/pcam_mobilenet_v3_small_96.pt --tta 4
+    python -m training.export_onnx --checkpoint model/colon_mobilenet_v3_small_224_kd-hibou.pt         --out model/colon/model_fp32.onnx --results training/results/colon_mobilenet_v3_small_224_kd-hibou.json
 """
 import argparse
 import json
@@ -19,6 +20,7 @@ import onnxruntime as ort
 import torch
 
 from training.model import ProbabilityModel, TTAModel, build_model
+from training.pcam import DATASETS
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
 INPUT_NAME, OUTPUT_NAME = "patches", "p_malignant"
@@ -77,14 +79,16 @@ def main():
     p.add_argument("--results", type=Path, help="training results JSON; its test metrics go into the ONNX metadata")
     args = p.parse_args()
 
+    dataset = DATASETS["pcam"]
     metadata = {}
     if args.results:
         results = json.loads(args.results.read_text())
+        dataset = DATASETS[results["config"].get("dataset", "pcam")]
         test = results["test"]
         metadata = {"test_auc": f"{test['auc']:.4f}", "test_accuracy": f"{test['accuracy']:.4f}"}
         if results.get("teacher"):
             metadata["distilled_from"] = results["teacher"]
-    export(args.checkpoint, args.out, {"dataset": "PCam", **metadata}, tta=args.tta)
+    export(args.checkpoint, args.out, {"dataset": dataset["short"], "organ": dataset["organ"], **metadata}, tta=args.tta)
 
 
 if __name__ == "__main__":

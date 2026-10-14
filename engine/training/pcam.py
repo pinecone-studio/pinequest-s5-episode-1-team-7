@@ -1,4 +1,8 @@
-"""PCam data loading and GPU augmentation.
+"""Patch dataset loading (PCam and other organs) and GPU augmentation.
+
+Every dataset is stored in PCam's HDF5 layout: <stem>_x.h5 with x (N, H, W, 3) uint8 and
+<stem>_y.h5 with y (N, ...) 0/1 tumour labels, one pair per split. So one loader, train.py
+and teacher.py work for every organ (issue #53); only DATASETS below differs.
 
 Images are read a whole batch at a time (one worker call per batch) and augmented on the
 GPU, which keeps the CPU from becoming the bottleneck, especially on Windows.
@@ -11,13 +15,37 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import BatchSampler, DataLoader, Dataset, RandomSampler, SequentialSampler
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "pcam"
+DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
+DATA_DIR = DATA_ROOT / "pcam"
 SPLITS = ("train", "valid", "test")
 PCAM_SIZE = 96
 
+# name -> where its HDF5 files are, the organ its model is for, and the prefix of the
+# checkpoint / results file names (pcam_..., colon_...).
+DATASETS = {
+    "pcam": {
+        "dir": DATA_DIR,
+        "stem": "camelyonpatch_level_2_split_{split}",
+        "organ": "lymph_node",
+        "prefix": "pcam",
+        "short": "PCam",
+        "description": "PatchCamelyon (PCam), CC0, via Hugging Face 1aurent/PatchCamelyon",
+    },
+    "nct_crc": {  # training/download_nct_crc.py
+        "dir": DATA_ROOT / "nct-crc",
+        "stem": "nct_crc_split_{split}",
+        "organ": "colon",
+        "prefix": "colon",
+        "short": "NCT-CRC-HE",
+        "description": "NCT-CRC-HE-100K-NONORM (train) + CRC-VAL-HE-7K halves (valid / test), CC BY 4.0, "
+                       "via Hugging Face 1aurent/NCT-CRC-HE",
+    },
+}
 
-def split_paths(split: str, data_dir: Path = DATA_DIR) -> tuple:
-    stem = Path(data_dir) / f"camelyonpatch_level_2_split_{split}"
+
+def split_paths(split: str, data_dir: Path = None, dataset: str = "pcam") -> tuple:
+    spec = DATASETS[dataset]
+    stem = Path(data_dir or spec["dir"]) / spec["stem"].format(split=split)
     return Path(f"{stem}_x.h5"), Path(f"{stem}_y.h5")
 
 
@@ -38,8 +66,8 @@ class PCamBatches(Dataset):
         self.soft = None     # optional per-sample teacher logits for distillation (set by train.py)
 
     @classmethod
-    def from_split(cls, split: str, data_dir: Path = DATA_DIR, limit: int = 0) -> "PCamBatches":
-        return cls(*split_paths(split, data_dir), limit=limit)
+    def from_split(cls, split: str, data_dir: Path = None, limit: int = 0, dataset: str = "pcam") -> "PCamBatches":
+        return cls(*split_paths(split, data_dir, dataset), limit=limit)
 
     def __len__(self) -> int:
         return len(self.labels)
