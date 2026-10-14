@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '../../shared/api/client.ts'
@@ -11,6 +11,7 @@ import { Button } from '../../shared/ui/Button.tsx'
 import { ConfirmDialog } from '../../shared/ui/ConfirmDialog.tsx'
 import { fieldClass } from '../../shared/ui/field.ts'
 import { SegmentedControl } from '../../shared/ui/SegmentedControl.tsx'
+import { MicrometerCanvas } from './MicrometerCanvas.tsx'
 import { umPerPx, type Point } from './scale.ts'
 
 /**
@@ -109,17 +110,8 @@ function SetupForm() {
     setPhoto(URL.createObjectURL(picked))
   }
 
-  /** Clicks become natural-pixel marks, so µm/px does not depend on display size. */
-  const onPhotoClick = (e: MouseEvent<HTMLImageElement>) => {
-    e.stopPropagation() // or the drop-zone underneath would reopen the file picker
-    if (!size) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const point = {
-      x: ((e.clientX - rect.left) / rect.width) * size.width,
-      y: ((e.clientY - rect.top) / rect.height) * size.height,
-    }
-    setMarks((prev) => (prev.length >= 2 ? [point] : [...prev, point]))
-  }
+  /** First click sets A, second sets B, a third starts over. */
+  const onMark = (point: Point) => setMarks((prev) => (prev.length >= 2 ? [point] : [...prev, point]))
 
   const value = marks.length === 2 ? umPerPx(marks[0], marks[1], Number(distance)) : null
   const canSave = name.trim() !== '' && value != null && !create.isPending
@@ -184,51 +176,49 @@ function SetupForm() {
         <span aria-hidden className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
           {t('calibrate:form.marks')}
         </span>
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label={t('calibrate:form.marks')}
-          onClick={() => input.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              input.current?.click()
-            }
-          }}
-          className="relative flex cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 text-center text-sm hover:border-cyan-600 focus-visible:outline-2 focus-visible:outline-cyan-600 dark:border-slate-700"
-        >
-          {photo ? (
-            <div className="relative">
-              <img src={photo} alt={t('calibrate:form.photo')} className="max-h-80 object-contain" onClick={onPhotoClick} />
-              {size &&
-                marks.map((m, i) => (
-                  <span
-                    key={i}
-                    aria-hidden
-                    className="absolute flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white"
-                    style={{ left: `${(m.x / size.width) * 100}%`, top: `${(m.y / size.height) * 100}%` }}
-                  >
-                    {i === 0 ? 'A' : 'B'}
-                  </span>
-                ))}
-            </div>
-          ) : (
-            <div className="px-4 py-10 text-slate-500">
+        {photo ? (
+          <div className="space-y-2">
+            {size ? (
+              <MicrometerCanvas key={photo} imageUrl={photo} size={size} alt={t('calibrate:form.photo')} marks={marks} onMark={onMark} />
+            ) : (
+              <p className="flex h-80 items-center justify-center rounded-lg bg-slate-900 text-sm text-slate-400 sm:h-[28rem]">
+                {t('common:status.loading')}
+              </p>
+            )}
+            <Button size="sm" onClick={() => input.current?.click()}>
+              {t('calibrate:form.changePhoto')}
+            </Button>
+          </div>
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={t('calibrate:form.marks')}
+            onClick={() => input.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                input.current?.click()
+              }
+            }}
+            className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 hover:border-cyan-600 focus-visible:outline-2 focus-visible:outline-cyan-600 dark:border-slate-700"
+          >
+            <div>
               <div className="font-medium text-slate-700 dark:text-slate-200">{t('calibrate:form.photo')}</div>
               <div className="mt-1 text-xs">{t('calibrate:form.photoHint')}</div>
             </div>
-          )}
-          <input
-            ref={input}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              pick(e.target.files)
-              e.target.value = ''
-            }}
-          />
-        </div>
+          </div>
+        )}
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            pick(e.target.files)
+            e.target.value = ''
+          }}
+        />
         <p className="mt-1 text-[11px] text-slate-500">{photo ? t('calibrate:form.marksHint') : t('calibrate:form.photoHint')}</p>
       </div>
 

@@ -60,7 +60,7 @@ test.describe('slide page', () => {
     expect(backend.posts).toEqual([{ path: '/slides/3/action', body: { action: 'reassign_priority', priority: 0.75 } }])
 
     await page.getByRole('link', { name: 'Worklist' }).click()
-    expect(await rowIds(page, 'Worklist')).toEqual([3, 1, 2])
+    await expect.poll(() => rowIds(page, 'Worklist')).toEqual([3, 1, 2])
   })
 
   test('a failed slide can be retried', async ({ page, backend }) => {

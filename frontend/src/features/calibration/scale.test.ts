@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { scaledUmPerPx, umPerPx } from './scale.ts'
+import { imagePointToMap, mapToImagePoint, scaledUmPerPx, umPerPx } from './scale.ts'
 
 describe('umPerPx', () => {
   it('divides the known distance by the pixel distance', () => {
@@ -26,5 +26,27 @@ describe('scaledUmPerPx', () => {
     expect(scaledUmPerPx(0.5, '40x', 'wide')).toBeNull()
     expect(scaledUmPerPx(0.5, 'wide', '10x')).toBeNull()
     expect(scaledUmPerPx(-1, '40x', '10x')).toBeNull()
+  })
+})
+
+describe('mapToImagePoint / imagePointToMap', () => {
+  const size = { width: 1536, height: 1152 }
+
+  it('flips the map y axis into top-left image pixels', () => {
+    expect(mapToImagePoint(1152, 0, size)).toEqual({ x: 0, y: 0 })
+    expect(mapToImagePoint(0, 1536, size)).toEqual({ x: 1536, y: 1152 })
+    expect(mapToImagePoint(1000.5, 250.25, size)).toEqual({ x: 250.25, y: 151.5 })
+  })
+
+  it('ignores clicks outside the photo', () => {
+    expect(mapToImagePoint(1200, 10, size)).toBeNull()
+    expect(mapToImagePoint(10, -1, size)).toBeNull()
+    expect(mapToImagePoint(-0.5, 10, size)).toBeNull()
+    expect(mapToImagePoint(10, 1537, size)).toBeNull()
+  })
+
+  it('round-trips', () => {
+    const [lat, lng] = imagePointToMap({ x: 123.4, y: 567.8 }, size)
+    expect(mapToImagePoint(lat, lng, size)).toEqual({ x: 123.4, y: expect.closeTo(567.8) })
   })
 })

@@ -5,6 +5,22 @@ export interface Point {
 }
 
 /**
+ * Map position in the zoomable viewer (Leaflet CRS.Simple: one unit per image pixel,
+ * origin bottom-left, as in viewer/SlideViewer.tsx) to a natural-pixel point (origin
+ * top-left). Null when the click is outside the photo.
+ */
+export function mapToImagePoint(lat: number, lng: number, size: { width: number; height: number }): Point | null {
+  const point = { x: lng, y: size.height - lat }
+  if (point.x < 0 || point.y < 0 || point.x > size.width || point.y > size.height) return null
+  return point
+}
+
+/** Inverse of mapToImagePoint: [lat, lng] for a natural-pixel point. */
+export function imagePointToMap(point: Point, size: { width: number; height: number }): [number, number] {
+  return [size.height - point.y, point.x]
+}
+
+/**
  * µm/px from two clicked marks a known distance apart (issue #35): the stage
  * micrometer's true distance divided by the marks' pixel distance. Null when
  * the marks coincide or the distance is not positive.

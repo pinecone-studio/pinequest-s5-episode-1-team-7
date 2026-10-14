@@ -20,7 +20,7 @@
     "photoHint": "Tap to choose the stage-micrometer photo.",
     "changePhoto": "Choose a different photo",
     "marks": "Click two marks a known distance apart",
-    "marksHint": "First click sets A, second sets B. Click again to start over.",
+    "marksHint": "Scroll, pinch or use + / − to zoom in, and drag to move, so each mark lands exactly on its tick. First click sets A, second sets B. Click again to start over.",
     "distance": "Distance between the marks (µm)",
     "result": "This setup sees {{value}} µm per pixel.",
     "needMarks": "Click two marks and enter their distance to compute µm/px.",

@@ -15,7 +15,8 @@ interface Props {
   heatmapUrl?: string
 }
 
-function Fit({ bounds }: { bounds: L.LatLngBounds }) {
+/** Fits the photo in view, and limits zoom-out and panning to around it. */
+export function Fit({ bounds }: { bounds: L.LatLngBounds }) {
   const map = useMap()
   useEffect(() => {
     map.fitBounds(bounds)
