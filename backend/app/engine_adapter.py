@@ -9,14 +9,16 @@ Member 1 exposes ONE function (default TRIAGE_ENGINE="engine.pipeline:analyze_sl
             "heatmap_path": "/tmp/h.png",  # PNG overlay, backend moves it (optional)
             "num_patches": 142,            # (optional)
             "inference_ms": 1180.0,        # (optional)
-            "um_per_px_used": 0.42,        # µm/px the photo was analysed at (optional)
+            "um_per_px_used": 0.25,        # µm/px the photo was taken at, None if not given (optional)
             "scale_warning": None,         # e.g. "no_scale_info" when um_per_px was None (optional)
         }
 
 `um_per_px` is the photo's microns per pixel from the backend's calibrated setup
-profile (issue #35); the engine resizes to its training scale (MODEL_UM_PER_PX)
-before tiling. Engines that only take `image_path` keep working: the backend
-passes `um_per_px` only when the entry point accepts it (see call_engine).
+profile (issue #35); the engine resizes to its training scale (MODEL_UM_PER_PX = 0.42)
+before tiling, and the heatmap keeps the original photo's size. Values outside
+0.05-2.0 µm/px raise ValueError (almost certainly a calibration or objective mistake),
+so the slide is marked FAILED. Engines that only take `image_path` keep working: the
+backend passes `um_per_px` only when the entry point accepts it (see call_engine).
 
 If `risk_flag` is omitted the backend derives it from config thresholds.
 Until the engine exists (or if it fails to import) a deterministic STUB is used so the whole

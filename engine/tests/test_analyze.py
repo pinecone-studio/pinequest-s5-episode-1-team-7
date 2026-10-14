@@ -113,10 +113,45 @@ def test_analyze_slide_downscales_coarse_photos(tmp_path, result_cleanup):
     assert heatmap.shape == (448, 448, 4)
 
 
-@pytest.mark.parametrize("bad", [0, -0.5, float("nan"), float("inf"), "wide"])
+@pytest.mark.parametrize("bad", [0, -0.5, float("nan"), float("inf"), "wide", 3.0])
 def test_analyze_slide_rejects_bad_um_per_px(tmp_path, bad):
     image = np.full((224, 224, 3), TISSUE, dtype=np.uint8)
     path = write_image(tmp_path / "slide.png", image)
 
     with pytest.raises(ValueError, match="um_per_px"):
         analyze_slide(path, um_per_px=bad)
+
+
+def tissue_slide(height, width, tissue_width):
+    image = np.full((height, width, 3), WHITE, dtype=np.uint8)
+    image[:, :tissue_width] = TISSUE
+    return image
+
+
+def test_analyze_slide_resizes_to_model_scale_but_keeps_heatmap_size(tmp_path, result_cleanup):
+    # 0.84 µm/px is twice the model's 0.42, so the photo is enlarged 2x before tiling:
+    # 300x500 -> 600x1000, tissue 224 -> 448 px wide = 2 tile columns x 3 rows.
+    image = tissue_slide(300, 500, tissue_width=224)
+    result = analyze_slide(write_image(tmp_path / "slide.png", image), um_per_px=0.84)
+    result_cleanup.append(result["heatmap_path"])
+
+    assert result["num_patches"] == 6
+    assert result["um_per_px_used"] == 0.84
+    assert result["scale_warning"] is None
+    heatmap = cv2.imread(result["heatmap_path"], cv2.IMREAD_UNCHANGED)
+    assert heatmap.shape == (300, 500, 4)
+    assert heatmap[150, 100, 3] == 255  # tissue is still covered after resizing back
+    assert heatmap[150, 400, 3] == 0    # background stays transparent
+
+
+def test_same_slide_at_two_magnifications_scores_alike(tmp_path, result_cleanup):
+    # The same field photographed at the model's scale and at half the magnification.
+    at_model_scale = tissue_slide(448, 672, tissue_width=448)
+    low_mag = cv2.resize(at_model_scale, (336, 224), interpolation=cv2.INTER_AREA)
+
+    high = analyze_slide(write_image(tmp_path / "high.png", at_model_scale), um_per_px=0.42)
+    low = analyze_slide(write_image(tmp_path / "low.png", low_mag), um_per_px=0.84)
+    result_cleanup.extend([high["heatmap_path"], low["heatmap_path"]])
+
+    assert low["num_patches"] == high["num_patches"] == 4
+    assert low["score"] == pytest.approx(high["score"], abs=0.02)
