@@ -17,13 +17,8 @@ export function Header() {
           <span className="text-[15px] text-ink">PathTriage</span>
           <span className="hidden text-[13px] font-normal text-ink-faint md:inline">{t('app.tagline')}</span>
         </Link>
-        <nav aria-label={t('app.calibration')} className="ml-2 flex items-center gap-1">
-          <Link
-            to="/calibrate"
-            className="rounded-lg px-2.5 py-1.5 font-display text-[13px] font-semibold text-ink-dim transition hover:bg-raised hover:text-ink"
-          >
-            {t('app.calibration')}
-          </Link>
+        {/* Calibration is reached from the upload panel's setup picker, where it is needed. */}
+        <nav aria-label={t('app.nav')} className="ml-2 flex items-center gap-1">
           <Link
             to="/about"
             className="rounded-lg px-2.5 py-1.5 font-display text-[13px] font-semibold text-ink-dim transition hover:bg-raised hover:text-ink"

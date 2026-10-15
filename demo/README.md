@@ -13,7 +13,7 @@ Test photos for demoing the app: real lymph-node tissue from the PCam test set, 
 \*Measured with the shipped model (`engine/model/model_fp32.onnx`) and the colour-based tissue mask (15 Oct), at 0.972 µm/px, through `analyze_slide`, the function the backend calls. The flag cut-offs are red ≥ 81 and yellow ≥ 70.
 
 ## How to use them in a demo
-1. **Calibrate:** open **Калибровк / Calibration**.
+1. **Calibrate:** in the upload panel, click **Тохиргоо калибровк хийх / Calibrate a setup**.
    - Name the setup, e.g. "Demo scope", and choose objective **10x**.
    - Choose `00-stage-micrometer.jpg`, click the **0** and **1000** ticks, and enter **1000** µm. The app should show about **0.97 µm/px**. Save the setup.
 2. **Upload:** upload the four slide photos with that setup and objective **10x**.

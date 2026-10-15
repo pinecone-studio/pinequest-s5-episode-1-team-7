@@ -12,6 +12,7 @@ executed. Downloads go to HF_HUB_CACHE (set it to a roomy disk, e.g. B:/pineques
 
     python -m training.teacher --teacher hibou-b                     # PCam (lymph node)
     python -m training.teacher --teacher hibou-b --dataset nct_crc   # colon: its own head
+    python -m training.teacher --teacher hibou-b --benchmark          # CPU speed + size, for the model card
 """
 import argparse
 import json
@@ -146,6 +147,36 @@ def fit_head(train: tuple, valid: tuple, dim: int, device, epochs: int = 20) -> 
     return head.cpu(), best_auc
 
 
+def benchmark(name: str, patches: int = 150, batch: int = 16, threads: int = 4, runs: int = 3) -> dict:
+    """CPU seconds per slide and weights size, measured like the shipped model's (training/quantize.py).
+
+    The teacher is the accuracy ceiling the student was distilled from; this records why it isn't the
+    model the clinic PC runs.
+    """
+    import time
+
+    from huggingface_hub import hf_hub_download
+
+    torch.set_num_threads(threads)
+    teacher = Teacher(name).eval()
+    x = torch.rand(patches, 3, INPUT_SIZE, INPUT_SIZE)
+    with torch.no_grad():
+        teacher.features(x[:batch])  # warm-up
+        times = []
+        for _ in range(runs):
+            start = time.perf_counter()
+            for i in range(0, patches, batch):
+                teacher.features(x[i:i + batch])
+            times.append(time.perf_counter() - start)
+    weights = Path(hf_hub_download(TEACHERS[name]["repo"], "model.safetensors"))
+    return {
+        "cpu_seconds_per_slide": round(sorted(times)[len(times) // 2], 1),
+        "size_mb": round(weights.stat().st_size / 1e6),
+        "benchmark": f"median of {runs} warm runs, {patches} patches, batch {batch}, {threads} threads, "
+                     f"PyTorch {torch.__version__}, frozen backbone only",
+    }
+
+
 def main():
     p = argparse.ArgumentParser(description="Extract teacher features on a dataset and train its linear head.")
     p.add_argument("--teacher", choices=TEACHERS, default="hibou-b")
@@ -153,7 +184,16 @@ def main():
     p.add_argument("--batch-size", type=int, default=256)
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--data-dir", type=Path, help="default: the dataset's folder (training/pcam.py DATASETS)")
+    p.add_argument("--benchmark", action="store_true", help="only measure CPU speed + size into the teacher's results file")
     args = p.parse_args()
+
+    if args.benchmark:
+        out = RESULTS_DIR / f"teacher_{args.teacher}.json"
+        result = json.loads(out.read_text()) if out.exists() else {"teacher": args.teacher}
+        result["cpu"] = benchmark(args.teacher)
+        print(json.dumps(result["cpu"], indent=2))
+        out.write_text(json.dumps(result, indent=2))
+        return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     teacher = Teacher(args.teacher).to(device)

@@ -124,44 +124,80 @@
   },
   "comparison": [
     {
-      "model": "MobileNetV3-Small, Hibou-B-distilled (shipped)",
-      "pcam_auc": 0.9687,
+      "model": "This model: MobileNetV3-Small, distilled from Hibou-B",
+      "test_auc": 0.9687,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
-      "note": "same-graph speed reference, see runtime"
+      "local": "yes",
+      "note": "shipped"
     },
     {
-      "model": "MobileNetV3-Small, direct (previous release)",
-      "pcam_auc": 0.9604,
-      "size_mb": 6.42,
-      "per_slide_s": 0.101,
-      "note": "replaced: worse PLISM phone agreement"
+      "model": "Hibou-B pathology foundation model (the teacher)",
+      "test_auc": 0.9842,
+      "size_mb": 343,
+      "per_slide_s": 23.0,
+      "local": "slow",
+      "note": "most accurate, but about 230x slower than this model on a CPU"
     },
     {
-      "model": "Hibou-B foundation-model teacher (head only)",
-      "pcam_auc": 0.9842,
-      "size_mb": null,
-      "per_slide_s": null,
-      "note": "training-time teacher, too large for clinic PCs"
+      "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
+      "test_auc": 0.963,
+      "size_mb": 0.5,
+      "per_slide_s": 3.58,
+      "per_slide_range_s": [
+        1.11,
+        11.57
+      ],
+      "speed_estimated": true,
+      "local": "slow",
+      "note": "published accuracy; speed estimated"
     },
     {
-      "model": "MobileNetV3-Small 96 px (study)",
-      "pcam_auc": 0.9224,
-      "size_mb": null,
-      "per_slide_s": null,
-      "note": "native-PCam-size study, never exported"
-    },
-    {
-      "model": "INT8-quantized direct model (study)",
-      "pcam_auc": 0.9628,
-      "size_mb": 1.79,
-      "per_slide_s": 0.152,
-      "note": "72% smaller but slower than FP32 on CPU → not shipped"
+      "model": "DenseNet (Veeling et al. 2018)",
+      "test_auc": 0.955,
+      "size_mb": 0.5,
+      "per_slide_s": 0.48,
+      "per_slide_range_s": [
+        0.15,
+        1.56
+      ],
+      "speed_estimated": true,
+      "local": "yes",
+      "note": "published accuracy; speed estimated"
     }
   ],
   "literature": {
-    "note": "Published PCam baselines were not recorded with these runs, so none are quoted: numbers here come only from the evidence files above.",
-    "baselines": []
+    "note": "Published results on the same PCam test split (32,768 patches), quoted from the paper's results table, not re-run here.",
+    "source": "Veeling et al., Rotation Equivariant CNNs for Digital Pathology, MICCAI 2018, Table 1",
+    "url": "https://arxiv.org/abs/1806.03962",
+    "baselines": [
+      {
+        "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
+        "params": 119000,
+        "test_auc": 0.963,
+        "test_accuracy": 0.898,
+        "per_slide_s": 3.58,
+        "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network; x8 for rotation-equivariant layers",
+        "per_slide_range_s": [
+          1.11,
+          11.57
+        ],
+        "local": "slow"
+      },
+      {
+        "model": "DenseNet (Veeling et al. 2018)",
+        "params": 128000,
+        "test_auc": 0.955,
+        "test_accuracy": null,
+        "per_slide_s": 0.48,
+        "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network",
+        "per_slide_range_s": [
+          0.15,
+          1.56
+        ],
+        "local": "yes"
+      }
+    ]
   },
   "limitations": [
     "Trained only on lymph-node metastases (breast cancer, PCam). Not valid for other organs: normal non-lymph tissue false alarms were 22%–35% on phones at the correct magnification (PLISM).",
@@ -170,8 +206,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-14T02:10:16+00:00",
-    "repo_commit": "8e81330f007c18bc82f38ac24fe7d8e49ebf27eb",
+    "at": "2026-10-15T09:45:35+00:00",
+    "repo_commit": "153ec27c8ba1a79bd491d1380aa73052f26b2dee",
     "generator": "training/make_model_card.py"
   }
 }

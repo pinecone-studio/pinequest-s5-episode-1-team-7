@@ -23,7 +23,7 @@ See [docs/TDD.md](docs/TDD.md) for the technical design and [docs/PLAN.md](docs/
      app → Open → Open**, because it is not signed by an Apple developer account.
    - **Linux:** make the `.AppImage` executable (`chmod +x`) and run it.
 3. Open **Pathology Triage**. The first start takes up to a minute while the local AI service starts.
-4. Click **Калибровк / Calibration** and calibrate your microscope + phone once with a stage micrometer.
+4. In the upload panel, click **Тохиргоо калибровк хийх / Calibrate a setup** and calibrate your microscope + phone once with a stage micrometer.
    Without it, scores are unreliable (the app warns about this).
 5. Take the slide photo with the phone on the microscope and upload it. It appears in the worklist with its risk flag.
 

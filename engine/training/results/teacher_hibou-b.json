@@ -3,5 +3,10 @@
   "repo": "histai/hibou-b",
   "valid_auc": 0.975683992836246,
   "test_auc": 0.9842441146372318,
-  "test_accuracy": 0.9425048828125
+  "test_accuracy": 0.9425048828125,
+  "cpu": {
+    "cpu_seconds_per_slide": 23.0,
+    "size_mb": 343,
+    "benchmark": "median of 3 warm runs, 150 patches, batch 16, 4 threads, PyTorch 2.14.1+cu126, frozen backbone only"
+  }
 }
