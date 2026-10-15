@@ -156,13 +156,14 @@ def convert_heldout(data_dir: Path) -> None:
         shard.unlink()
 
 
-def shuffle_split(split: str, data_dir: Path, seed: int = SEED, chunk: int = 2048) -> None:
+def shuffle_split(split: str, data_dir: Path, seed: int = SEED, chunk: int = 2048,
+                  dataset: str = "nct_crc") -> None:
     """Rewrite a split in a fixed random order, once (marked in the y file).
 
     The sources are sorted by class, so without this the first N tiles (--limit smoke runs,
-    quick checks) would all be one tissue class.
+    quick checks) would all be one tissue class. Works on any PCam-layout dataset.
     """
-    x_path, y_path = split_paths(split, data_dir, "nct_crc")
+    x_path, y_path = split_paths(split, data_dir, dataset)
     with h5py.File(y_path, "r") as fy:
         if fy.attrs.get("order") == f"shuffled, seed {seed}":
             return

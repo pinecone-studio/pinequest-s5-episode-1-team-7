@@ -3,8 +3,7 @@ import os
 import uuid
 from typing import Optional
 
-from . import anonymize, config, db, quality, queue, setups
-from .engine_adapter import available_organs, default_organ
+from . import anonymize, config, db, engine_adapter, quality, queue, setups
 
 ALLOWED_INDICATIONS = {"Routine", "Urgent"}
 
@@ -34,9 +33,9 @@ def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Rout
     if setup_id is None and objective is not None:
         raise ValueError("objective needs a setup_id (calibrate a setup first)")
     if organ is None:
-        organ = default_organ()
+        organ = engine_adapter.default_organ()
     else:
-        known = available_organs()
+        known = engine_adapter.available_organs()
         if known and organ not in known:
             raise ValueError(f"no AI model for organ {organ!r}; available: {sorted(known)}")
     um_per_px: Optional[float] = None

@@ -84,7 +84,8 @@
   "organ": {
     "names": {
       "lymph_node": "Lymph node",
-      "colon": "Colon"
+      "colon": "Colon",
+      "stomach": "Stomach"
     }
   }
 }

@@ -40,6 +40,15 @@ DATASETS = {
         "description": "NCT-CRC-HE-100K-NONORM (train) + CRC-VAL-HE-7K halves (valid / test), CC BY 4.0, "
                        "via Hugging Face 1aurent/NCT-CRC-HE",
     },
+    "hmu_gc": {  # training/download_hmu_gc.py
+        "dir": DATA_ROOT / "hmu-gc",
+        "stem": "hmu_gc_split_{split}",
+        "organ": "stomach",
+        "prefix": "stomach",
+        "short": "HMU-GC-HE",
+        "description": "HMU-GC-HE-30K (Lou et al. 2024, figshare 25954813, CC BY 4.0): stratified "
+                       "80/10/10 random split, no patient IDs upstream",
+    },
 }
 
 
