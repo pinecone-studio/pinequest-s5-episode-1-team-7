@@ -1,73 +1,41 @@
 {
   "title": "About the AI",
-  "intro": "What scores the slides on this computer: the model, where it runs, how good it is, and where it is known to fail. Scores are prioritisation aid only — every slide must be reviewed by a pathologist.",
+  "intro": "The AI that scores slides on this computer. It is a prioritisation aid, not a diagnosis: every slide must still be reviewed by a pathologist.",
   "unavailable": "The AI description is unavailable: the engine has no model card to show.",
-  "identity": {
-    "title": "Model identity",
+  "mismatch": "Note: the loaded model ({{name}}) differs from this card ({{version}}).",
+  "model": {
+    "title": "This model",
     "name": "Model",
-    "version": "Version",
-    "file": "File",
-    "sha": "SHA-256",
+    "dataset": "Trained on",
+    "runs": "Runs",
+    "local": "On this computer, offline. No cloud; no data leaves the clinic.",
     "size": "Size",
-    "arch": "Architecture",
-    "params": "Parameters",
-    "input": "Input",
-    "inputValue": "{{px}} px at {{scale}} µm/px",
-    "dataset": "Training data",
-    "backbone": "Backbone",
-    "training": "Training",
-    "distilled": "Distilled from",
-    "dateTrained": "Date trained",
-    "unknownDate": "not recorded"
-  },
-  "runtime": {
-    "title": "Where it runs",
-    "offline": "Runs on this computer, offline. No cloud, no data leaves the clinic.",
-    "provider": "Execution provider in use",
-    "providerUnknown": "unknown (engine unreachable)",
-    "perSlide": "Measured time per slide",
-    "mismatch": "Note: the loaded model ({{name}}) differs from this card ({{version}})."
-  },
-  "patch": {
-    "title": "Patch test results",
-    "split": "Test set",
-    "auc": "AUC",
+    "speed": "Speed",
+    "speedValue": "≈{{s}} s per slide",
     "accuracy": "Accuracy",
-    "sensitivity": "Sensitivity",
-    "specificity": "Specificity",
-    "threshold": "Threshold",
-    "op90": "At 90% sensitivity: threshold {{threshold}}, sensitivity {{sens}}, specificity {{spec}}"
+    "accuracyValue": "AUC {{auc}} on {{split}}"
   },
-  "slide": {
-    "title": "Slide triage results",
-    "formula": "Slide score: {{formula}}",
-    "thresholds": "Flags red ≥ {{red}} and yellow ≥ {{yellow}}, tuned {{when}}",
-    "thresholdsUnknown": "Flags red ≥ {{red}} and yellow ≥ {{yellow}}",
-    "fraction": "Tumour share",
-    "auc": "Slide AUC",
-    "red": "Flagged red",
-    "yellowOrRed": "Flagged yellow or red",
-    "normal": "Normal slides"
-  },
-  "plism": {
-    "title": "Smartphone robustness (PLISM)",
-    "note": "{{metric}} — {{at}}",
-    "device": "Device",
-    "kind": "Kind",
-    "flagged": "Normal lymph node flagged",
-    "scanner": "scanner",
-    "phone": "phone"
-  },
-  "comparison": {
-    "title": "Compared models",
+  "compare": {
+    "title": "Compared with other models",
     "model": "Model",
-    "auc": "PCam AUC",
+    "auc": "Test AUC",
     "size": "Size",
     "speed": "Per slide",
-    "note": "Note"
+    "clinicPc": "Runs on a clinic PC",
+    "yes": "Yes",
+    "no": "No",
+    "aucHelp": "AUC: 1.0 is perfect, 0.5 is guessing. Speed is on a desktop CPU with no GPU.",
+    "published": "Published results are quoted from"
   },
-  "limitations": {
-    "title": "Limitations and intended use"
+  "details": {
+    "title": "Technical details",
+    "version": "Version",
+    "sha": "File SHA-256",
+    "input": "Input",
+    "inputValue": "{{px}} px tiles at {{scale}} µm/px",
+    "flags": "Risk flags",
+    "flagsValue": "red ≥ {{red}}, yellow ≥ {{yellow}}",
+    "limitations": "Limitations and intended use"
   },
   "organ": {
     "label": "Organ model"

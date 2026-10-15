@@ -129,8 +129,20 @@ export interface ModelCard {
     phones: Record<string, number>
     other_tissues_false_alarm: { min: number; max: number; note: string }
   }
-  comparison: { model: string; pcam_auc: number | null; size_mb: number | null; per_slide_s: number | null; note: string }[]
-  literature: { note: string; baselines: unknown[] }
+  /**
+   * The shipped model first, then alternatives. test_auc is on the card's own test set; older cards
+   * (before 15 Oct) used pcam_auc instead. clinic_pc: can it run on a clinic CPU (null = not run here).
+   */
+  comparison: {
+    model: string
+    test_auc?: number | null
+    pcam_auc?: number | null
+    size_mb: number | null
+    per_slide_s: number | null
+    clinic_pc?: boolean | null
+    note: string
+  }[]
+  literature: { note: string; source?: string; url?: string; baselines: unknown[] }
   limitations: string[]
   generated: { at: string; repo_commit: string | null; generator: string }
 }

@@ -1,7 +1,7 @@
 {
   "app": {
     "tagline": "AI pathology triage",
-    "calibration": "Calibration",
+    "nav": "Main navigation",
     "about": "About the AI"
   },
   "language": {

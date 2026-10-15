@@ -1,0 +1,9 @@
+{
+  "note": "Published results on the same PCam test split (32,768 patches), quoted from the paper's results table, not re-run here.",
+  "source": "Veeling et al., Rotation Equivariant CNNs for Digital Pathology, MICCAI 2018, Table 1",
+  "url": "https://arxiv.org/abs/1806.03962",
+  "baselines": [
+    {"model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)", "params": 119000, "test_auc": 0.963, "test_accuracy": 0.898},
+    {"model": "DenseNet (Veeling et al. 2018)", "params": 128000, "test_auc": 0.955, "test_accuracy": null}
+  ]
+}

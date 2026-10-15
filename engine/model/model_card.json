@@ -124,44 +124,72 @@
   },
   "comparison": [
     {
-      "model": "MobileNetV3-Small, Hibou-B-distilled (shipped)",
-      "pcam_auc": 0.9687,
+      "model": "This model: MobileNetV3-Small, distilled from Hibou-B",
+      "test_auc": 0.9687,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
-      "note": "same-graph speed reference, see runtime"
+      "clinic_pc": true,
+      "note": "shipped"
     },
     {
-      "model": "MobileNetV3-Small, direct (previous release)",
-      "pcam_auc": 0.9604,
+      "model": "Same model, trained without the teacher",
+      "test_auc": 0.9604,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
-      "note": "replaced: worse PLISM phone agreement"
+      "clinic_pc": true,
+      "note": "previous release; worse phone-vs-scanner agreement"
     },
     {
-      "model": "Hibou-B foundation-model teacher (head only)",
-      "pcam_auc": 0.9842,
-      "size_mb": null,
-      "per_slide_s": null,
-      "note": "training-time teacher, too large for clinic PCs"
-    },
-    {
-      "model": "MobileNetV3-Small 96 px (study)",
-      "pcam_auc": 0.9224,
-      "size_mb": null,
-      "per_slide_s": null,
-      "note": "native-PCam-size study, never exported"
-    },
-    {
-      "model": "INT8-quantized direct model (study)",
-      "pcam_auc": 0.9628,
+      "model": "Same model, INT8-quantized",
+      "test_auc": 0.9628,
       "size_mb": 1.79,
       "per_slide_s": 0.152,
-      "note": "72% smaller but slower than FP32 on CPU → not shipped"
+      "clinic_pc": true,
+      "note": "72% smaller but slower on CPU"
+    },
+    {
+      "model": "Hibou-B pathology foundation model (the teacher)",
+      "test_auc": 0.9842,
+      "size_mb": 343,
+      "per_slide_s": 23.0,
+      "clinic_pc": false,
+      "note": "most accurate, but too large and slow for a clinic CPU"
+    },
+    {
+      "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
+      "test_auc": 0.963,
+      "size_mb": 0.5,
+      "per_slide_s": null,
+      "clinic_pc": null,
+      "note": "published result, not run here"
+    },
+    {
+      "model": "DenseNet (Veeling et al. 2018)",
+      "test_auc": 0.955,
+      "size_mb": 0.5,
+      "per_slide_s": null,
+      "clinic_pc": null,
+      "note": "published result, not run here"
     }
   ],
   "literature": {
-    "note": "Published PCam baselines were not recorded with these runs, so none are quoted: numbers here come only from the evidence files above.",
-    "baselines": []
+    "note": "Published results on the same PCam test split (32,768 patches), quoted from the paper's results table, not re-run here.",
+    "source": "Veeling et al., Rotation Equivariant CNNs for Digital Pathology, MICCAI 2018, Table 1",
+    "url": "https://arxiv.org/abs/1806.03962",
+    "baselines": [
+      {
+        "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
+        "params": 119000,
+        "test_auc": 0.963,
+        "test_accuracy": 0.898
+      },
+      {
+        "model": "DenseNet (Veeling et al. 2018)",
+        "params": 128000,
+        "test_auc": 0.955,
+        "test_accuracy": null
+      }
+    ]
   },
   "limitations": [
     "Trained only on lymph-node metastases (breast cancer, PCam). Not valid for other organs: normal non-lymph tissue false alarms were 22%–35% on phones at the correct magnification (PLISM).",
@@ -170,8 +198,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-14T02:10:16+00:00",
-    "repo_commit": "8e81330f007c18bc82f38ac24fe7d8e49ebf27eb",
+    "at": "2026-10-15T09:21:30+00:00",
+    "repo_commit": "db2909de148f1ca9ae49b2eba83e3972bedbe9f8",
     "generator": "training/make_model_card.py"
   }
 }

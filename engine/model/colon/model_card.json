@@ -133,28 +133,28 @@
   },
   "comparison": [
     {
-      "model": "Colon MobileNetV3-Small, Hibou-B-distilled (shipped)",
-      "pcam_auc": null,
+      "model": "This model: MobileNetV3-Small, distilled from Hibou-B",
       "test_auc": 0.9899,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
-      "note": "CRC-VAL-HE-7K test half; same-graph speed reference, see runtime"
+      "clinic_pc": true,
+      "note": "shipped"
     },
     {
-      "model": "Same student without the teacher",
-      "pcam_auc": null,
+      "model": "Same model, trained without the teacher",
       "test_auc": 0.9858,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
+      "clinic_pc": true,
       "note": "not shipped"
     },
     {
-      "model": "Hibou-B foundation-model teacher (head only)",
-      "pcam_auc": null,
+      "model": "Hibou-B pathology foundation model (the teacher)",
       "test_auc": 0.9996,
-      "size_mb": null,
-      "per_slide_s": null,
-      "note": "training-time teacher, too large for clinic PCs"
+      "size_mb": 343,
+      "per_slide_s": 23.0,
+      "clinic_pc": false,
+      "note": "most accurate, but too large and slow for a clinic CPU"
     }
   ],
   "literature": {
@@ -169,8 +169,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-14T13:59:11+00:00",
-    "repo_commit": "b948a2fdb658be7db2579f6bf5a2fa9c11d7bf11",
+    "at": "2026-10-15T09:21:31+00:00",
+    "repo_commit": "db2909de148f1ca9ae49b2eba83e3972bedbe9f8",
     "generator": "training/make_model_card.py"
   }
 }

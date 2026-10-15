@@ -31,12 +31,12 @@ CARD_PATH = MODEL_DIR / "model_card.json"
 
 MAIN_RESULTS = "pcam_mobilenet_v3_small_224_kd-hibou.json"
 DIRECT_RESULTS = "pcam_mobilenet_v3_small_224.json"
-SMALL_RESULTS = "pcam_mobilenet_v3_small_96.json"
 TEACHER_RESULTS = "teacher_hibou-b.json"
 SCORING_RESULTS = "slide_scoring.json"
 PLISM_RESULTS = "plism_model_fp32_kd-hibou.json"
 PLISM_DIRECT_RESULTS = "plism_model_fp32.json"
 INT8_RESULTS = "int8_minmax_fp32convs10_pc_rr.json"
+LITERATURE_RESULTS = "literature_pcam.json"  # published PCam baselines, quoted with their source
 
 # PLISM image scale that matches the training magnification (issue #35).
 PLISM_GOOD_SCALE = "0.6"
@@ -107,11 +107,11 @@ def _device_table(plism: dict) -> tuple[dict, dict]:
 def build_card() -> dict:
     main = _load(MAIN_RESULTS)
     direct = _load(DIRECT_RESULTS)
-    small = _load(SMALL_RESULTS)
     teacher = _load(TEACHER_RESULTS)
     scoring = _load(SCORING_RESULTS)
     plism = _load(PLISM_RESULTS)
     int8 = _load(INT8_RESULTS)
+    literature = _load(LITERATURE_RESULTS)
     model_path = MODEL_DIR / SHIPPED_FILE
     if not model_path.is_file():
         raise SystemExit(f"shipped model missing: {model_path}")
@@ -228,27 +228,30 @@ def build_card() -> dict:
                                           "note": "normal non-lymph tissue on phones: not valid, see limitations"},
         },
         "comparison": [
-            {"model": "MobileNetV3-Small, Hibou-B-distilled (shipped)",
-             "pcam_auc": round(test["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
-             "per_slide_s": int8["fp32"]["seconds_per_slide"], "note": "same-graph speed reference, see runtime"},
-            {"model": "MobileNetV3-Small, direct (previous release)",
-             "pcam_auc": round(direct["test"]["auc"], 4), "size_mb": int8["fp32"]["size_mb"],
-             "per_slide_s": int8["fp32"]["seconds_per_slide"], "note": "replaced: worse PLISM phone agreement"},
-            {"model": "Hibou-B foundation-model teacher (head only)",
-             "pcam_auc": round(teacher["test_auc"], 4), "size_mb": None,
-             "per_slide_s": None, "note": "training-time teacher, too large for clinic PCs"},
-            {"model": "MobileNetV3-Small 96 px (study)",
-             "pcam_auc": round(small["test"]["auc"], 4), "size_mb": None,
-             "per_slide_s": None, "note": "native-PCam-size study, never exported"},
-            {"model": "INT8-quantized direct model (study)",
-             "pcam_auc": int8["int8"]["test_auc"], "size_mb": int8["int8"]["size_mb"],
-             "per_slide_s": int8["int8"]["seconds_per_slide"],
-             "note": "72% smaller but slower than FP32 on CPU → not shipped"},
+            {"model": "This model: MobileNetV3-Small, distilled from Hibou-B",
+             "test_auc": round(test["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
+             "per_slide_s": int8["fp32"]["seconds_per_slide"], "clinic_pc": True, "note": "shipped"},
+            {"model": "Same model, trained without the teacher",
+             "test_auc": round(direct["test"]["auc"], 4), "size_mb": int8["fp32"]["size_mb"],
+             "per_slide_s": int8["fp32"]["seconds_per_slide"], "clinic_pc": True,
+             "note": "previous release; worse phone-vs-scanner agreement"},
+            {"model": "Same model, INT8-quantized",
+             "test_auc": int8["int8"]["test_auc"], "size_mb": int8["int8"]["size_mb"],
+             "per_slide_s": int8["int8"]["seconds_per_slide"], "clinic_pc": True,
+             "note": "72% smaller but slower on CPU"},
+            {"model": "Hibou-B pathology foundation model (the teacher)",
+             "test_auc": round(teacher["test_auc"], 4), "size_mb": teacher["cpu"]["size_mb"],
+             "per_slide_s": teacher["cpu"]["cpu_seconds_per_slide"], "clinic_pc": False,
+             "note": "most accurate, but too large and slow for a clinic CPU"},
+            *[{"model": b["model"], "test_auc": b["test_auc"], "size_mb": round(b["params"] * 4 / 1e6, 1),
+               "per_slide_s": None, "clinic_pc": None, "note": "published result, not run here"}
+              for b in literature["baselines"]],
         ],
         "literature": {
-            "note": "Published PCam baselines were not recorded with these runs, so none are quoted: "
-                    "numbers here come only from the evidence files above.",
-            "baselines": [],
+            "note": literature["note"],
+            "source": literature["source"],
+            "url": literature["url"],
+            "baselines": literature["baselines"],
         },
         "limitations": [
             f"Trained only on lymph-node metastases (breast cancer, PCam). Not valid for other organs: "
@@ -340,18 +343,19 @@ def build_organ_card(organ: str) -> dict:
     except (OSError, subprocess.CalledProcessError):
         tuned_commit = None
 
+    teacher_cpu = _load(TEACHER_RESULTS)["cpu"]  # the same frozen Hibou-B backbone for every organ
     comparison = [
-        {"model": f"{spec_files['name']} (shipped)", "pcam_auc": None, "test_auc": round(test["auc"], 4),
+        {"model": "This model: MobileNetV3-Small, distilled from Hibou-B", "test_auc": round(test["auc"], 4),
          "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
-         "note": f"{spec_files['test_split']}; same-graph speed reference, see runtime"},
-        {"model": "Hibou-B foundation-model teacher (head only)", "pcam_auc": None,
-         "test_auc": round(teacher["test_auc"], 4), "size_mb": None, "per_slide_s": None,
-         "note": "training-time teacher, too large for clinic PCs"},
+         "clinic_pc": True, "note": "shipped"},
+        {"model": "Hibou-B pathology foundation model (the teacher)", "test_auc": round(teacher["test_auc"], 4),
+         "size_mb": teacher_cpu["size_mb"], "per_slide_s": teacher_cpu["cpu_seconds_per_slide"],
+         "clinic_pc": False, "note": "most accurate, but too large and slow for a clinic CPU"},
     ]
     if direct:
-        comparison.insert(1, {"model": "Same student without the teacher", "pcam_auc": None,
-                              "test_auc": round(direct["test"]["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
-                              "per_slide_s": int8["fp32"]["seconds_per_slide"], "note": "not shipped"})
+        comparison.insert(1, {"model": "Same model, trained without the teacher", "test_auc": round(direct["test"]["auc"], 4),
+                              "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
+                              "clinic_pc": True, "note": "not shipped"})
 
     return {
         "name": spec_files["name"],
