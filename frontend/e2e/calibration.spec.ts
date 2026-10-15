@@ -12,6 +12,13 @@ async function clickPhoto(page: Page, photo: Locator, x: number, y: number) {
   await page.mouse.click(box.x + x, box.y + y)
 }
 
+/** Opens the calibration dialog from the New slide panel. */
+async function openCalibration(page: Page) {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Calibrate a setup' }).click()
+  return page.getByRole('dialog')
+}
+
 /** µm/px shown on the page, e.g. "This setup sees 0.123 µm per pixel." */
 async function shownUmPerPx(page: Page) {
   const text = await page.getByText(/µm per pixel/).textContent()
@@ -20,12 +27,12 @@ async function shownUmPerPx(page: Page) {
 
 test('calibrates a setup from a micrometer photo', async ({ page, backend }) => {
   await useLanguage(page, 'en')
-  await page.goto('/calibrate')
-  await expect(page.getByRole('heading', { name: 'Microscope calibration' })).toBeVisible()
-  await expect(page.getByText('No calibrated setup yet.')).toBeVisible()
+  const dialog = await openCalibration(page)
+  await expect(dialog.getByRole('heading', { name: 'Microscope calibration' })).toBeVisible()
+  await expect(dialog.getByText('No calibrated setup yet.')).toBeVisible()
 
-  await page.getByLabel('Setup name').fill('Lab scope + Redmi 12')
-  await page.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
+  await dialog.getByLabel('Setup name').fill('Lab scope + Redmi 12')
+  await dialog.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
   const photo = page.getByRole('img', { name: 'Micrometer photo' })
   await expect(photo).toBeVisible()
   await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
@@ -36,16 +43,18 @@ test('calibrates a setup from a micrometer photo', async ({ page, backend }) => 
   await expect(page.getByText(/µm per pixel/)).toBeVisible()
 
   await page.getByRole('button', { name: 'Save setup' }).click()
-  await expect(page.getByText(/saved at .* µm\/px/)).toBeVisible()
-  await expect(page.getByText('Lab scope + Redmi 12', { exact: true })).toBeVisible()
+  // Saving closes the dialog and selects the new setup for the next upload.
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(backend.setups).toHaveLength(1)
   expect(backend.setups[0]).toMatchObject({ name: 'Lab scope + Redmi 12', calibration_objective: '40x' })
+  await expect(page.getByLabel('Microscope setup')).toHaveValue(String(backend.setups[0].id))
+  await expect(page.getByLabel('Objective')).toHaveValue('40x')
 })
 
 test('zooming in keeps the marks on the same image pixels', async ({ page }) => {
   await useLanguage(page, 'en')
-  await page.goto('/calibrate')
-  await page.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
+  const dialog = await openCalibration(page)
+  await dialog.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
   const photo = page.getByRole('img', { name: 'Micrometer photo' })
   await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
   await photo.scrollIntoViewIfNeeded()
@@ -126,4 +135,11 @@ test('slide page warns without calibration and shows the scale when calibrated',
 
   await page.goto('/slides/13')
   await expect(page.getByText('Scale note from the AI engine: no_scale_info')).toBeVisible()
+})
+
+test('the old calibration address goes to the worklist, where calibration is a dialog', async ({ page }) => {
+  await useLanguage(page, 'en')
+  await page.goto('/calibrate')
+  await expect(page).toHaveURL('/')
+  await expect(page.getByRole('button', { name: 'Calibrate a setup' })).toBeVisible()
 })

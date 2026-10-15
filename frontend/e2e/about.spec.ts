@@ -26,11 +26,11 @@ test('about page shows the essentials and a model comparison', async ({ page, ba
   expect(backend.posts).toEqual([]) // the About page only GETs
 })
 
-test('header has no calibration link; calibration is reached from the upload panel', async ({ page }) => {
+test('header has no calibration link; calibration opens from the New slide panel', async ({ page }) => {
   await useLanguage(page, 'en')
   await page.goto('/')
   await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Calibration' })).toHaveCount(0)
-  await expect(page.locator('a[href="/calibrate"]').first()).toBeVisible()
+  await expect(page.getByRole('complementary').getByRole('button', { name: 'Calibrate a setup' })).toBeVisible()
 })
 
 test('slide viewer labels the model version that scored it', async ({ page, backend }) => {

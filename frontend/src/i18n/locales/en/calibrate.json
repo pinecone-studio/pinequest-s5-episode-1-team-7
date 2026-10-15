@@ -1,6 +1,6 @@
 {
   "title": "Microscope calibration",
-  "intro": "Photograph a stage micrometer once per microscope + phone + adapter, then click two marks a known distance apart. Every later capture, at any objective, is resized to the AI's training magnification from this one calibration.",
+  "close": "Close",
   "setups": {
     "title": "Calibrated setups",
     "empty": "No calibrated setup yet. Add the first one below.",
