@@ -155,7 +155,7 @@ desktop app's About page, and every scored slide records the model name + hash.
 ## Heatmap overlay (step 7)
 `pipeline/heatmap.py` writes an RGBA PNG the size of the photo, for the viewer's overlay:
 - **Colour:** patch P_malignant, green 0 → yellow 0.5 → red 1. It is interpolated between the centres of scored tiles, so the overlay is smooth rather than blocky, and unscored background tiles don't pull it towards green.
-- **Alpha:** only tissue pixels of scored tiles are opaque, using the tissue mask from step 2. White background and fat holes stay clear. The UI applies the opacity slider.
+- **Alpha:** every tissue pixel is opaque, using the tissue mask from step 2, including tissue in tiles the AI didn't score (under half tissue), which takes the colour of the nearest scored tile. White background and fat holes stay clear. The UI applies the opacity slider.
 - **Hotspots:** tiles with P ≥ 0.8 are outlined in bright cyan, clipped to tissue and with adjacent tiles merged, ignoring specks under a quarter tile (TDD 6.2 focus cues). The outline is part of the same PNG, so it fades with the opacity slider too.
 
 A 12 MP capture takes ~0.45 s for the heatmap and ~0.9 s for the whole `analyze_slide` (i5-13400F). Grad-CAM is not implemented: it needs gradients, meaning PyTorch (~2 GB) or a second gradient model on the clinic PC, and the patch map already shows where to look at tile resolution.

@@ -101,3 +101,29 @@ def test_no_outline_below_hotspot_probability():
     layer = render_heatmap(tiles, np.full(9, HOTSPOT_PROB - 0.05))
 
     assert not (layer[..., :3] == HOTSPOT_COLOR).all(axis=-1).any()
+
+
+def test_tissue_in_unscored_tiles_takes_the_nearest_scored_colour():
+    tiles = grid_tiles(1, 4)
+    scored = replace(tiles, coords=np.array([[0, 0]]))  # only the first tile had enough tissue
+    tissue = np.zeros((224, 4 * 224), dtype=bool)
+    tissue[:, :112] = True       # tissue in the scored tile
+    tissue[:, 3 * 224:] = True   # and in a far tile the AI skipped
+    # tile 1 and 2 are glass
+
+    layer = render_heatmap(scored, np.array([0.9]), tissue)
+
+    assert layer[112, 3 * 224 + 112, 3] == 255  # skipped tissue is coloured...
+    np.testing.assert_allclose(layer[112, 3 * 224 + 112, :3], probability_colors(np.array([0.9]))[0], atol=1)  # LUT rounding
+    assert layer[112, 2 * 224 + 112, 3] == 0    # ...glass stays clear
+
+
+def test_hotspot_outline_only_uses_scored_tiles():
+    tiles = grid_tiles(1, 3)
+    scored = replace(tiles, coords=np.array([[0, 0]]))
+    tissue = np.ones((224, 3 * 224), dtype=bool)
+
+    layer = render_heatmap(scored, np.array([0.99]), tissue)
+
+    hot = np.array([is_hotspot(px) for px in layer[112, :]])
+    assert hot[:224].any() and not hot[300:].any()  # the filled-in tiles get colour, not an outline
