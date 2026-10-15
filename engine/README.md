@@ -73,6 +73,37 @@ Static QDQ quantization of the Conv and Gemm layers, calibrated on 512 PCam trai
 
 INT8 keeps accuracy and is 72% smaller, but it is **slower** than FP32: MobileNetV3-Small is so small that the extra quantize/dequantize steps cost more than the 8-bit maths saves. Use `model_fp32.onnx` at runtime; `model_int8.onnx` only helps where file size matters. INT8 does pay off for bigger models: ResNet-18 went from 1.29 s / 44.8 MB to 0.43 s / 11.4 MB with near-identical outputs, but that is still slower than MobileNetV3-Small in FP32.
 
+## Tissue mask (step 2)
+`pipeline/masking.py` decides which pixels are tissue. Only tiles that are at least half tissue are scored, and the heatmap is drawn on tissue pixels only.
+
+**How it works:** tissue is found by its H&E colour, using `min(R, B) − G`. Haematoxylin and eosin both absorb green, so in tissue green is below both red and blue. Glass, fat and gaps are white, and a phone's colour cast tints them yellow, green or blue, never with green lowest. The details:
+- If the brightest pixels have green above red or blue, the photo has a green / yellow cast. That amount is added back, scaled by each pixel's brightness. It is never subtracted, so an all-pink photo with no background is not erased.
+- The signal is smoothed over 5 × 5 pixels, so noise on white glass is not tissue.
+- Otsu picks the threshold per image, clamped to 4–10.
+- Near-black pixels (the eyepiece rim) are excluded.
+
+**Why it changed (15 Oct):** it used to threshold HSV saturation, clamped to 20–60. That failed two ways:
+- On photos with strongly stained areas, Otsu followed the strong stain up to the cap, so pale tissue was dropped. On the demo photos, whole squares of real tissue got no score.
+- On phones, tinted glass is as saturated as pale eosin. Phone photos of glass and lumen were marked as tissue, and pale tissue was missed.
+
+**Evidence (PLISM, 150 random fields, the same field photographed by every device):**
+
+| | Tissue coverage | Agreement with the GT450 scanner's mask (IoU) |
+|---|---|---|
+| Old mask, scanners | 0.35–0.61 | 0.55–0.66 |
+| **New mask, scanners** | **0.65–0.86** | **0.72–0.75** |
+| Old mask, phones | 0.30–0.43 | 0.43–0.54 |
+| **New mask, phones** | **0.55–0.71** | **0.61–0.74** |
+
+- On background-heavy fields (empty glass, fat, gland lumen), the new mask leaves the background out on every device, while the old one marked a phone's yellow-green glass as tissue.
+- Demo photos at 0.972 µm/px: 124–132 of 192 tiles are scored instead of 88–103. Every demo photo keeps its flag (see `demo/README.md`).
+
+**Cost:** the mask takes ~0.2 s on a 12 MP photo, against 0.04 s before. Scoring the extra tissue tiles adds more, which is the point of the change.
+
+**Limits:**
+- A photo with a pinkish colour cast is not corrected, and would mark pink-tinted glass as tissue. The cap of 10, rather than 8, keeps a margin.
+- Re-check on real phone captures from our setup.
+
 ## Inference (step 5)
 `pipeline/inference.py` runs the exported model inside `analyze_slide()`:
 - Model: `model/model_fp32.onnx`, or the file in `TRIAGE_MODEL_PATH`. It is committed (6.4 MB, MobileNetV3-Small at 224 px distilled from Hibou-B, PCam test AUC 0.969); re-export it as above after retraining, and re-run `training.tune_scoring` (step 6). **If it is missing, `analyze_slide` raises `FileNotFoundError`** and the backend marks the slide FAILED with that message. There is no silent fallback to fake scores.
@@ -81,7 +112,7 @@ INT8 keeps accuracy and is 72% smaller, but it is **slower** than FP32: MobileNe
 - onnxruntime is imported on first use. `backend/requirements.txt` must include it (step 8, coordinate with the backend owner); without it, every slide fails with `No module named 'onnxruntime'`.
 - Tests use `tests/fixtures/tiny_model.onnx` (449 bytes, same contract), so they need neither torch nor the real model.
 
-A 12 MP capture (~200 tissue patches) takes about 0.6 s end to end on CPU (i5-13400F), including tiling, masking and the heatmap.
+A 12 MP capture (~175 tissue patches) takes about 1 s end to end on CPU (i5-13400F), including tiling, masking and the heatmap. The tissue mask is ~0.2 s of that (see "Tissue mask" above).
 
 ## Slide score and risk flag (step 6)
 `pipeline/scoring.py` turns the patch probabilities into one score and a flag:
