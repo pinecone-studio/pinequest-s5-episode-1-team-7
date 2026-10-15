@@ -132,22 +132,6 @@
       "note": "shipped"
     },
     {
-      "model": "Same model, trained without the teacher",
-      "test_auc": 0.9604,
-      "size_mb": 6.42,
-      "per_slide_s": 0.101,
-      "clinic_pc": true,
-      "note": "previous release; worse phone-vs-scanner agreement"
-    },
-    {
-      "model": "Same model, INT8-quantized",
-      "test_auc": 0.9628,
-      "size_mb": 1.79,
-      "per_slide_s": 0.152,
-      "clinic_pc": true,
-      "note": "72% smaller but slower on CPU"
-    },
-    {
       "model": "Hibou-B pathology foundation model (the teacher)",
       "test_auc": 0.9842,
       "size_mb": 343,
@@ -198,8 +182,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-15T09:21:30+00:00",
-    "repo_commit": "db2909de148f1ca9ae49b2eba83e3972bedbe9f8",
+    "at": "2026-10-15T09:34:14+00:00",
+    "repo_commit": "b0a8053aaf0c11489f8f0192b516b5ebbe3482e2",
     "generator": "training/make_model_card.py"
   }
 }

@@ -30,7 +30,6 @@ SHIPPED_FILE = "model_fp32.onnx"
 CARD_PATH = MODEL_DIR / "model_card.json"
 
 MAIN_RESULTS = "pcam_mobilenet_v3_small_224_kd-hibou.json"
-DIRECT_RESULTS = "pcam_mobilenet_v3_small_224.json"
 TEACHER_RESULTS = "teacher_hibou-b.json"
 SCORING_RESULTS = "slide_scoring.json"
 PLISM_RESULTS = "plism_model_fp32_kd-hibou.json"
@@ -106,7 +105,6 @@ def _device_table(plism: dict) -> tuple[dict, dict]:
 
 def build_card() -> dict:
     main = _load(MAIN_RESULTS)
-    direct = _load(DIRECT_RESULTS)
     teacher = _load(TEACHER_RESULTS)
     scoring = _load(SCORING_RESULTS)
     plism = _load(PLISM_RESULTS)
@@ -227,18 +225,12 @@ def build_card() -> dict:
             "other_tissues_false_alarm": {"min": min(other_fa), "max": max(other_fa),
                                           "note": "normal non-lymph tissue on phones: not valid, see limitations"},
         },
+        # Only completely different models: variants of the same network (without the teacher,
+        # INT8) are covered in engine/README.md, not on the About page.
         "comparison": [
             {"model": "This model: MobileNetV3-Small, distilled from Hibou-B",
              "test_auc": round(test["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
              "per_slide_s": int8["fp32"]["seconds_per_slide"], "clinic_pc": True, "note": "shipped"},
-            {"model": "Same model, trained without the teacher",
-             "test_auc": round(direct["test"]["auc"], 4), "size_mb": int8["fp32"]["size_mb"],
-             "per_slide_s": int8["fp32"]["seconds_per_slide"], "clinic_pc": True,
-             "note": "previous release; worse phone-vs-scanner agreement"},
-            {"model": "Same model, INT8-quantized",
-             "test_auc": int8["int8"]["test_auc"], "size_mb": int8["int8"]["size_mb"],
-             "per_slide_s": int8["int8"]["seconds_per_slide"], "clinic_pc": True,
-             "note": "72% smaller but slower on CPU"},
             {"model": "Hibou-B pathology foundation model (the teacher)",
              "test_auc": round(teacher["test_auc"], 4), "size_mb": teacher["cpu"]["size_mb"],
              "per_slide_s": teacher["cpu"]["cpu_seconds_per_slide"], "clinic_pc": False,
@@ -280,7 +272,6 @@ ORGAN_CARDS = {
         "trained_on": "colorectal tissue: tumour epithelium vs 8 non-tumour classes (NCT-CRC-HE-100K)",
         "test_split": "CRC-VAL-HE-7K test half",
         "main": "colon_mobilenet_v3_small_224_kd-hibou.json",
-        "direct": "colon_mobilenet_v3_small_224.json",  # optional: same student without the teacher
         "teacher": "teacher_hibou-b_nct_crc.json",
         "scoring": "slide_scoring_colon.json",
         "plism": "plism_colon_model_fp32.json",
@@ -303,7 +294,6 @@ def build_organ_card(organ: str) -> dict:
     teacher = _load(spec_files["teacher"])
     scoring = _load(spec_files["scoring"])
     plism = _load(spec_files["plism"])
-    direct = _load(spec_files["direct"]) if (RESULTS / spec_files["direct"]).exists() else None
     int8 = _load(INT8_RESULTS)
     model_path = spec.model_path
     if not model_path.is_file():
@@ -344,6 +334,8 @@ def build_organ_card(organ: str) -> dict:
         tuned_commit = None
 
     teacher_cpu = _load(TEACHER_RESULTS)["cpu"]  # the same frozen Hibou-B backbone for every organ
+    # Only completely different models: variants of the same network (without the teacher, INT8)
+    # are covered in engine/README.md, not on the About page.
     comparison = [
         {"model": "This model: MobileNetV3-Small, distilled from Hibou-B", "test_auc": round(test["auc"], 4),
          "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
@@ -352,10 +344,6 @@ def build_organ_card(organ: str) -> dict:
          "size_mb": teacher_cpu["size_mb"], "per_slide_s": teacher_cpu["cpu_seconds_per_slide"],
          "clinic_pc": False, "note": "most accurate, but too large and slow for a clinic CPU"},
     ]
-    if direct:
-        comparison.insert(1, {"model": "Same model, trained without the teacher", "test_auc": round(direct["test"]["auc"], 4),
-                              "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
-                              "clinic_pc": True, "note": "not shipped"})
 
     return {
         "name": spec_files["name"],
