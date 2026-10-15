@@ -42,10 +42,10 @@ export function WorklistPage() {
       <section className="min-w-0" aria-labelledby="worklist-title">
         <div className="mb-4 flex flex-wrap items-end gap-3">
           <div className="min-w-0">
-            <h1 id="worklist-title" className="text-xl font-semibold tracking-tight">
+            <h1 id="worklist-title" className="font-display text-[22px] font-bold tracking-[-0.02em] text-ink">
               {t('title')}
             </h1>
-            <p className="text-sm text-slate-500">{t('subtitle')}</p>
+            <p className="mt-0.5 text-sm text-ink-dim">{t('subtitle')}</p>
           </div>
           <SegmentedControl
             className="ml-auto"
@@ -61,11 +61,11 @@ export function WorklistPage() {
         </div>
 
         {organList.length > 1 && (
-          <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
+          <div className="mb-3 flex items-center gap-2 text-xs text-ink-dim">
             <label className="flex items-center gap-2">
               {t('filter.organ')}
               <select
-                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                className="rounded-[10px] border border-line bg-surface px-2 py-1.5 text-sm text-ink outline-none focus:border-mist-dim"
                 value={organFilter}
                 onChange={(e) => setOrganFilter(e.target.value)}
               >
@@ -93,16 +93,16 @@ export function WorklistPage() {
             {processing.length > 0 && <ProcessingList slides={processing} />}
             <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
               <SortSwitch mode={sortMode} onChange={setSortMode} />
-              <span className="text-xs text-slate-500">{t(sortMode === 'risk' ? 'sort.riskHint' : 'sort.arrivalHint')}</span>
+              <span className="text-xs text-ink-faint">{t(sortMode === 'risk' ? 'sort.riskHint' : 'sort.arrivalHint')}</span>
             </div>
           </>
         )}
-        {tab === 'review' && <p className="mb-3 text-xs text-slate-500">{t('reviewHint')}</p>}
+        {tab === 'review' && <p className="mb-3 text-xs text-ink-faint">{t('reviewHint')}</p>}
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <div className="panel overflow-hidden">
           <div
             aria-hidden
-            className="hidden grid-cols-[120px_minmax(0,1fr)_90px_120px_150px] gap-3 border-b border-slate-200 px-4 py-2 text-xs font-medium tracking-wide text-slate-500 uppercase md:grid dark:border-slate-800"
+            className="hidden grid-cols-[120px_minmax(0,1fr)_90px_120px_150px] gap-3 border-b border-line-soft bg-raised/40 px-4 py-2 font-display text-xs font-bold tracking-[0.06em] text-ink-faint uppercase md:grid"
           >
             <span>{t('column.risk')}</span>
             <span>{t('column.slide')}</span>
@@ -110,11 +110,11 @@ export function WorklistPage() {
             <span>{t('column.score')}</span>
             <span>{t('column.status')}</span>
           </div>
-          {!visible && !error && <p className="p-8 text-center text-sm text-slate-500">{t('common:status.loading')}</p>}
-          {visible?.length === 0 && <p className="p-8 text-center text-sm text-slate-500">{t(`empty.${tab}`)}</p>}
+          {!visible && !error && <p className="p-8 text-center text-sm text-ink-faint">{t('common:status.loading')}</p>}
+          {visible?.length === 0 && <p className="p-8 text-center text-sm text-ink-faint">{t(`empty.${tab}`)}</p>}
           <ul aria-label={t(`tab.${tab}List`)}>
             {visible?.map((s) => (
-              <li key={s.id} ref={rowRef(s.id)} className="relative bg-white dark:bg-slate-900">
+              <li key={s.id} ref={rowRef(s.id)} className="relative bg-surface">
                 <SlideRow s={s} now={now} />
               </li>
             ))}
@@ -122,12 +122,12 @@ export function WorklistPage() {
         </div>
       </section>
 
-      <aside className="lg:sticky lg:top-6 lg:self-start" aria-labelledby="new-slide-title">
-        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <h2 id="new-slide-title" className="mb-1 font-semibold">
+      <aside className="lg:sticky lg:top-[4.5rem] lg:self-start" aria-labelledby="new-slide-title">
+        <div className="panel p-5">
+          <h2 id="new-slide-title" className="font-display text-[15px] font-bold tracking-[-0.01em]">
             {t('upload:title')}
           </h2>
-          <p className="mb-3 text-xs text-slate-500">{t('upload:intro')}</p>
+          <p className="mb-4 text-xs leading-relaxed text-ink-dim">{t('upload:intro')}</p>
           <NewSlidePanel />
         </div>
       </aside>
@@ -144,10 +144,10 @@ function SortSwitch({ mode, onChange }: { mode: SortMode; onChange: (mode: SortM
       role="switch"
       aria-checked={on}
       onClick={() => onChange(on ? 'arrival' : 'risk')}
-      className="inline-flex items-center gap-2 rounded-md text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600"
+      className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-ink-dim transition hover:text-ink focus-visible:outline-2 focus-visible:outline-mist"
     >
-      <span aria-hidden className={cn('relative h-5 w-9 shrink-0 rounded-full transition', on ? 'bg-cyan-700' : 'bg-slate-300 dark:bg-slate-700')}>
-        <span className={cn('absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform', on && 'translate-x-4')} />
+      <span aria-hidden className={cn('relative h-5 w-9 shrink-0 rounded-full transition', on ? 'bg-mist-dim' : 'bg-overlay ring-1 ring-line')}>
+        <span className={cn('absolute top-0.5 left-0.5 size-4 rounded-full bg-ink shadow transition-transform', on && 'translate-x-4')} />
       </span>
       {t('sort.byRisk')}
     </button>
@@ -157,21 +157,21 @@ function SortSwitch({ mode, onChange }: { mode: SortMode; onChange: (mode: SortM
 function Stats({ queued, processing }: { queued: Slide[]; processing: Slide[] }) {
   const { t } = useTranslation('worklist')
   const stats = [
-    { key: 'red', value: queued.filter((s) => s.risk_flag === 'red').length, tone: 'text-red-600 dark:text-red-400' },
-    { key: 'yellow', value: queued.filter((s) => s.risk_flag === 'yellow').length, tone: 'text-amber-600 dark:text-amber-400' },
-    { key: 'urgent', value: queued.filter((s) => s.indication === 'Urgent').length, tone: 'text-rose-700 dark:text-rose-400' },
+    { key: 'red', value: queued.filter((s) => s.risk_flag === 'red').length, tone: 'text-critical' },
+    { key: 'yellow', value: queued.filter((s) => s.risk_flag === 'yellow').length, tone: 'text-high' },
+    { key: 'urgent', value: queued.filter((s) => s.indication === 'Urgent').length, tone: 'text-critical' },
     {
       key: 'processing',
       value: processing.filter((s) => s.state !== 'failed').length,
-      tone: 'text-sky-600 dark:text-sky-400',
+      tone: 'text-info',
     },
   ] as const
   return (
     <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
       {stats.map((s) => (
-        <div key={s.key} className="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-          <dd className={cn('text-2xl font-semibold tabular-nums', s.tone)}>{s.value}</dd>
-          <dt className="text-xs text-slate-500">{t(`stats.${s.key}`)}</dt>
+        <div key={s.key} className="panel px-4 py-3">
+          <dd className={cn('tnum text-[26px] leading-none font-semibold', s.tone)}>{s.value}</dd>
+          <dt className="mt-1.5 text-xs text-ink-faint">{t(`stats.${s.key}`)}</dt>
         </div>
       ))}
     </dl>
@@ -182,8 +182,8 @@ function Stats({ queued, processing }: { queued: Slide[]; processing: Slide[] })
 function ProcessingList({ slides }: { slides: Slide[] }) {
   const { t } = useTranslation(['worklist', 'common'])
   return (
-    <section aria-labelledby="processing-title" className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-      <h2 id="processing-title" className="mb-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
+    <section aria-labelledby="processing-title" className="panel mb-4 px-4 py-3">
+      <h2 id="processing-title" className="mb-2 font-display text-xs font-bold tracking-[0.06em] text-ink-faint uppercase">
         {t('processing.title')}
       </h2>
       <ul className="flex flex-wrap gap-2">
@@ -192,8 +192,8 @@ function ProcessingList({ slides }: { slides: Slide[] }) {
             <Link
               to={`/slides/${s.id}`}
               className={cn(
-                'inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-sm hover:bg-slate-50 dark:hover:bg-slate-800',
-                s.state === 'failed' ? 'border-red-200 dark:border-red-900/60' : 'border-slate-200 dark:border-slate-700',
+                'inline-flex items-center gap-2 rounded-[10px] border border-line-soft bg-canvas px-2.5 py-1 text-sm transition hover:border-mist-dim hover:bg-raised',
+                s.state === 'failed' && 'border-[#5a3436]',
               )}
             >
               <span className="font-medium">{t('common:slide.title', { id: s.id })}</span>

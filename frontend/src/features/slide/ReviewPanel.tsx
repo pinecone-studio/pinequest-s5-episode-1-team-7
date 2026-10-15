@@ -29,8 +29,8 @@ export function ReviewPanel({ slide }: { slide: Slide }) {
   const [pending, setPending] = useState<Decision | null>(null)
 
   const section = (children: ReactNode) => (
-    <section className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-      <h2 className="text-sm font-semibold">{t('review.title')}</h2>
+    <section className="space-y-3 border-t border-line-soft pt-4">
+      <h2 className="font-display text-sm font-bold tracking-[-0.01em]">{t('review.title')}</h2>
       {children}
     </section>
   )
@@ -39,7 +39,7 @@ export function ReviewPanel({ slide }: { slide: Slide }) {
     case 'queued':
       return section(
         <>
-          <p className="text-xs text-slate-500">{t('review.startHint')}</p>
+          <p className="text-xs leading-relaxed text-ink-dim">{t('review.startHint')}</p>
           <Button variant="primary" block disabled={open.isPending} onClick={() => open.mutate()}>
             {t('review.start')}
           </Button>
@@ -67,7 +67,7 @@ export function ReviewPanel({ slide }: { slide: Slide }) {
               </Button>
             ))}
           </div>
-          <p className="text-xs text-slate-500">{t('review.decideHint')}</p>
+          <p className="text-xs leading-relaxed text-ink-dim">{t('review.decideHint')}</p>
           <PriorityMenu slide={slide} />
           <ConfirmDialog
             open={pending != null}
@@ -79,7 +79,7 @@ export function ReviewPanel({ slide }: { slide: Slide }) {
             error={decide.error?.message}
             onConfirm={() => pending && decide.mutate(pending, { onSuccess: () => navigate('/') })}
           >
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{t('common:slide.title', { id: slide.id })}</p>
+            <p className="font-semibold text-ink">{t('common:slide.title', { id: slide.id })}</p>
             <p>{t('review.confirmBody')}</p>
           </ConfirmDialog>
         </>,
@@ -90,7 +90,7 @@ export function ReviewPanel({ slide }: { slide: Slide }) {
     case 'failed':
       return section(
         <>
-          <p className="text-xs text-slate-500">{t('review.retryHint')}</p>
+          <p className="text-xs leading-relaxed text-ink-dim">{t('review.retryHint')}</p>
           <Button block disabled={retry.isPending} onClick={() => retry.mutate()}>
             {t('review.retry')}
           </Button>
@@ -107,15 +107,15 @@ function Archived({ slide }: { slide: Slide }) {
   const f = useFormat()
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-      <dt className="text-slate-500">{t('review.decision')}</dt>
+      <dt className="text-ink-faint">{t('review.decision')}</dt>
       <dd className="font-medium">{slide.decision ? t(`common:decision.${slide.decision}`) : '—'}</dd>
-      <dt className="text-slate-500">{t('review.archivedAt')}</dt>
-      <dd>{f.dateTime(slide.updated_at)}</dd>
+      <dt className="text-ink-faint">{t('review.archivedAt')}</dt>
+      <dd className="tnum">{f.dateTime(slide.updated_at)}</dd>
     </dl>
   )
 }
 
 function ErrorText({ error }: { error: Error | null }) {
   if (!error) return null
-  return <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
+  return <p className="text-sm text-critical">{error.message}</p>
 }

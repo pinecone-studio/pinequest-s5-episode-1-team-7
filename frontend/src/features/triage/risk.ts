@@ -1,13 +1,24 @@
 import type { RiskFlag, Slide } from '../../shared/api/types.ts'
 
-/** Red / yellow / green risk flag colours (TDD 6.1). */
+/**
+ * Red / yellow / green risk flag colours (TDD 6.1).
+ * Dusty, desaturated tones in both modes: readable without neon glare.
+ */
 export const RISK_STYLE: Record<RiskFlag, { badge: string; bar: string; ring: string }> = {
-  red: { badge: 'bg-red-600 text-white', bar: 'bg-red-600', ring: 'border-l-red-600' },
-  yellow: { badge: 'bg-amber-400 text-slate-950', bar: 'bg-amber-400', ring: 'border-l-amber-400' },
+  red: {
+    badge: 'border border-[#dfb9b9] bg-[#f3e2e2] text-[#7a3535] dark:border-[#5a3436] dark:bg-[#3a2426] dark:text-[#eec3c3]',
+    bar: 'bg-[#a85656] dark:bg-[#cf8d8d]',
+    ring: 'border-l-[#a85656] dark:border-l-[#cf8d8d]',
+  },
+  yellow: {
+    badge: 'border border-[#d8c49a] bg-[#f2e8d3] text-[#6d5220] dark:border-[#57492f] dark:bg-[#3a3120] dark:text-[#e6cf9c]',
+    bar: 'bg-[#a5813f] dark:bg-[#c9ac7c]',
+    ring: 'border-l-[#a5813f] dark:border-l-[#c9ac7c]',
+  },
   green: {
-    badge: 'bg-emerald-600/15 text-emerald-800 dark:text-emerald-300',
-    bar: 'bg-emerald-600',
-    ring: 'border-l-emerald-600',
+    badge: 'border border-[#b3d4c2] bg-[#e2efe6] text-[#2f6b4e] dark:border-[#2f4a3e] dark:bg-[#22382f] dark:text-[#b7dcc4]',
+    bar: 'bg-[#4a8f6d] dark:bg-[#8fc0a6]',
+    ring: 'border-l-[#4a8f6d] dark:border-l-[#8fc0a6]',
   },
 }
 

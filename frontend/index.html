@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="mn">
+<html lang="mn" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f141a" />
+    <meta name="description" content="PathTriage — offline AI triage for pathology slides. Prioritisation assistant, not a diagnosis." />
     <title>PathTriage</title>
+    <style>
+      /* First-paint background: matches the app canvas so there is never a white flash. */
+      html { background: #0f141a; }
+      html.light { background: #f4f1ea; }
+    </style>
+    <script>
+      // Default to the eye-friendly dark theme; respect a stored choice, fall back to dark.
+      try {
+        var t = localStorage.getItem('pathtriage.theme');
+        if (t === 'light') document.documentElement.classList.replace('dark', 'light');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

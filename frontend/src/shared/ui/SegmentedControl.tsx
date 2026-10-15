@@ -24,8 +24,8 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
       role="radiogroup"
       aria-label={label}
       className={cn(
-        'flex rounded-md p-0.5 text-sm',
-        tone === 'light' ? 'border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900' : 'bg-white/10',
+        'flex rounded-[10px] border border-line-soft bg-canvas p-1 text-sm',
+        tone === 'dark' && 'border-white/10 bg-white/10',
         className,
       )}
     >
@@ -41,14 +41,12 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
             title={o.title}
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex-1 rounded px-3 py-1 leading-tight transition focus-visible:outline-2 focus-visible:outline-cyan-600 disabled:opacity-35',
-              tone === 'light'
-                ? selected
-                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
-                : selected
-                  ? 'bg-cyan-600 font-medium text-white'
-                  : 'hover:bg-white/10',
+              'flex-1 rounded-lg px-3 py-1.5 font-display text-[13px] font-semibold tracking-[-0.005em] transition focus-visible:outline-2 focus-visible:outline-mist disabled:opacity-35',
+              selected
+                ? 'bg-mist text-mist-ink shadow-[0_4px_12px_-6px_rgb(127_179_168/0.7)]'
+                : 'text-ink-dim hover:bg-raised hover:text-ink',
+              tone === 'dark' && !selected && 'text-ink-dim hover:bg-white/10 hover:text-ink',
+              tone === 'dark' && selected && 'bg-mist text-mist-ink',
             )}
           >
             {o.label}

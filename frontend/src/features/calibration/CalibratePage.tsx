@@ -27,8 +27,8 @@ export function CalibratePage() {
   return (
     <main className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('intro')}</p>
+        <h1 className="font-display text-[22px] font-bold tracking-[-0.02em]">{t('title')}</h1>
+        <p className="mt-1 text-sm text-ink-dim">{t('intro')}</p>
       </div>
       <SetupList />
       <SetupForm />
@@ -46,15 +46,15 @@ function SetupList() {
 
   return (
     <section aria-label={t('setups.title')} className="space-y-2">
-      <h2 className="text-sm font-semibold">{t('setups.title')}</h2>
-      {setups.isPending && <p className="text-sm text-slate-500">{t('common:status.loading')}</p>}
-      {list.length === 0 && !setups.isPending && <p className="text-sm text-slate-500">{t('setups.empty')}</p>}
-      <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+      <h2 className="font-display text-sm font-bold tracking-[-0.01em]">{t('setups.title')}</h2>
+      {setups.isPending && <p className="text-sm text-ink-faint">{t('common:status.loading')}</p>}
+      {list.length === 0 && !setups.isPending && <p className="text-sm text-ink-faint">{t('setups.empty')}</p>}
+      <ul className="divide-y divide-line-soft panel divide-y overflow-hidden">
         {list.map((s) => (
           <li key={s.id} className="flex items-center gap-3 p-3">
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{s.name}</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-faint">
                 {t('setups.umPerPx', { value: s.um_per_px.toFixed(2), objective: s.calibration_objective })}
                 {s.phone_resolution ? ` · ${t('setups.resolution', { value: s.phone_resolution })}` : ''}
               </p>
@@ -141,15 +141,15 @@ function SetupForm() {
 
   return (
     <section aria-label={t('calibrate:form.title')} className="space-y-3">
-      <h2 className="text-sm font-semibold">{t('calibrate:form.title')}</h2>
+      <h2 className="font-display text-sm font-bold tracking-[-0.01em]">{t('calibrate:form.title')}</h2>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('calibrate:form.name')}</span>
+        <span className="mb-1 block text-xs font-medium text-ink-dim">{t('calibrate:form.name')}</span>
         <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('calibrate:form.namePlaceholder')} autoComplete="off" />
       </label>
 
       <div>
-        <span aria-hidden className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+        <span aria-hidden className="mb-1 block text-xs font-medium text-ink-dim">
           {t('calibrate:form.objective')}
         </span>
         <SegmentedControl
@@ -161,7 +161,7 @@ function SetupForm() {
       </div>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('calibrate:form.resolution')}</span>
+        <span className="mb-1 block text-xs font-medium text-ink-dim">{t('calibrate:form.resolution')}</span>
         <input
           className={fieldClass}
           value={resolution}
@@ -173,7 +173,7 @@ function SetupForm() {
       </label>
 
       <div>
-        <span aria-hidden className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+        <span aria-hidden className="mb-1 block text-xs font-medium text-ink-dim">
           {t('calibrate:form.marks')}
         </span>
         {photo ? (
@@ -181,7 +181,7 @@ function SetupForm() {
             {size ? (
               <MicrometerCanvas key={photo} imageUrl={photo} size={size} alt={t('calibrate:form.photo')} marks={marks} onMark={onMark} />
             ) : (
-              <p className="flex h-80 items-center justify-center rounded-lg bg-slate-900 text-sm text-slate-400 sm:h-[28rem]">
+              <p className="flex h-80 items-center justify-center rounded-xl bg-canvas text-sm text-ink-faint ring-1 ring-line-soft sm:h-[28rem]">
                 {t('common:status.loading')}
               </p>
             )}
@@ -201,10 +201,10 @@ function SetupForm() {
                 input.current?.click()
               }
             }}
-            className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 hover:border-cyan-600 focus-visible:outline-2 focus-visible:outline-cyan-600 dark:border-slate-700"
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-line bg-canvas px-4 py-10 text-center text-sm text-ink-faint transition hover:border-mist-dim focus-visible:outline-2 focus-visible:outline-mist"
           >
             <div>
-              <div className="font-medium text-slate-700 dark:text-slate-200">{t('calibrate:form.photo')}</div>
+              <div className="font-display font-bold text-ink-dim">{t('calibrate:form.photo')}</div>
               <div className="mt-1 text-xs">{t('calibrate:form.photoHint')}</div>
             </div>
           </div>
@@ -219,11 +219,11 @@ function SetupForm() {
             e.target.value = ''
           }}
         />
-        <p className="mt-1 text-[11px] text-slate-500">{photo ? t('calibrate:form.marksHint') : t('calibrate:form.photoHint')}</p>
+        <p className="mt-1 text-[11px] text-ink-faint">{photo ? t('calibrate:form.marksHint') : t('calibrate:form.photoHint')}</p>
       </div>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('calibrate:form.distance')}</span>
+        <span className="mb-1 block font-display text-xs font-bold text-ink-dim">{t('calibrate:form.distance')}</span>
         <input
           className={fieldClass}
           type="number"
@@ -235,7 +235,7 @@ function SetupForm() {
         />
       </label>
 
-      <p role="status" className="text-sm text-slate-600 dark:text-slate-300">
+      <p role="status" className="text-sm text-ink-dim">
         {value != null ? t('calibrate:form.result', { value: value.toFixed(3) }) : t('calibrate:form.needMarks')}
       </p>
 

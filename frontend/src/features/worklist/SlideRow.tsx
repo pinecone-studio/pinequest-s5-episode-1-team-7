@@ -15,7 +15,7 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
     <Link
       to={`/slides/${s.id}`}
       className={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b border-l-4 border-b-slate-100 px-4 py-3 transition hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none md:grid-cols-[116px_minmax(0,1fr)_90px_120px_150px] md:items-center dark:border-b-slate-800 dark:hover:bg-slate-800/60 dark:focus-visible:bg-slate-800/60',
+        'group grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b border-l-[3px] border-b-line-soft px-4 py-3 transition duration-150 hover:bg-raised/70 focus-visible:bg-raised/70 focus-visible:outline-none md:grid-cols-[116px_minmax(0,1fr)_90px_120px_150px] md:items-center',
         s.risk_flag ? RISK_STYLE[s.risk_flag].ring : 'border-l-transparent',
       )}
     >
@@ -23,8 +23,10 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
         <RiskBadge flag={s.risk_flag} />
       </span>
       <span className="order-1 min-w-0 md:order-none">
-        <span className="block truncate font-medium">{t('slide.title', { id: s.id })}</span>
-        <span className="block truncate text-xs text-slate-500">
+        <span className="block truncate font-display text-[14px] font-bold tracking-[-0.01em] text-ink">
+          {t('slide.title', { id: s.id })}
+        </span>
+        <span className="tnum block truncate text-xs text-ink-faint">
           {t('slide.code', { code: s.local_hash.slice(0, 8) })} · {f.ago(s.created_at, now)} ·{' '}
           {t(`organ.names.${s.organ ?? 'lymph_node'}`, { defaultValue: s.organ ?? 'lymph_node' })}
         </span>
@@ -37,7 +39,7 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
       </span>
       <span className="order-5 col-span-2 flex flex-wrap items-center gap-2 md:order-none md:col-span-1">
         {s.state === 'archived' && s.decision ? (
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">{t(`decision.${s.decision}`)}</span>
+          <span className="text-xs font-medium text-routine">{t(`decision.${s.decision}`)}</span>
         ) : (
           <StateLabel state={s.state} />
         )}

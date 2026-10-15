@@ -17,12 +17,12 @@ const SlidePage = lazy(() => import('../features/slide/SlidePage.tsx').then((m) 
 export default function App() {
   const { t } = useTranslation()
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-dvh flex-col bg-canvas text-ink">
       <Header />
       <DisclaimerBanner />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <ErrorBoundary>
-          <Suspense fallback={<p className="p-8 text-center text-slate-500">{t('status.loading')}</p>}>
+          <Suspense fallback={<p className="p-8 text-center text-ink-faint">{t('status.loading')}</p>}>
             <Routes>
               <Route path="/" element={<WorklistPage />} />
               <Route path="/slides/:id" element={<SlidePage />} />

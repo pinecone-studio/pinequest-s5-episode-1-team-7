@@ -12,7 +12,7 @@ const pct = (share: number) => `${(share * 100).toFixed(1)}%`
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold">{title}</h2>
+      <h2 className="font-display text-sm font-bold tracking-[-0.01em]">{title}</h2>
       {children}
     </section>
   )
@@ -23,7 +23,7 @@ function Facts({ rows }: { rows: [string, ReactNode][] }) {
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
       {rows.map(([term, value]) => (
         <div key={term} className="contents">
-          <dt className="text-slate-500">{term}</dt>
+          <dt className="text-ink-faint">{term}</dt>
           <dd className="min-w-0 break-words">{value}</dd>
         </div>
       ))}
@@ -33,18 +33,18 @@ function Facts({ rows }: { rows: [string, ReactNode][] }) {
 
 function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+    <div className="overflow-x-auto rounded-lg border border-line-soft">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800/50">
+          <tr className="bg-raised/40">
             {head.map((h) => (
-              <th key={h} scope="col" className="px-3 py-2 font-medium text-slate-600 dark:text-slate-300">
+              <th key={h} scope="col" className="px-3 py-2 font-medium text-ink-dim">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+        <tbody className="divide-y divide-line-soft">
           {rows.map((cells, i) => (
             <tr key={i}>
               {cells.map((c, j) => (
@@ -74,13 +74,13 @@ export function AboutPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('intro')}</p>
+        <h1 className="font-display text-[22px] font-bold tracking-[-0.02em]">{t('title')}</h1>
+        <p className="mt-1 text-sm text-ink-dim">{t('intro')}</p>
       </div>
 
       {organList.length > 1 && (
         <label className="block max-w-xs">
-          <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('organ.label')}</span>
+          <span className="mb-1 block text-xs font-medium text-ink-dim">{t('organ.label')}</span>
           <select className={fieldClass} value={selected ?? ''} onChange={(e) => setOrgan(e.target.value || null)}>
             {organList.map((o) => (
               <option key={o} value={o}>
@@ -91,7 +91,7 @@ export function AboutPage() {
         </label>
       )}
 
-      {model.isPending && <p className="text-sm text-slate-500">{t('common:status.loading')}</p>}
+      {model.isPending && <p className="text-sm text-ink-faint">{t('common:status.loading')}</p>}
       {model.error && <Alert tone="error">{t('unavailable')}</Alert>}
       {model.data && (model.data.card ? <ModelCardView card={model.data.card} fileName={model.data.file.name} provider={model.data.provider} matches={model.data.file.matches_card} /> : <Alert tone="error">{t('unavailable')}</Alert>)}
     </main>
@@ -137,19 +137,19 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
       </Section>
 
       <Section title={t('patch.title')}>
-        <p className="text-xs text-slate-500">{t('patch.split')}: {patch.split}</p>
+        <p className="text-xs text-ink-faint">{t('patch.split')}: {patch.split}</p>
         <Table
           head={[t('patch.threshold'), t('patch.auc'), t('patch.accuracy'), t('patch.sensitivity'), t('patch.specificity')]}
           rows={[[patch.threshold, patch.auc.toFixed(4), patch.accuracy.toFixed(4), patch.sensitivity.toFixed(4), patch.specificity.toFixed(4)]]}
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-faint">
           {t('patch.op90', { threshold: patch.at_90_sensitivity.threshold, sens: patch.at_90_sensitivity.sensitivity.toFixed(3), spec: patch.at_90_sensitivity.specificity.toFixed(3) })}
         </p>
       </Section>
 
       <Section title={t('slide.title')}>
-        <p className="text-xs text-slate-500">{t('slide.formula', { formula: slide.formula })}</p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-faint">{t('slide.formula', { formula: slide.formula })}</p>
+        <p className="text-xs text-ink-faint">
           {tuned ? t('slide.thresholds', { red: slide.thresholds.red, yellow: slide.thresholds.yellow, when: tuned }) : t('slide.thresholdsUnknown', { red: slide.thresholds.red, yellow: slide.thresholds.yellow })}
         </p>
         <Table
@@ -167,7 +167,7 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
       </Section>
 
       <Section title={t('plism.title')}>
-        <p className="text-xs text-slate-500">{t('plism.note', { metric: card.plism.metric, at: card.plism.at })}</p>
+        <p className="text-xs text-ink-faint">{t('plism.note', { metric: card.plism.metric, at: card.plism.at })}</p>
         <Table
           head={[t('plism.device'), t('plism.kind'), t('plism.flagged')]}
           rows={[
@@ -185,13 +185,13 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
             row.pcam_auc == null ? '—' : row.pcam_auc.toFixed(4),
             row.size_mb == null ? '—' : `${row.size_mb} MB`,
             row.per_slide_s == null ? '—' : `≈${row.per_slide_s} s`,
-            <span key="n" className="text-xs text-slate-500">{row.note}</span>,
+            <span key="n" className="text-xs text-ink-faint">{row.note}</span>,
           ])}
         />
       </Section>
 
       <Section title={t('limitations.title')}>
-        <ul className="list-disc space-y-1 pl-5 text-sm">
+        <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink-dim">
           {card.limitations.map((item) => (
             <li key={item}>{item}</li>
           ))}

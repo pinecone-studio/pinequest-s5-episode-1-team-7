@@ -1,22 +1,157 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --color-critical: #dc2626;
-  --color-high: #d97706;
-  --color-routine: #059669;
+  /* ——— Typography: Manrope (display) + Inter (UI) + JetBrains Mono (numbers) ———
+     All three ship locally via @fontsource-variable (offline clinic PCs)
+     and all cover Mongolian Cyrillic. */
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Mongolian", sans-serif;
+  --font-display: "Manrope Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* ——— Eye-friendly dark canvas: warm charcoal-blue, never pure black ——— */
+  --color-canvas: #0f141a;
+  --color-surface: #161d25;
+  --color-raised: #1d2631;
+  --color-overlay: #232f3d;
+  --color-line: #2a3544;
+  --color-line-soft: #212b37;
+  --color-ink: #d9e1e8;
+  --color-ink-dim: #9aa7b6;
+  --color-ink-faint: #6e7e8f;
+
+  /* ——— Primary accent: muted eucalyptus, not neon cyan ——— */
+  --color-mist: #7fb3a8;
+  --color-mist-strong: #93c4ba;
+  --color-mist-dim: #587f78;
+  --color-mist-ink: #0c1514;
+  --color-mist-wash: #1a2b28;
+
+  /* ——— Risk flags: dusty, desaturated — readable without shouting ——— */
+  --color-critical: #cf8d8d;
+  --color-high: #c9ac7c;
+  --color-routine: #8fc0a6;
+  --color-info: #8fa9c6;
+  --color-vio: #b3a6d6;
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+  /* Warm-paper light theme: low-glare beige, never pure white. */
+  --color-canvas: #f4f1ea;
+  --color-surface: #fffdf8;
+  --color-raised: #ece6d8;
+  --color-overlay: #e4dccb;
+  --color-line: #d9cfba;
+  --color-line-soft: #e3dac7;
+  --color-ink: #2b3036;
+  --color-ink-dim: #5d6771;
+  --color-ink-faint: #8b938d;
+  --color-mist: #3f6f66;
+  --color-mist-strong: #35605a;
+  --color-mist-dim: #9dbfb7;
+  --color-mist-ink: #f4f1ea;
+  --color-mist-wash: #dce8e2;
+  --color-critical: #8f3d3d;
+  --color-high: #8a6a2f;
+  --color-routine: #2f6b4e;
+  --color-info: #3d5f86;
+  --color-vio: #5d4f9e;
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-canvas text-ink font-sans;
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: 0.002em;
+  min-height: 100dvh;
+}
+
+/* Warm-paper light fallback (only when the user explicitly picks light). */
+html.light body {
+  background: #f4f1ea;
+  color: #2b3036;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+::selection {
+  background: rgb(127 179 168 / 0.28);
+}
+
+/* Thin, quiet scrollbars that don't flash white. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334052 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #334052;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Consistent, soft keyboard focus everywhere. */
+:where(a, button, input, select, textarea, [role="button"], [role="switch"], summary):focus-visible {
+  outline: 2px solid var(--color-mist);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Muted numeric text: scores, hashes, timestamps. */
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Reusable soft panel: 1px line + faint top highlight instead of a hard shadow. */
+.panel {
+  @apply rounded-xl border bg-surface;
+  border-color: var(--color-line-soft);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 12px 32px -16px rgb(0 0 0 / 0.55);
+}
+html.light .panel {
+  background: #fffdf8;
+  border-color: #e4ddd0;
+  box-shadow: 0 1px 2px rgb(60 50 30 / 0.06);
+}
+
+.panel-soft {
+  @apply rounded-xl border;
+  background: rgb(255 255 255 / 0.02);
+  border-color: var(--color-line-soft);
 }
 
 .leaflet-container {
-  background: #0b0f17;
+  background: #0c1116;
   font: inherit;
 }
 
@@ -73,5 +208,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .guide-pin--focus::after {
     animation: none;
+  }
+  .reorder-move {
+    transition: none;
   }
 }

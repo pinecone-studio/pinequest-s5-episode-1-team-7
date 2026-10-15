@@ -33,7 +33,7 @@ export function NewSlidePanel() {
   return (
     <div className="space-y-3">
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('field.patient')}</span>
+        <span className="mb-1 block text-xs font-display font-bold text-ink-dim">{t('field.patient')}</span>
         <input
           className={fieldClass}
           value={patientId}
@@ -41,12 +41,12 @@ export function NewSlidePanel() {
           autoComplete="off"
           aria-describedby={`${ids}-privacy`}
         />
-        <span id={`${ids}-privacy`} className="mt-1 block text-[11px] text-slate-500">
+        <span id={`${ids}-privacy`} className="mt-1 block text-[11px] leading-relaxed text-ink-faint">
           {t('field.patientHint')}
         </span>
       </label>
       <div>
-        <span aria-hidden className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+        <span aria-hidden className="mb-1 block text-xs font-display font-bold text-ink-dim">
           {t('field.indication')}
         </span>
         <SegmentedControl
@@ -66,7 +66,7 @@ export function NewSlidePanel() {
 
       <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} organ={organ} />
       {done != null && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p role="status" className="text-sm text-routine">
           {t('added', { id: done })}
         </p>
       )}
@@ -93,7 +93,7 @@ function OrganFields({ organ, onOrganChange }: { organ: string; onOrganChange: (
 
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('organ.label')}</span>
+      <span className="mb-1 block text-xs font-display font-bold text-ink-dim">{t('organ.label')}</span>
       <select className={fieldClass} value={organ} onChange={(e) => onOrganChange(e.target.value)} required>
         <option value="">{t('organ.pick')}</option>
         {list.map((o) => (
@@ -102,7 +102,7 @@ function OrganFields({ organ, onOrganChange }: { organ: string; onOrganChange: (
           </option>
         ))}
       </select>
-      <span className="mt-1 block text-[11px] text-slate-500">{t('organ.hint')}</span>
+      <span className="mt-1 block text-[11px] leading-relaxed text-ink-faint">{t('organ.hint')}</span>
     </label>
   )
 }
@@ -127,7 +127,7 @@ function ScaleFields({
   return (
     <div className="grid grid-cols-2 gap-2">
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('setup.label')}</span>
+        <span className="mb-1 block text-xs font-display font-bold text-ink-dim">{t('setup.label')}</span>
         <select
           className={fieldClass}
           value={setupId ?? ''}
@@ -150,7 +150,7 @@ function ScaleFields({
         </select>
       </label>
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('objective.label')}</span>
+        <span className="mb-1 block text-xs font-display font-bold text-ink-dim">{t('objective.label')}</span>
         <select
           className={fieldClass}
           value={objective}
@@ -165,8 +165,8 @@ function ScaleFields({
           ))}
         </select>
       </label>
-      <p className="col-span-2 text-[11px] text-slate-500">
-        {t('setup.hint')} <Link to="/calibrate" className="text-cyan-700 underline dark:text-cyan-400">{t('setup.calibrate')}</Link>
+      <p className="col-span-2 text-[11px] leading-relaxed text-ink-faint">
+        {t('setup.hint')} <Link to="/calibrate" className="text-mist underline hover:text-mist-strong">{t('setup.calibrate')}</Link>
       </p>
     </div>
   )
@@ -245,16 +245,16 @@ function UploadForm({ patientId, indication, onDone, setupId, objective, organ }
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={cn(
-          'relative flex cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed text-center text-sm transition focus-visible:outline-2 focus-visible:outline-cyan-600',
+          'relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed text-center text-sm transition focus-visible:outline-2 focus-visible:outline-mist',
           file ? 'py-3' : 'aspect-[4/3]',
-          dragging ? 'border-cyan-600 bg-cyan-50 dark:bg-cyan-950/30' : 'border-slate-300 hover:border-cyan-600 dark:border-slate-700',
+          dragging ? 'border-mist-dim bg-mist-wash' : 'border-line bg-canvas hover:border-mist-dim',
         )}
       >
         {file ? (
-          <img src={preview} alt={t('selectedPhoto')} className="max-h-56 rounded object-contain" />
+          <img src={preview} alt={t('selectedPhoto')} className="max-h-56 rounded-lg object-contain" />
         ) : (
-          <div className="px-4 text-slate-500">
-            <div className="font-medium text-slate-700 dark:text-slate-200">{t('drop.title')}</div>
+          <div className="px-4 text-ink-faint">
+            <div className="font-display font-bold text-ink-dim">{t('drop.title')}</div>
             <div className="mt-1 text-xs">{t('drop.formats')}</div>
           </div>
         )}
@@ -271,7 +271,7 @@ function UploadForm({ patientId, indication, onDone, setupId, objective, organ }
         />
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-critical">
           {error}
         </p>
       )}
