@@ -21,21 +21,16 @@
     "auc": "Test AUC",
     "size": "Size",
     "speed": "Per slide",
-    "clinicPc": "Runs on a clinic PC",
-    "yes": "Yes",
-    "no": "No",
     "aucHelp": "AUC: 1.0 is perfect, 0.5 is guessing. Speed is on a desktop CPU with no GPU.",
-    "published": "Published results are quoted from"
-  },
-  "details": {
-    "title": "Technical details",
-    "version": "Version",
-    "sha": "File SHA-256",
-    "input": "Input",
-    "inputValue": "{{px}} px tiles at {{scale}} µm/px",
-    "flags": "Risk flags",
-    "flagsValue": "red ≥ {{red}}, yellow ≥ {{yellow}}",
-    "limitations": "Limitations and intended use"
+    "published": "Published results are quoted from",
+    "runsLocally": "Runs locally",
+    "local": {
+      "yes": "Yes",
+      "slow": "Yes, slowly",
+      "no": "No"
+    },
+    "estimated": "≈{{s}} s (est. {{low}}–{{high}})",
+    "localHelp": "\"Yes, slowly\": it runs on this PC, but over the 1.5 s per slide target. Speeds marked est. are estimated here with a network of the same size, because papers don't report speed."
   },
   "organ": {
     "label": "Organ model"

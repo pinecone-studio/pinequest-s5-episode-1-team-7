@@ -81,8 +81,18 @@ export function AboutPage() {
 function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard; fileName: string | null; provider: string | null; matches: boolean }) {
   const { t } = useTranslation(['about', 'common'])
   const patch = card.patch_metrics
-  const slide = card.slide_metrics
-  const yesNo = (v: boolean | null | undefined) => (v == null ? '—' : v ? t('compare.yes') : t('compare.no'))
+  const local = (row: ModelCard['comparison'][number]) => {
+    // Older cards (before 15 Oct) had a clinic_pc boolean instead of local.
+    const value = row.local ?? (row.clinic_pc == null ? null : row.clinic_pc ? 'yes' : 'no')
+    return value == null ? '—' : t(`compare.local.${value}`)
+  }
+  const speed = (row: ModelCard['comparison'][number]) => {
+    if (row.per_slide_s == null) return '—'
+    const range = row.per_slide_range_s
+    return row.speed_estimated && range
+      ? t('compare.estimated', { s: row.per_slide_s, low: range[0], high: range[1] })
+      : `≈${row.per_slide_s} s`
+  }
 
   return (
     <>
@@ -111,7 +121,7 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-raised/40">
-                {[t('compare.model'), t('compare.auc'), t('compare.size'), t('compare.speed'), t('compare.clinicPc')].map((h) => (
+                {[t('compare.model'), t('compare.auc'), t('compare.size'), t('compare.speed'), t('compare.runsLocally')].map((h) => (
                   <th key={h} scope="col" className="px-3 py-2 font-medium text-ink-dim">
                     {h}
                   </th>
@@ -129,8 +139,8 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap tabular-nums">{auc == null ? '—' : formatAuc(auc)}</td>
                     <td className="px-3 py-2 whitespace-nowrap tabular-nums">{row.size_mb == null ? '—' : `${row.size_mb} MB`}</td>
-                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">{row.per_slide_s == null ? '—' : `≈${row.per_slide_s} s`}</td>
-                    <td className="px-3 py-2">{yesNo(row.clinic_pc)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">{speed(row)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{local(row)}</td>
                   </tr>
                 )
               })}
@@ -138,7 +148,7 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
           </table>
         </div>
         <p className="text-xs leading-relaxed text-ink-faint">
-          {t('compare.aucHelp')}{' '}
+          {t('compare.aucHelp')} {t('compare.localHelp')}{' '}
           {card.literature.source && (
             <>
               {t('compare.published')}{' '}
@@ -155,27 +165,6 @@ function ModelCardView({ card, fileName, provider, matches }: { card: ModelCard;
         </p>
       </Section>
 
-      <details className="group rounded-lg border border-line-soft px-4 py-3 text-sm">
-        <summary className="cursor-pointer font-display font-bold text-ink-dim group-open:mb-3">{t('details.title')}</summary>
-        <div className="space-y-4">
-          <Facts
-            rows={[
-              [t('details.version'), <code key="v">{card.version}</code>],
-              [t('details.sha'), <code key="s" className="break-all text-xs">{card.file.sha256}</code>],
-              [t('details.input'), t('details.inputValue', { px: card.architecture.input_px, scale: card.architecture.input_scale_um_per_px })],
-              [t('details.flags'), t('details.flagsValue', { red: slide.thresholds.red, yellow: slide.thresholds.yellow })],
-            ]}
-          />
-          <div>
-            <h3 className="mb-1.5 text-xs font-semibold text-ink-dim">{t('details.limitations')}</h3>
-            <ul className="list-disc space-y-1.5 pl-5 leading-relaxed text-ink-dim">
-              {card.limitations.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </details>
     </>
   )
 }

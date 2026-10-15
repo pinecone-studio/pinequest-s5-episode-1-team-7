@@ -128,7 +128,7 @@
       "test_auc": 0.9687,
       "size_mb": 6.42,
       "per_slide_s": 0.101,
-      "clinic_pc": true,
+      "local": "yes",
       "note": "shipped"
     },
     {
@@ -136,24 +136,34 @@
       "test_auc": 0.9842,
       "size_mb": 343,
       "per_slide_s": 23.0,
-      "clinic_pc": false,
-      "note": "most accurate, but too large and slow for a clinic CPU"
+      "local": "slow",
+      "note": "most accurate, but about 230x slower than this model on a CPU"
     },
     {
       "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
       "test_auc": 0.963,
       "size_mb": 0.5,
-      "per_slide_s": null,
-      "clinic_pc": null,
-      "note": "published result, not run here"
+      "per_slide_s": 3.58,
+      "per_slide_range_s": [
+        1.11,
+        11.57
+      ],
+      "speed_estimated": true,
+      "local": "slow",
+      "note": "published accuracy; speed estimated"
     },
     {
       "model": "DenseNet (Veeling et al. 2018)",
       "test_auc": 0.955,
       "size_mb": 0.5,
-      "per_slide_s": null,
-      "clinic_pc": null,
-      "note": "published result, not run here"
+      "per_slide_s": 0.48,
+      "per_slide_range_s": [
+        0.15,
+        1.56
+      ],
+      "speed_estimated": true,
+      "local": "yes",
+      "note": "published accuracy; speed estimated"
     }
   ],
   "literature": {
@@ -165,13 +175,27 @@
         "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
         "params": 119000,
         "test_auc": 0.963,
-        "test_accuracy": 0.898
+        "test_accuracy": 0.898,
+        "per_slide_s": 3.58,
+        "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network; x8 for rotation-equivariant layers",
+        "per_slide_range_s": [
+          1.11,
+          11.57
+        ],
+        "local": "slow"
       },
       {
         "model": "DenseNet (Veeling et al. 2018)",
         "params": 128000,
         "test_auc": 0.955,
-        "test_accuracy": null
+        "test_accuracy": null,
+        "per_slide_s": 0.48,
+        "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network",
+        "per_slide_range_s": [
+          0.15,
+          1.56
+        ],
+        "local": "yes"
       }
     ]
   },
@@ -182,8 +206,8 @@
     "Prioritisation aid only, not a diagnostic engine: every slide must be reviewed by a pathologist (TDD 1.2)."
   ],
   "generated": {
-    "at": "2026-10-15T09:34:14+00:00",
-    "repo_commit": "b0a8053aaf0c11489f8f0192b516b5ebbe3482e2",
+    "at": "2026-10-15T09:45:35+00:00",
+    "repo_commit": "153ec27c8ba1a79bd491d1380aa73052f26b2dee",
     "generator": "training/make_model_card.py"
   }
 }

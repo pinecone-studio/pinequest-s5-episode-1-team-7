@@ -3,7 +3,31 @@
   "source": "Veeling et al., Rotation Equivariant CNNs for Digital Pathology, MICCAI 2018, Table 1",
   "url": "https://arxiv.org/abs/1806.03962",
   "baselines": [
-    {"model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)", "params": 119000, "test_auc": 0.963, "test_accuracy": 0.898},
-    {"model": "DenseNet (Veeling et al. 2018)", "params": 128000, "test_auc": 0.955, "test_accuracy": null}
+    {
+      "model": "P4M-DenseNet, rotation-equivariant (Veeling et al. 2018)",
+      "params": 119000,
+      "test_auc": 0.963,
+      "test_accuracy": 0.898,
+      "per_slide_s": 3.58,
+      "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network; x8 for rotation-equivariant layers",
+      "per_slide_range_s": [
+        1.11,
+        11.57
+      ],
+      "local": "slow"
+    },
+    {
+      "model": "DenseNet (Veeling et al. 2018)",
+      "params": 128000,
+      "test_auc": 0.955,
+      "test_accuracy": null,
+      "per_slide_s": 0.48,
+      "speed_method": "estimated on this PC with a DenseNet of the same size (ONNX Runtime, CPU, 4 threads, 150 patches of 96 px, median of 5); not the published network",
+      "per_slide_range_s": [
+        0.15,
+        1.56
+      ],
+      "local": "yes"
+    }
   ]
 }

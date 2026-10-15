@@ -103,6 +103,19 @@ def _device_table(plism: dict) -> tuple[dict, dict]:
     return scanners, phones
 
 
+LOCAL_BUDGET_S = 1.5  # TDD: under 1.5 s per slide on a clinic CPU; slower models still run, "slowly"
+
+
+def _teacher_row(teacher: dict, shipped_s: float) -> dict:
+    """Comparison row for the Hibou-B teacher: its accuracy, and its measured CPU speed and size."""
+    seconds = teacher["cpu"]["cpu_seconds_per_slide"]
+    slower = round(seconds / shipped_s, -1)
+    return {"model": "Hibou-B pathology foundation model (the teacher)", "test_auc": round(teacher["test_auc"], 4),
+            "size_mb": teacher["cpu"]["size_mb"], "per_slide_s": seconds,
+            "local": "yes" if seconds <= LOCAL_BUDGET_S else "slow",
+            "note": f"most accurate, but about {slower:.0f}x slower than this model on a CPU"}
+
+
 def build_card() -> dict:
     main = _load(MAIN_RESULTS)
     teacher = _load(TEACHER_RESULTS)
@@ -230,13 +243,11 @@ def build_card() -> dict:
         "comparison": [
             {"model": "This model: MobileNetV3-Small, distilled from Hibou-B",
              "test_auc": round(test["auc"], 4), "size_mb": round(size_bytes / 1e6, 2),
-             "per_slide_s": int8["fp32"]["seconds_per_slide"], "clinic_pc": True, "note": "shipped"},
-            {"model": "Hibou-B pathology foundation model (the teacher)",
-             "test_auc": round(teacher["test_auc"], 4), "size_mb": teacher["cpu"]["size_mb"],
-             "per_slide_s": teacher["cpu"]["cpu_seconds_per_slide"], "clinic_pc": False,
-             "note": "most accurate, but too large and slow for a clinic CPU"},
+             "per_slide_s": int8["fp32"]["seconds_per_slide"], "local": "yes", "note": "shipped"},
+            _teacher_row(teacher, int8["fp32"]["seconds_per_slide"]),
             *[{"model": b["model"], "test_auc": b["test_auc"], "size_mb": round(b["params"] * 4 / 1e6, 1),
-               "per_slide_s": None, "clinic_pc": None, "note": "published result, not run here"}
+               "per_slide_s": b["per_slide_s"], "per_slide_range_s": b["per_slide_range_s"], "speed_estimated": True,
+               "local": b["local"], "note": "published accuracy; speed estimated"}
               for b in literature["baselines"]],
         ],
         "literature": {
@@ -339,10 +350,8 @@ def build_organ_card(organ: str) -> dict:
     comparison = [
         {"model": "This model: MobileNetV3-Small, distilled from Hibou-B", "test_auc": round(test["auc"], 4),
          "size_mb": round(size_bytes / 1e6, 2), "per_slide_s": int8["fp32"]["seconds_per_slide"],
-         "clinic_pc": True, "note": "shipped"},
-        {"model": "Hibou-B pathology foundation model (the teacher)", "test_auc": round(teacher["test_auc"], 4),
-         "size_mb": teacher_cpu["size_mb"], "per_slide_s": teacher_cpu["cpu_seconds_per_slide"],
-         "clinic_pc": False, "note": "most accurate, but too large and slow for a clinic CPU"},
+         "local": "yes", "note": "shipped"},
+        _teacher_row({**teacher, "cpu": teacher_cpu}, int8["fp32"]["seconds_per_slide"]),
     ]
 
     return {
