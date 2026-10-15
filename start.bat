@@ -25,7 +25,15 @@ if not exist engine\model\model_fp32.onnx echo WARNING: engine\model\model_fp32.
 
 echo.
 echo ==^> Setting up the dashboard
-if not exist frontend\node_modules (
+set NEED_INSTALL=0
+if not exist frontend\node_modules set NEED_INSTALL=1
+if exist frontend\node_modules if not exist frontend\node_modules\.package-lock.json set NEED_INSTALL=1
+if %NEED_INSTALL%==0 (
+  %PY% -c "import os,sys;sys.exit(0 if os.path.getmtime('frontend/package-lock.json')>os.path.getmtime('frontend/node_modules/.package-lock.json') else 1)" 2>nul
+  if not errorlevel 1 set NEED_INSTALL=1
+)
+if %NEED_INSTALL%==1 (
+  echo Installing updated dashboard packages (this takes a few minutes on first run)...
   pushd frontend
   call npm ci --no-audit --no-fund || (popd & goto :fail)
   popd

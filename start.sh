@@ -33,7 +33,10 @@ backend/.venv/bin/python -m pip install --quiet --disable-pip-version-check -r b
   echo "WARNING: engine/model/model_fp32.onnx is missing; every slide will fail until it is there."
 
 say "Setting up the dashboard"
-[ -d frontend/node_modules ] || (cd frontend && npm ci --no-audit --no-fund)
+if [ ! -d frontend/node_modules ] || [ ! -f frontend/node_modules/.package-lock.json ] || [ frontend/package-lock.json -nt frontend/node_modules/.package-lock.json ]; then
+  echo "Installing updated dashboard packages (this takes a few minutes on first run)..."
+  (cd frontend && npm ci --no-audit --no-fund)
+fi
 
 say "Starting the backend on http://127.0.0.1:8000"
 (cd backend && exec .venv/bin/python run_server.py) &
