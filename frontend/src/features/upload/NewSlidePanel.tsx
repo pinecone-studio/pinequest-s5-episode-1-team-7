@@ -1,8 +1,8 @@
-import { type DragEvent, type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import { type DragEvent, type FormEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 
 import { useIngest, useOrgans, useSetups } from '../../shared/api/queries.ts'
+import { CalibrationDialog } from '../calibration/CalibrationDialog.tsx'
 import { OBJECTIVES, type Indication, type Objective } from '../../shared/api/types.ts'
 import { cn } from '../../shared/lib/cn.ts'
 import { useStoredState } from '../../shared/lib/hooks.ts'
@@ -14,7 +14,6 @@ import { ingestErrorKey } from './errors.ts'
 /** Adds a slide by uploading a photo taken with the phone on the microscope (TDD 2.1, 3.1). */
 export function NewSlidePanel() {
   const { t } = useTranslation(['upload', 'common'])
-  const ids = useId()
   const [patientId, setPatientId] = useState('')
   const [indication, setIndication] = useState<Indication>('Routine')
   const [done, setDone] = useState<number | null>(null)
@@ -39,11 +38,7 @@ export function NewSlidePanel() {
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
           autoComplete="off"
-          aria-describedby={`${ids}-privacy`}
         />
-        <span id={`${ids}-privacy`} className="mt-1 block text-[11px] leading-relaxed text-ink-faint">
-          {t('field.patientHint')}
-        </span>
       </label>
       <div>
         <span aria-hidden className="mb-1 block text-xs font-display font-bold text-ink-dim">
@@ -102,7 +97,6 @@ function OrganFields({ organ, onOrganChange }: { organ: string; onOrganChange: (
           </option>
         ))}
       </select>
-      <span className="mt-1 block text-[11px] leading-relaxed text-ink-faint">{t('organ.hint')}</span>
     </label>
   )
 }
@@ -123,6 +117,7 @@ function ScaleFields({
   const setups = useSetups()
   const list = Array.isArray(setups.data) ? setups.data : []
   const selected = list.find((s) => s.id === setupId) ?? null
+  const [calibrating, setCalibrating] = useState(false)
 
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -165,9 +160,19 @@ function ScaleFields({
           ))}
         </select>
       </label>
-      <p className="col-span-2 text-[11px] leading-relaxed text-ink-faint">
-        {t('setup.hint')} <Link to="/calibrate" className="text-mist underline hover:text-mist-strong">{t('setup.calibrate')}</Link>
-      </p>
+      <Button size="sm" className="col-span-2" onClick={() => setCalibrating(true)}>
+        {t('setup.calibrate')}
+      </Button>
+      <CalibrationDialog
+        open={calibrating}
+        onOpenChange={setCalibrating}
+        onSaved={(setup) => {
+          onSetupChange(setup.id)
+          if ((OBJECTIVES as readonly string[]).includes(setup.calibration_objective)) {
+            onObjectiveChange(setup.calibration_objective as Objective)
+          }
+        }}
+      />
     </div>
   )
 }

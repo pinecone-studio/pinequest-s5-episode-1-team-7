@@ -124,10 +124,9 @@ export function WorklistPage() {
 
       <aside className="lg:sticky lg:top-[4.5rem] lg:self-start" aria-labelledby="new-slide-title">
         <div className="panel p-5">
-          <h2 id="new-slide-title" className="font-display text-[15px] font-bold tracking-[-0.01em]">
+          <h2 id="new-slide-title" className="mb-4 font-display text-[15px] font-bold tracking-[-0.01em]">
             {t('upload:title')}
           </h2>
-          <p className="mb-4 text-xs leading-relaxed text-ink-dim">{t('upload:intro')}</p>
           <NewSlidePanel />
         </div>
       </aside>
