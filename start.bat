@@ -33,7 +33,8 @@ if %NEED_INSTALL%==0 (
   if not errorlevel 1 set NEED_INSTALL=1
 )
 if %NEED_INSTALL%==1 (
-  echo Installing updated dashboard packages (this takes a few minutes on first run)...
+  rem Parentheses inside an if-block must be escaped (^( ^)), or cmd ends the block early.
+  echo Installing updated dashboard packages ^(this takes a few minutes on first run^)...
   pushd frontend
   call npm ci --no-audit --no-fund || (popd & goto :fail)
   popd

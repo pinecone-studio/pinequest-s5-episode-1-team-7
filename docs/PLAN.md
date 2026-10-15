@@ -93,9 +93,15 @@ Get the whole system running early, before the model exists.
 - Frontend: required organ picker on upload (no silent default), organ on the worklist/slide page, organ filter, per-organ About cards, MN/EN organ names.
 - The packaged exe bundles every organ's model + card (`backend/backend.spec` walks `engine/model/`).
 
-### Step 10 — Stomach model, Phase 2 (weights pending a GPU run)
-- Dataset chosen: HMU-GC-HE-30K (Lou et al. 2024, figshare 25954813, CC BY 4.0 — weights may be redistributed with attribution), ~31k tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x). Rejected GasHisSDB (non-commercial only, 80–160 px crops, no patient IDs to split by). Converter + `hmu_gc` dataset entry are committed (`training/download_hmu_gc.py`, tested without data); the recipe is in `engine/README.md`.
-- Still needs a CUDA GPU run (~1–2 h on an RTX 4060): download → teacher features → train → export → tune thresholds → PLISM stomach check (43_stomach vs 38_EBVGC) → card → `pipeline/organs.py` settings + `ORGAN_CARDS` entry. Then the stomach model just appears: backend/frontend code is already organ-generic (proven by the `stomach` test in `backend/tests/test_organ.py`), and its MN/EN names are already in the locales.
+### Step 10 — Stomach model, Phase 2 (on hold, not shipped)
+- Dataset: HMU-GC-HE-30K (Lou et al. 2024, figshare 25954813, CC BY 4.0 — weights may be redistributed with attribution), ~31k tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x). The converter + `hmu_gc` dataset entry are on `main` (`training/download_hmu_gc.py`); the recipe is in `engine/README.md`. GasHisSDB was rejected: its figshare licence is also CC BY 4.0, but its 80–160 px crops were renamed and shuffled, with no image or patient IDs, so a test split would leak.
+- **The GPU run was done (#55), and the model was put on hold** (decision of 15 Oct). Test AUC 0.956 on HMU, but it is not good enough to offer:
+  - HMU is almost all gland-forming cancer: 195 tubular + 71 mucinous of 300 patients, 19 Lauren diffuse type, no EBV-associated cases.
+  - On PLISM's only gastric cancer (EBV-associated) it is at chance (cancer vs normal AUC 0.39–0.55 on phones). The colon model is no better there.
+  - On TCGA-STAD signet-ring slides it flagged 4 of 7 strongly and 3 barely at all (stopped early when put on hold).
+  - So it likely misses diffuse, signet-ring and EBV-associated gastric cancer.
+- **Not on `main`:** no stomach model, card or `pipeline/organs.py` entry, so the app offers lymph node + colon only. The trained model and the TCGA/GTEx whole-slide check are kept on the branches `feat/stomach-model` and `feat/gastric-eval`. The backend/frontend are organ-generic (the `stomach` test in `backend/tests/test_organ.py`, MN/EN names in the locales), so nothing else needs changing if it resumes.
+- To resume: gastric training data that includes diffuse, signet-ring and EBV-associated cancer (e.g. TCGA-STAD, which needs slide-level training), and validation on real phone captures of gastric cancer.
 - Later (explicitly out of scope here): lung (LungHist700 too small; LC25000 test scores inflated) and liver (PAIP 2019 non-commercial + registration; TCGA-LIHC needs a different training method).
 
 ---
