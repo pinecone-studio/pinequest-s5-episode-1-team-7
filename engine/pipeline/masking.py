@@ -1,12 +1,21 @@
 """Drop blank microscope background before inference (TDD 5.2, 3.1 step 3, 8.1).
 
-Stained tissue is coloured, while background is white or grey (and the eyepiece
-vignette is black), so tissue is detected on the HSV saturation channel:
-  - Otsu picks the saturation threshold for each image, clamped to a sane range so a
-    blank image does not get a noise-level threshold and an all-tissue image is not
-    split in half.
-  - Very dark pixels are excluded, since near-black noise can have high saturation.
-Thresholds are first guesses; tune them once we have real smartphone captures.
+Tissue is found by its H&E colour, not by how saturated it is. Haematoxylin (purple)
+and eosin (pink) both absorb green, so in tissue green is below both red and blue.
+Glass, fat and gaps are white, and a phone's colour cast tints them yellow, green or
+blue, never with green lowest. So the "magenta" signal min(R, B) - G separates pale
+tissue from tinted background, where saturation could not: on phones, tinted glass is
+as saturated as pale eosin, and saturation thresholds marked yellow lumen as tissue
+while dropping pale tissue (checked on PLISM's phone vs scanner photos of the same
+fields; see engine/README.md, "Tissue mask").
+  - Cast correction: if the brightest pixels (the background, or the palest tissue)
+    have green above red or blue, the photo has a green / yellow cast, and that amount
+    is added back, scaled by each pixel's brightness. It is never subtracted, so an
+    all-pink photo with no background is not erased.
+  - The signal is smoothed over 5x5 pixels, so sensor and JPEG noise on white is not
+    tissue, and Otsu picks the threshold per image, clamped to MAGENTA_THRESHOLD_RANGE.
+  - Very dark pixels (eyepiece vignette) are excluded.
+Re-check the thresholds once we have real smartphone captures.
 """
 from dataclasses import replace
 
@@ -15,20 +24,48 @@ import numpy as np
 
 from .tiling import Tiles
 
-SATURATION_THRESHOLD_RANGE = (20, 60)  # clamp for the Otsu threshold, 0-255 scale
-MIN_VALUE = 30                         # ignore near-black pixels (eyepiece vignette)
-MIN_TISSUE_FRACTION = 0.5              # keep patches that are at least half tissue
+MAGENTA_THRESHOLD_RANGE = (4, 10)  # clamp for the Otsu threshold on min(R, B) - G, 0-255 scale; a higher
+# cap follows strongly stained areas up and drops pale tissue again, lower risks pinkish casts
+MIN_VALUE = 30                     # ignore near-black pixels (eyepiece vignette)
+MIN_TISSUE_FRACTION = 0.5          # keep patches that are at least half tissue
+BRIGHT_PERCENTILE = 95             # pixels used to estimate the photo's colour cast
+SMOOTHING = 5                      # box filter size for the magenta signal, pixels
+
+
+def _colour_cast(image: np.ndarray) -> tuple:
+    """(cast, reference brightness) from the brightest pixels of a small copy of the image.
+
+    cast < 0 means green is above red or blue there: a green / yellow cast.
+    """
+    scale = min(1.0, 512 / max(image.shape[:2]))  # statistics only; full resolution is slow
+    small = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if scale < 1 else image
+    r, g, b = (small[..., i].astype(np.int16) for i in range(3))
+    raw, value = np.minimum(r, b) - g, small.max(axis=2)
+    valid = value >= MIN_VALUE
+    if valid.sum() < 100:
+        return 0.0, 1.0
+    bright = valid & (value >= np.percentile(value[valid], BRIGHT_PERCENTILE))
+    return float(np.median(raw[bright])), max(float(np.median(value[bright])), 1.0)
+
+
+def magenta(image: np.ndarray) -> np.ndarray:
+    """min(R, B) - G per pixel, cast-corrected and smoothed; float32 (H, W)."""
+    r, g, b = cv2.split(image)
+    raw = cv2.subtract(cv2.min(r, b), g, dtype=cv2.CV_32F)
+    cast, reference = _colour_cast(image)
+    if cast < 0:  # green / yellow cast: add it back, in proportion to brightness
+        value = cv2.max(cv2.max(r, g), b)
+        raw = cv2.scaleAdd(value.astype(np.float32), -cast / reference, raw)
+    return cv2.blur(raw, (SMOOTHING, SMOOTHING))
 
 
 def tissue_mask(image: np.ndarray) -> np.ndarray:
     """Return an (H, W) bool mask that is True where the RGB image shows tissue."""
-    hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    saturation, value = hsv[..., 1], hsv[..., 2]
-
-    otsu, _ = cv2.threshold(saturation, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    threshold = np.clip(otsu, *SATURATION_THRESHOLD_RANGE)
-
-    return (saturation > threshold) & (value >= MIN_VALUE)
+    signal = magenta(image)
+    as_uint8 = np.clip(signal, 0, 255).astype(np.uint8)
+    otsu, _ = cv2.threshold(as_uint8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    threshold = np.clip(otsu, *MAGENTA_THRESHOLD_RANGE)
+    return (signal > threshold) & (cv2.max(cv2.max(image[..., 0], image[..., 1]), image[..., 2]) >= MIN_VALUE)
 
 
 def tissue_fraction(mask: np.ndarray, tiles: Tiles) -> np.ndarray:

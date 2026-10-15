@@ -5,12 +5,12 @@ Test photos for demoing the app: real lymph-node tissue from the PCam test set, 
 | File | What it shows | Calibrated result* | Uncalibrated result |
 |---|---|---|---|
 | `00-stage-micrometer.jpg` | Stage micrometer, 0–1000 µm scale, for the calibration screen | – | – |
-| `01-normal-lymph-node.jpg` | Normal lymph node only | **38.8, green** | 33.2, green |
-| `02-micro-metastasis.jpg` | 2 tumour patches (a micro-metastasis) | **75.8, yellow** | 47.6, green |
-| `03-small-metastasis.jpg` | A small tumour region (16 of 192 patches) | **86.5, red** | 50.7, green |
-| `04-large-metastasis.jpg` | A large tumour region (44 of 192 patches) | **87.8, red** | 75.3, yellow |
+| `01-normal-lymph-node.jpg` | Normal lymph node only | **38.7, green** | 32.7, green |
+| `02-micro-metastasis.jpg` | 2 tumour patches (a micro-metastasis) | **78.4, yellow** | 48.4, green |
+| `03-small-metastasis.jpg` | A small tumour region (16 of 192 patches) | **87.6, red** | 50.9, green |
+| `04-large-metastasis.jpg` | A large tumour region (44 of 192 patches) | **89.9, red** | 73.8, yellow |
 
-\*Measured through the real backend with the shipped model (`engine/model/model_fp32.onnx`), at 0.972 µm/px. The flag cut-offs are red ≥ 81 and yellow ≥ 70.
+\*Measured with the shipped model (`engine/model/model_fp32.onnx`) and the colour-based tissue mask (15 Oct), at 0.972 µm/px, through `analyze_slide`, the function the backend calls. The flag cut-offs are red ≥ 81 and yellow ≥ 70.
 
 ## How to use them in a demo
 1. **Calibrate:** open **Калибровк / Calibration**.
