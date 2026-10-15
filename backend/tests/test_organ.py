@@ -80,6 +80,18 @@ def test_organs_endpoint(env):
         assert organs[0] == "lymph_node" and "colon" in organs
 
 
+def test_future_organ_needs_no_new_code(env, monkeypatch):
+    """Phase 2 proof: a third organ flows through ingest → validation → storage
+    with no code changes, once the engine lists it (stomach model pending)."""
+    monkeypatch.setattr(engine_adapter, "available_organs",
+                        lambda: ["lymph_node", "colon", "stomach"])
+    slide_id = ingest.ingest_bytes(make_jpeg(), None, "Routine", None, None, "stomach")
+    with db.session() as conn:
+        assert queue.get_slide(conn, slide_id)["organ"] == "stomach"
+    with pytest.raises(ValueError, match="no AI model for organ"):
+        ingest.ingest_bytes(make_jpeg(), None, "Routine", None, None, "lung")
+
+
 def test_model_endpoint_takes_organ(env):
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")

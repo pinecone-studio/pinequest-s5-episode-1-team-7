@@ -93,6 +93,11 @@ Get the whole system running early, before the model exists.
 - Frontend: required organ picker on upload (no silent default), organ on the worklist/slide page, organ filter, per-organ About cards, MN/EN organ names.
 - The packaged exe bundles every organ's model + card (`backend/backend.spec` walks `engine/model/`).
 
+### Step 10 — Stomach model, Phase 2 (weights pending a GPU run)
+- Dataset chosen: HMU-GC-HE-30K (Lou et al. 2024, figshare 25954813, CC BY 4.0 — weights may be redistributed with attribution), ~31k tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x). Rejected GasHisSDB (non-commercial only, 80–160 px crops, no patient IDs to split by). Converter + `hmu_gc` dataset entry are committed (`training/download_hmu_gc.py`, tested without data); the recipe is in `engine/README.md`.
+- Still needs a CUDA GPU run (~1–2 h on an RTX 4060): download → teacher features → train → export → tune thresholds → PLISM stomach check (43_stomach vs 38_EBVGC) → card → `pipeline/organs.py` settings + `ORGAN_CARDS` entry. Then the stomach model just appears: backend/frontend code is already organ-generic (proven by the `stomach` test in `backend/tests/test_organ.py`), and its MN/EN names are already in the locales.
+- Later (explicitly out of scope here): lung (LungHist700 too small; LC25000 test scores inflated) and liver (PAIP 2019 non-commercial + registration; TCGA-LIHC needs a different training method).
+
 ---
 
 ## Members 2 & 3 — summary

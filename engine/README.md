@@ -232,3 +232,25 @@ Phones are about as good as scanners. The last row is why the organ must be chos
 **Slide score:** `tune_scoring` preferred the single highest tile (`top_k = 1`), with red ≥ 0.54 and yellow ≥ 0.50. Simulated test slides with 1% tumour reach a slide AUC of 0.91, 2% reach 0.97, and 5% or more reach above 0.998. But **13.7% of normal test slides are flagged red** against the 5% target on validation. That number rests on a handful of debris tiles reused across many simulated slides, and with `top_k = 1` a single tile can flag a slide. Treat the colon thresholds as a starting point and re-tune them on real colon captures.
 
 Caveats: CRC-VAL-HE-7K has no patient IDs, so the validation and test halves share patients. The test set is independent of training, but not of the epoch and threshold choices.
+
+### Stomach (Phase 2 — weights pending a GPU run)
+
+Data: [HMU-GC-HE-30K](https://doi.org/10.6084/m9.figshare.25954813) (Lou et al. 2024, CC BY 4.0, so trained weights may be redistributed with attribution). ~31,000 tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x objective — the AT2's nominal 20x scale), in the same tissue-class scheme as the colon data; tumour (TUM) vs everything else. Chosen over GasHisSDB, which is non-commercial only, ships small 80–160 px crops, and has no patient IDs to split by.
+
+`training/download_hmu_gc.py` converts the figshare zip to the PCam HDF5 layout (`--dataset hmu_gc` is registered in `training/pcam.py`). File names carry no patient or slide IDs, so train/valid/test are a stratified random 80/10/10 split — treat test as slightly optimistic. Then the standard recipe, on a CUDA GPU (teacher features + training need it; ~1–2 h on an RTX 4060):
+
+```bash
+python -m training.download_hmu_gc                                       # ~3 GB download -> data/hmu-gc/*.h5
+python -m training.teacher --teacher hibou-b --dataset hmu_gc            # features + stomach head
+python -m training.train --dataset hmu_gc --teacher hibou-b --tag kd-hibou
+python -m training.export_onnx --checkpoint model/stomach_mobilenet_v3_small_224_kd-hibou.pt \
+    --out model/stomach/model_fp32.onnx --results training/results/stomach_mobilenet_v3_small_224_kd-hibou.json
+python -m training.tune_scoring --dataset hmu_gc --model model/stomach/model_fp32.onnx   # -> pipeline/organs.py
+python -m training.plism_eval --root B:/pinequest-data/plism/PLISM_sm --csv B:/pinequest-data/plism/PLISM_sm_en.csv \
+    --organ stomach --model model/stomach/model_fp32.onnx --scales 0.5
+python -m training.make_model_card --organ stomach                        # -> model/stomach/model_card.json
+```
+
+Then add the tuned scale/thresholds to `pipeline/organs.py` and a `stomach` entry to `ORGAN_CARDS` in `training/make_model_card.py` (following `colon`'s), and re-run `--check`. No backend or frontend code is needed: the picker, filter, audit and About page all follow the engine's organ list; only the `stomach` name strings (already in the locales) apply.
+
+PLISM check: 43_stomach (normal) vs 38_EBVGC (EBV-associated gastric cancer — a single subtype, so a sanity check only).
