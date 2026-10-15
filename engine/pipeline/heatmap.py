@@ -1,9 +1,11 @@
 """Patch-probability heatmap layer for the viewer's overlay (TDD 2.3, 3.1 step 7, 6.2).
 
 The layer is an RGBA PNG the size of the original image:
-  - colour: patch P_malignant, interpolated between tile centres (green 0, yellow 0.5, red 1)
-  - alpha: opaque only on tissue pixels of scored tiles, transparent elsewhere (the UI
-    applies the opacity slider)
+  - colour: patch P_malignant, interpolated between tile centres (green 0, yellow 0.5, red 1).
+    Tiles the AI didn't score (under half tissue, masking.MIN_TISSUE_FRACTION) take the value
+    of the nearest scored tile, so their tissue is coloured too
+  - alpha: opaque on every tissue pixel, transparent on glass, fat and gaps (the UI applies
+    the opacity slider). Without a tissue mask, on scored tiles only
   - hotspots: tiles with P >= HOTSPOT_PROB (clipped to tissue, adjacent tiles merged) are
     outlined in a bright colour, so the pathologist's eye goes to them first (TDD 6.2
     "visual focus cues"). Outlines use whole tiles rather than the interpolated colours,
@@ -35,19 +37,33 @@ _LUT = probability_colors(np.linspace(0.0, 1.0, 256))  # uint8 colour per quanti
 
 
 def _probability_map(tiles: Tiles, probs: np.ndarray) -> tuple:
-    """(P per pixel, scored-tile mask), both (H, W). P is interpolated between the centres
-    of scored tiles only, so unscored background tiles don't pull it towards 0."""
+    """(P per pixel, scored-tile mask), both (H, W).
+
+    P is interpolated between the centres of scored tiles only, so unscored tiles don't pull
+    it towards 0. Beyond the reach of any scored tile (more than a tile away), P is the value
+    of the nearest scored tile, so all tissue gets a colour.
+    """
     rows, cols = tiles.grid_shape
     value = np.zeros((rows, cols), dtype=np.float32)
     weight = np.zeros((rows, cols), dtype=np.float32)
     value[tiles.coords[:, 0], tiles.coords[:, 1]] = probs
     weight[tiles.coords[:, 0], tiles.coords[:, 1]] = 1.0
 
+    nearest = value
+    if not weight.all():
+        # Label of the nearest scored tile for every grid cell (distance to the zero pixels).
+        unscored = (weight == 0).astype(np.uint8)
+        _, labels = cv2.distanceTransformWithLabels(unscored, cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+        by_label = np.zeros(labels.max() + 1, dtype=np.float32)
+        ys, xs = np.nonzero(weight)
+        by_label[labels[ys, xs]] = value[ys, xs]
+        nearest = by_label[labels]
+
     size = (cols * tiles.patch_size, rows * tiles.patch_size)
     num = cv2.resize(value * weight, size, interpolation=cv2.INTER_LINEAR)
     den = cv2.resize(weight, size, interpolation=cv2.INTER_LINEAR)
-    nearest = cv2.resize(value, size, interpolation=cv2.INTER_NEAREST)
-    p = np.where(den > 1e-6, num / np.maximum(den, 1e-6), nearest)
+    far = cv2.resize(nearest, size, interpolation=cv2.INTER_LINEAR)
+    p = np.where(den > 1e-6, num / np.maximum(den, 1e-6), far)
     scored = cv2.resize(weight, size, interpolation=cv2.INTER_NEAREST) > 0
 
     height, width = tiles.image_shape
@@ -89,9 +105,10 @@ def render_heatmap(tiles: Tiles, probs: np.ndarray, tissue: np.ndarray = None) -
     p, scored = _probability_map(tiles, probs)
     visible = scored
     if tissue is not None:
-        # Close small gaps (nuclei, lumen) so the overlay reads as regions, not speckle.
+        # All tissue, scored or not. Close small gaps (nuclei, lumen) so the overlay reads
+        # as regions, not speckle.
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
-        visible = scored & (cv2.morphologyEx(tissue.astype(np.uint8), cv2.MORPH_CLOSE, kernel) > 0)
+        visible = cv2.morphologyEx(tissue.astype(np.uint8), cv2.MORPH_CLOSE, kernel) > 0
 
     layer[..., :3] = _LUT[np.round(np.clip(p, 0.0, 1.0) * 255).astype(np.uint8)]
     layer[..., 3] = visible * np.uint8(255)
