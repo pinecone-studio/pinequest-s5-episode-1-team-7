@@ -21,7 +21,7 @@ export function ScoreCard({ slide }: { slide: Slide }) {
         <span className="text-base font-normal text-ink-faint">/100</span>
       </p>
       {slide.priority_override != null && (
-        <p className="mt-1 text-xs text-vio">
+        <p className="mt-1 text-xs text-[#5d4f9e] dark:text-[#b3a6d6]">
           {t('score.manualPriority', { level: t(`common:priority.level.${priorityLevel(slide.priority_override)}`) })}
         </p>
       )}

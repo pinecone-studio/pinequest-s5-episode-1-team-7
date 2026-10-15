@@ -38,7 +38,7 @@ export function ConfirmDialog({
           <Dialog.Description asChild>
             <div className="mt-2 space-y-2 text-sm leading-relaxed text-ink-dim">{children}</div>
           </Dialog.Description>
-          {error && <p className="mt-3 text-sm text-critical">{error}</p>}
+          {error && <p className="mt-3 text-sm text-[#8e2a5b] dark:text-[#f0a6c8]">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <Dialog.Close asChild>
               <Button disabled={busy}>{t('action.cancel')}</Button>

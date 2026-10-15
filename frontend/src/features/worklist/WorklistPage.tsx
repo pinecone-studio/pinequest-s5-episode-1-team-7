@@ -157,20 +157,29 @@ function SortSwitch({ mode, onChange }: { mode: SortMode; onChange: (mode: SortM
 function Stats({ queued, processing }: { queued: Slide[]; processing: Slide[] }) {
   const { t } = useTranslation('worklist')
   const stats = [
-    { key: 'red', value: queued.filter((s) => s.risk_flag === 'red').length, tone: 'text-critical' },
-    { key: 'yellow', value: queued.filter((s) => s.risk_flag === 'yellow').length, tone: 'text-high' },
-    { key: 'urgent', value: queued.filter((s) => s.indication === 'Urgent').length, tone: 'text-critical' },
+    { key: 'red', value: queued.filter((s) => s.risk_flag === 'red').length, tone: 'text-[#b23a1f] dark:text-[#ff7a45]', icon: null },
+    { key: 'yellow', value: queued.filter((s) => s.risk_flag === 'yellow').length, tone: 'text-[#4f4f08] dark:text-[#ebcb8b]', icon: null },
+    // Urgent is a human request, not an AI score: neutral ink + bolt, never a risk colour.
+    { key: 'urgent', value: queued.filter((s) => s.indication === 'Urgent').length, tone: 'text-ink', icon: 'bolt' },
     {
       key: 'processing',
       value: processing.filter((s) => s.state !== 'failed').length,
-      tone: 'text-info',
+      tone: 'text-[#3d5f86] dark:text-[#8fa9c6]',
+      icon: null,
     },
   ] as const
   return (
     <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
       {stats.map((s) => (
         <div key={s.key} className="panel px-4 py-3">
-          <dd className={cn('tnum text-[26px] leading-none font-semibold', s.tone)}>{s.value}</dd>
+          <dd className={cn('tnum flex items-center gap-1.5 text-[26px] leading-none font-semibold', s.tone)}>
+            {s.icon === 'bolt' && (
+              <svg viewBox="0 0 16 16" className="size-5 shrink-0 text-ink-faint" fill="currentColor" aria-hidden>
+                <path d="M9.5 1 3 9h4l-1 6 6.5-8.5H8.7L9.5 1Z" />
+              </svg>
+            )}
+            {s.value}
+          </dd>
           <dt className="mt-1.5 text-xs text-ink-faint">{t(`stats.${s.key}`)}</dt>
         </div>
       ))}
@@ -193,7 +202,8 @@ function ProcessingList({ slides }: { slides: Slide[] }) {
               to={`/slides/${s.id}`}
               className={cn(
                 'inline-flex items-center gap-2 rounded-[10px] border border-line-soft bg-canvas px-2.5 py-1 text-sm transition hover:border-mist-dim hover:bg-raised',
-                s.state === 'failed' && 'border-[#5a3436]',
+                // Failed analysis is an error (magenta), never a risk colour.
+                s.state === 'failed' && 'border-[#dfa3be] dark:border-[#6b3450]',
               )}
             >
               <span className="font-medium">{t('common:slide.title', { id: s.id })}</span>

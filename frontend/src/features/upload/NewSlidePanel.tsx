@@ -66,7 +66,7 @@ export function NewSlidePanel() {
 
       <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} organ={organ} />
       {done != null && (
-        <p role="status" className="text-sm text-routine">
+        <p role="status" className="text-sm text-[#0b6b5e] dark:text-[#7fe3d0]">
           {t('added', { id: done })}
         </p>
       )}
@@ -271,7 +271,7 @@ function UploadForm({ patientId, indication, onDone, setupId, objective, organ }
         />
       </div>
       {error && (
-        <p role="alert" className="text-sm text-critical">
+        <p role="alert" className="text-sm text-[#8e2a5b] dark:text-[#f0a6c8]">
           {error}
         </p>
       )}
