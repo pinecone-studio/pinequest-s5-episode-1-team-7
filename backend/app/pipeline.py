@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import config, db, queue
-from .engine_adapter import AnalysisResult, call_engine, get_model_info, load_engine
+from .engine_adapter import AnalysisResult, call_engine, default_organ, get_model_info, load_engine
 from .states import SlideState
 
 log = logging.getLogger(__name__)
@@ -44,13 +44,14 @@ def process_slide(slide_id: int) -> None:
             queue.transition(conn, slide_id, SlideState.IMAGE_PROCESSING)
             row = queue.get_slide(conn, slide_id)
             image_path, um_per_px = row["image_path"], row["um_per_px"]
+            organ = row["organ"] or default_organ()  # slides from before organs existed
         with db.session() as conn:
             queue.transition(conn, slide_id, SlideState.AI_RUNNING)
         with _inference_slots:
-            raw = call_engine(load_engine(), image_path, um_per_px)
+            raw = call_engine(load_engine(), image_path, um_per_px, organ)
         result = AnalysisResult.from_dict(raw)
         heatmap = _store_heatmap(slide_id, result.heatmap_path)
-        info = get_model_info()
+        info = get_model_info(organ)
         if info and isinstance(info.get("file"), dict):
             model_name = info["file"].get("name") or "engine"
             model_sha256 = info["file"].get("sha256")

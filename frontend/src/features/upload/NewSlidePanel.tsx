@@ -2,7 +2,7 @@ import { type DragEvent, type FormEvent, useEffect, useId, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
-import { useIngest, useSetups } from '../../shared/api/queries.ts'
+import { useIngest, useOrgans, useSetups } from '../../shared/api/queries.ts'
 import { OBJECTIVES, type Indication, type Objective } from '../../shared/api/types.ts'
 import { cn } from '../../shared/lib/cn.ts'
 import { useStoredState } from '../../shared/lib/hooks.ts'
@@ -20,6 +20,9 @@ export function NewSlidePanel() {
   const [done, setDone] = useState<number | null>(null)
   const [setupId, setSetupId] = useStoredState<number | null>('pathtriage.setupId', null)
   const [objective, setObjective] = useStoredState<Objective>('pathtriage.objective', '40x')
+  // No silent default (issue #53): the wrong organ's model gives meaningless
+  // scores, so the choice stays empty until the technician picks (then persists).
+  const [organ, setOrgan] = useStoredState<string>('pathtriage.organ', '')
 
   const reset = (id: number) => {
     setPatientId('')
@@ -57,9 +60,11 @@ export function NewSlidePanel() {
         />
       </div>
 
+      <OrganFields organ={organ} onOrganChange={setOrgan} />
+
       <ScaleFields setupId={setupId} onSetupChange={setSetupId} objective={objective} onObjectiveChange={setObjective} />
 
-      <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} />
+      <UploadForm patientId={patientId} indication={indication} onDone={reset} setupId={setupId} objective={objective} organ={organ} />
       {done != null && (
         <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
           {t('added', { id: done })}
@@ -76,6 +81,30 @@ interface FormProps {
   /** Calibrated setup + objective, issue #35. Null setup means captured resolution. */
   setupId: number | null
   objective: Objective
+  /** Organ whose model scores the slide, issue #53. Empty until the technician picks. */
+  organ: string
+}
+
+/** Required organ picker: the wrong organ's model gives meaningless scores, so there is no default. */
+function OrganFields({ organ, onOrganChange }: { organ: string; onOrganChange: (o: string) => void }) {
+  const { t } = useTranslation(['upload', 'common'])
+  const organs = useOrgans()
+  const list = Array.isArray(organs.data) ? organs.data : []
+
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('organ.label')}</span>
+      <select className={fieldClass} value={organ} onChange={(e) => onOrganChange(e.target.value)} required>
+        <option value="">{t('organ.pick')}</option>
+        {list.map((o) => (
+          <option key={o} value={o}>
+            {t(`common:organ.names.${o}`, { defaultValue: o })}
+          </option>
+        ))}
+      </select>
+      <span className="mt-1 block text-[11px] text-slate-500">{t('organ.hint')}</span>
+    </label>
+  )
 }
 
 /** Microscope setup + objective pickers for the upload form. */
@@ -150,7 +179,7 @@ function useErrorText(error: unknown) {
   return key ? t(`error.${key}`) : t('error.rejected', { detail: error instanceof Error ? error.message : String(error) })
 }
 
-function UploadForm({ patientId, indication, onDone, setupId, objective }: FormProps) {
+function UploadForm({ patientId, indication, onDone, setupId, objective, organ }: FormProps) {
   const { t } = useTranslation('upload')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState('')
@@ -182,6 +211,7 @@ function UploadForm({ patientId, indication, onDone, setupId, objective }: FormP
     form.append('file', file)
     if (patientId.trim()) form.append('patient_id', patientId.trim())
     form.append('indication', indication)
+    form.append('organ', organ)
     if (setupId != null) {
       form.append('setup_id', String(setupId))
       form.append('objective', objective)
@@ -245,7 +275,7 @@ function UploadForm({ patientId, indication, onDone, setupId, objective }: FormP
           {error}
         </p>
       )}
-      <Button type="submit" variant="primary" block disabled={!file || ingest.isPending}>
+      <Button type="submit" variant="primary" block disabled={!file || !organ || ingest.isPending}>
         {ingest.isPending ? t('submitting') : t('submit')}
       </Button>
     </form>

@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useModelInfo } from '../../shared/api/queries.ts'
+import { useModelInfo, useOrgans } from '../../shared/api/queries.ts'
 import type { ModelCard } from '../../shared/api/types.ts'
 import { useDocumentTitle } from '../../shared/lib/hooks.ts'
 import { Alert } from '../../shared/ui/Alert.tsx'
+import { fieldClass } from '../../shared/ui/field.ts'
 
 const pct = (share: number) => `${(share * 100).toFixed(1)}%`
 
@@ -59,10 +60,15 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   )
 }
 
-/** What AI scores the slides: model card plus live status (GET /model). */
+/** What AI scores the slides: one model card per organ (GET /model?organ=). */
 export function AboutPage() {
   const { t } = useTranslation(['about', 'common'])
-  const model = useModelInfo()
+  const organs = useOrgans()
+  const organList = Array.isArray(organs.data) ? organs.data : []
+  const [organ, setOrgan] = useState<string | null>(null)
+  // Default to lymph node (also what old slides used); fall back to the first listed organ.
+  const selected = organ ?? (organList.includes('lymph_node') ? 'lymph_node' : organList[0] ?? null)
+  const model = useModelInfo(selected)
   useDocumentTitle(`${t('title')} · PathTriage`)
 
   return (
@@ -71,6 +77,19 @@ export function AboutPage() {
         <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('intro')}</p>
       </div>
+
+      {organList.length > 1 && (
+        <label className="block max-w-xs">
+          <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('organ.label')}</span>
+          <select className={fieldClass} value={selected ?? ''} onChange={(e) => setOrgan(e.target.value || null)}>
+            {organList.map((o) => (
+              <option key={o} value={o}>
+                {t(`common:organ.names.${o}`, { defaultValue: o })}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {model.isPending && <p className="text-sm text-slate-500">{t('common:status.loading')}</p>}
       {model.error && <Alert tone="error">{t('unavailable')}</Alert>}

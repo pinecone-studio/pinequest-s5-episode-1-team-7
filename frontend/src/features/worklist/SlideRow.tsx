@@ -25,7 +25,8 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
       <span className="order-1 min-w-0 md:order-none">
         <span className="block truncate font-medium">{t('slide.title', { id: s.id })}</span>
         <span className="block truncate text-xs text-slate-500">
-          {t('slide.code', { code: s.local_hash.slice(0, 8) })} · {f.ago(s.created_at, now)}
+          {t('slide.code', { code: s.local_hash.slice(0, 8) })} · {f.ago(s.created_at, now)} ·{' '}
+          {t(`organ.names.${s.organ ?? 'lymph_node'}`, { defaultValue: s.organ ?? 'lymph_node' })}
         </span>
       </span>
       <span className="order-3 md:order-none">

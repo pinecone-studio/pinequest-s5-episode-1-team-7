@@ -57,10 +57,17 @@ const post = <T>(path: string, body?: unknown) =>
 
 export const api = {
   health: () => request<{ status: string }>('/health'),
-  /** Worklist: queued slides, by risk (manual priority first) or oldest first. */
-  queue: (sort: QueueSort = 'risk') => request<Slide[]>(`/queue?sort=${sort}`),
-  /** Every slide, newest first; `state` narrows to one state. */
-  slides: (state?: SlideState) => request<Slide[]>(`/slides${state ? `?state=${state}` : ''}`),
+  /** Worklist: queued slides, by risk (manual priority first) or oldest first; `organ` narrows to one organ. */
+  queue: (sort: QueueSort = 'risk', organ?: string | null) =>
+    request<Slide[]>(`/queue?sort=${sort}${organ ? `&organ=${encodeURIComponent(organ)}` : ''}`),
+  /** Every slide, newest first; `state`/`organ` narrow the list. */
+  slides: (state?: SlideState, organ?: string | null) => {
+    const params = new URLSearchParams()
+    if (state) params.set('state', state)
+    if (organ) params.set('organ', organ)
+    const query = params.toString()
+    return request<Slide[]>(`/slides${query ? `?${query}` : ''}`)
+  },
   slide: (id: number | string) => request<Slide>(`/slides/${id}`),
   events: (id: number | string) => request<SlideEvent[]>(`/slides/${id}/events`),
   imageUrl: (id: number | string) => `${API_BASE}/slides/${id}/image`,
@@ -75,8 +82,11 @@ export const api = {
   reassignPriority: (id: number, priority: number) =>
     post<Slide>(`/slides/${id}/action`, { action: 'reassign_priority', priority }),
   retry: (id: number) => post<Slide>(`/slides/${id}/retry`),
-  /** Model card + live model file/provider status (About the AI). */
-  model: () => request<ModelInfo>('/model'),
+  /** Organ model card + live file/provider status (About the AI); one card per organ. */
+  model: (organ?: string | null) =>
+    request<ModelInfo>(`/model${organ ? `?organ=${encodeURIComponent(organ)}` : ''}`),
+  /** Organ keys with a trained model, default first (issue #53). */
+  organs: () => request<string[]>('/organs'),
   /** Magnification-calibration setups (issue #35). */
   setups: () => request<SetupProfile[]>('/setups'),
   setup: (id: number) => request<SetupProfile>(`/setups/${id}`),

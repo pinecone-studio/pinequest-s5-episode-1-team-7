@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, db, queue
-from .routers import ingest, model, setups, slides
+from .routers import ingest, model, organs, setups, slides
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ app.include_router(ingest.router)
 app.include_router(slides.router)
 app.include_router(setups.router)
 app.include_router(model.router)
+app.include_router(organs.router)
 
 
 @app.get("/health")

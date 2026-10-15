@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-import { useAllSlides, useQueue } from '../../shared/api/queries.ts'
+import { useAllSlides, useOrgans, useQueue } from '../../shared/api/queries.ts'
 import { PROCESSING_STATES, type Slide } from '../../shared/api/types.ts'
 import { cn } from '../../shared/lib/cn.ts'
 import { useDocumentTitle, useNow, useStoredState } from '../../shared/lib/hooks.ts'
@@ -20,8 +20,11 @@ export function WorklistPage() {
   useDocumentTitle(`${t('title')} · PathTriage`)
   const [tab, setTab] = useStoredState<Tab>('pathtriage.worklistTab', 'queue')
   const [sortMode, setSortMode] = useStoredState<SortMode>('pathtriage.queueSort', 'risk')
-  const queue = useQueue('risk')
-  const all = useAllSlides()
+  const [organFilter, setOrganFilter] = useStoredState<string>('pathtriage.organFilter', '')
+  const organs = useOrgans()
+  const organList = Array.isArray(organs.data) ? organs.data : []
+  const queue = useQueue('risk', organFilter || undefined)
+  const all = useAllSlides(organFilter || undefined)
   const now = useNow()
 
   const slides = all.data ?? []
@@ -56,6 +59,26 @@ export function WorklistPage() {
             ]}
           />
         </div>
+
+        {organList.length > 1 && (
+          <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
+            <label className="flex items-center gap-2">
+              {t('filter.organ')}
+              <select
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                value={organFilter}
+                onChange={(e) => setOrganFilter(e.target.value)}
+              >
+                <option value="">{t('filter.allOrgans')}</option>
+                {organList.map((o) => (
+                  <option key={o} value={o}>
+                    {t(`common:organ.names.${o}`, { defaultValue: o })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
 
         {error && (
           <Alert tone="error" className="mb-3">

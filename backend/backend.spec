@@ -18,12 +18,25 @@ if "engine.pipeline" not in engine_modules:
 
 hidden = collect_submodules("uvicorn") + engine_modules
 
+# Every organ's model + card (engine/model/<organ>/model_fp32.onnx + model_card.json),
+# plus the lymph-node files at engine/model/ root: the packaged app must score any
+# offered organ offline, at the paths engine/pipeline expects.
+model_datas = []
+model_root = os.path.join(ROOT, "engine", "model")
+for dirpath, _dirnames, filenames in os.walk(model_root):
+    for filename in sorted(filenames):
+        if filename in ("model_fp32.onnx", "model_card.json"):
+            rel = os.path.relpath(dirpath, model_root)
+            dest = os.path.join("engine", "model") if rel == "." else os.path.join("engine", "model", rel)
+            model_datas.append((os.path.join(dirpath, filename), dest))
+if not [src for src, _ in model_datas if src.endswith(os.path.join("model", "model_fp32.onnx"))]:
+    raise SystemExit("engine/model/model_fp32.onnx not found: the app would have no model")
+
 a = Analysis(
     ["run_server.py"],
     pathex=[".", ".."],          # ".." makes the sibling engine/ package importable
     hiddenimports=hidden,
-    # The ONNX model, at the path engine/pipeline/inference.py expects (engine/model/).
-    datas=[(os.path.join(ROOT, "engine", "model", "model_fp32.onnx"), os.path.join("engine", "model"))],
+    datas=model_datas,
 )
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, a.binaries, a.datas, name="triage-backend", console=True)

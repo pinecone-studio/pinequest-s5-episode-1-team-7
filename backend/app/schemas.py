@@ -22,6 +22,7 @@ class SlideOut(BaseModel):
     scale_warning: Optional[str] = None
     model_name: Optional[str] = None
     model_sha256: Optional[str] = None
+    organ: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -34,6 +35,7 @@ class SlideOut(BaseModel):
             inference_ms=row["inference_ms"], decision=row["decision"], error=row["error"],
             setup_id=row["setup_id"], objective=row["objective"], um_per_px=row["um_per_px"],
             scale_warning=row["scale_warning"], model_name=row["model_name"], model_sha256=row["model_sha256"],
+            organ=row["organ"],
             created_at=row["created_at"], updated_at=row["updated_at"],
         )
 

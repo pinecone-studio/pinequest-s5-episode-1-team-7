@@ -85,6 +85,14 @@ Get the whole system running early, before the model exists.
 - Member 2's FastAPI `/ingest` calls this. Member 3 reads `risk_flag` and `heatmap_path`.
 - Done: `analyze_slide` returns the full contract, including `risk_flag` (#20, #22, #25); `onnxruntime` is in `backend/requirements.txt` (#23); the model is committed (#24). The end-to-end `/ingest` check passed, and the packaged exe bundles the engine and model (`backend/backend.spec`, #27); the desktop app runs it (#28).
 
+### Step 9 — Per-organ models (interface contract, issue #53) ✅ (engine; backend/frontend below)
+- One model per organ: `engine/model/<organ>/model_fp32.onnx + model_card.json` (lymph node keeps the original `engine/model/` files). Each card carries that model's training scale and slide-score thresholds — there is no global `MODEL_UM_PER_PX` or global red/yellow anymore.
+- `analyze_slide(image_path, um_per_px=None, organ=None) -> dict` returns the same contract plus `"organ"`. `None` means the default organ (`lymph_node`); an organ without a model raises `ValueError` — never a silent fallback to another organ's model.
+- `model_info(organ=None)` returns that organ's card plus live file/provider status; `available_organs()` lists organs whose model file is present, default first.
+- Backend: `/ingest` takes `organ` (default `lymph_node`), passes it to the engine, and stores it with `model_name`/`model_sha256` on the slide; `GET /organs` lists the engine's organs, `GET /model?organ=` serves one card, `/queue` and `/slides` filter by `organ` (slides without organ count as `lymph_node`).
+- Frontend: required organ picker on upload (no silent default), organ on the worklist/slide page, organ filter, per-organ About cards, MN/EN organ names.
+- The packaged exe bundles every organ's model + card (`backend/backend.spec` walks `engine/model/`).
+
 ---
 
 ## Members 2 & 3 — summary

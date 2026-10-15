@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from .. import db, pipeline, queue
+from ..engine_adapter import default_organ
 from ..schemas import ActionIn, EventOut, SlideOut
 from ..states import InvalidTransition, SlideState
 
@@ -18,18 +19,18 @@ def _get_or_404(conn, slide_id: int):
 
 
 @router.get("/queue", response_model=list[SlideOut])
-def get_queue(sort: str = Query("risk", pattern="^(risk|time)$")):
+def get_queue(sort: str = Query("risk", pattern="^(risk|time)$"), organ: str | None = None):
     """Priority worklist. Default: descending AI risk score (TDD 6.1)."""
     with db.session() as conn:
-        return [SlideOut.from_row(r) for r in queue.list_queue(conn, sort)]
+        return [SlideOut.from_row(r) for r in queue.list_queue(conn, sort, organ, default_organ())]
 
 
 @router.get("/slides", response_model=list[SlideOut])
-def list_slides(state: str | None = None):
+def list_slides(state: str | None = None, organ: str | None = None):
     if state is not None and state not in {s.value for s in SlideState}:
         raise HTTPException(422, f"unknown state: {state}")
     with db.session() as conn:
-        return [SlideOut.from_row(r) for r in queue.list_all(conn, state)]
+        return [SlideOut.from_row(r) for r in queue.list_all(conn, state, organ, default_organ())]
 
 
 @router.get("/slides/{slide_id}", response_model=SlideOut)

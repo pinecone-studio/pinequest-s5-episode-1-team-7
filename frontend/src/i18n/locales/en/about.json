@@ -68,5 +68,8 @@
   },
   "limitations": {
     "title": "Limitations and intended use"
+  },
+  "organ": {
+    "label": "Organ model"
   }
 }

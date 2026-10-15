@@ -40,5 +40,9 @@
   "offline": {
     "title": "Can't reach the triage engine",
     "hint": "Start the backend on this computer (cd backend && python run_server.py), then this page reconnects by itself."
+  },
+  "filter": {
+    "organ": "Organ",
+    "allOrgans": "All organs"
   }
 }

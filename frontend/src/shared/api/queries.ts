@@ -8,25 +8,26 @@ const POLL = { queue: 4000, slide: 2500, health: 15000 } as const
 
 export const queryKeys = {
   slides: ['slides'] as const,
-  queue: (sort: QueueSort) => ['slides', 'queue', sort] as const,
-  all: ['slides', 'all'] as const,
+  queue: (sort: QueueSort, organ?: string | null) => ['slides', 'queue', sort, organ ?? ''] as const,
+  all: (organ?: string | null) => ['slides', 'all', organ ?? ''] as const,
   slide: (id: number | string) => ['slides', 'detail', String(id)] as const,
   events: (id: number | string) => ['slides', 'events', String(id)] as const,
   health: ['health'] as const,
   setups: ['setups'] as const,
-  model: ['model'] as const,
+  model: (organ?: string | null) => ['model', organ ?? ''] as const,
+  organs: ['organs'] as const,
 }
 
 /** The pipeline is still working on the slide, so it will change on its own. */
 export const isProcessing = (s: Slide | undefined) => !s || PROCESSING_STATES.includes(s.state)
 
-export function useQueue(sort: QueueSort) {
-  return useQuery({ queryKey: queryKeys.queue(sort), queryFn: () => api.queue(sort), refetchInterval: POLL.queue })
+export function useQueue(sort: QueueSort, organ?: string | null) {
+  return useQuery({ queryKey: queryKeys.queue(sort, organ), queryFn: () => api.queue(sort, organ), refetchInterval: POLL.queue })
 }
 
 /** Every slide (all states), for the processing, under-review and archived lists. */
-export function useAllSlides() {
-  return useQuery({ queryKey: queryKeys.all, queryFn: () => api.slides(), refetchInterval: POLL.queue })
+export function useAllSlides(organ?: string | null) {
+  return useQuery({ queryKey: queryKeys.all(organ), queryFn: () => api.slides(undefined, organ), refetchInterval: POLL.queue })
 }
 
 export function useSlide(id: string) {
@@ -110,7 +111,12 @@ export function useDeleteSetup() {
   })
 }
 
-/** The model card + live model status for the About page. Static per deployment: no polling. */
-export function useModelInfo() {
-  return useQuery({ queryKey: queryKeys.model, queryFn: api.model })
+/** The organ model card + live model status for the About page. Static per deployment: no polling. */
+export function useModelInfo(organ?: string | null) {
+  return useQuery({ queryKey: queryKeys.model(organ), queryFn: () => api.model(organ ?? undefined) })
+}
+
+/** Organs with a trained model, default first (issue #53). Never empties: the backend falls back. */
+export function useOrgans() {
+  return useQuery({ queryKey: queryKeys.organs, queryFn: api.organs })
 }
