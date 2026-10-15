@@ -12,3 +12,8 @@ scikit-learn>=1.4
 # Distillation teacher (training/teacher.py) and Hugging Face login
 transformers>=5.0  # converts the Hibou checkpoint into the built-in class; tested with 5.19
 huggingface_hub>=0.34
+# Whole-slide gastric evaluation (training/gastric_eval.py): IDC downloads and DICOM slides,
+# including JPEG 2000 ones
+idc-index>=0.13
+wsidicom>=0.36
+imagecodecs>=2026.1
