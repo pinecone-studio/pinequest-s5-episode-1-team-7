@@ -32,13 +32,13 @@ export function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-slate-950/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-[2001] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-          <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content className="panel fixed top-1/2 left-1/2 z-[2001] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 p-5">
+          <Dialog.Title className="font-display text-[17px] font-bold tracking-[-0.01em]">{title}</Dialog.Title>
           <Dialog.Description asChild>
-            <div className="mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-300">{children}</div>
+            <div className="mt-2 space-y-2 text-sm leading-relaxed text-ink-dim">{children}</div>
           </Dialog.Description>
-          {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="mt-3 text-sm text-critical">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <Dialog.Close asChild>
               <Button disabled={busy}>{t('action.cancel')}</Button>

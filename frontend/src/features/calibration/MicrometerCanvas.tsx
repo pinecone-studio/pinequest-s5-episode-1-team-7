@@ -23,9 +23,9 @@ function markIcon(label: string) {
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     html: `<div class="pointer-events-none relative size-8">
-      <span class="absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-cyan-400 shadow-[0_0_2px_#000]"></span>
-      <span class="absolute top-1/2 left-0 h-px w-full -translate-y-1/2 bg-cyan-400 shadow-[0_0_2px_#000]"></span>
-      <span class="absolute -top-3 left-5 rounded bg-cyan-600 px-1 text-[11px] leading-4 font-bold text-white">${label}</span>
+      <span class="absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-mist shadow-[0_0_2px_#000]"></span>
+      <span class="absolute top-1/2 left-0 h-px w-full -translate-y-1/2 bg-mist shadow-[0_0_2px_#000]"></span>
+      <span class="absolute -top-3 left-5 rounded bg-mist px-1 text-[11px] leading-4 font-bold" style="color:#0c1514">${label}</span>
     </div>`,
   })
 }

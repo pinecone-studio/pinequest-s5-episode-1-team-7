@@ -5,8 +5,8 @@ export function NotFound() {
   const { t } = useTranslation()
   return (
     <main className="p-8 text-center">
-      <h1 className="text-lg font-semibold">{t('notFound.title')}</h1>
-      <Link to="/" className="mt-2 inline-block text-cyan-700 underline dark:text-cyan-400">
+      <h1 className="font-display text-lg font-bold">{t('notFound.title')}</h1>
+      <Link to="/" className="mt-2 inline-block text-mist underline hover:text-mist-strong">
         {t('notFound.back')}
       </Link>
     </main>

@@ -7,6 +7,9 @@
   "language": {
     "label": "Language"
   },
+  "theme": {
+    "toggle": "Switch to light"
+  },
   "disclaimer": {
     "title": "Prioritisation assistant, not a diagnostic engine.",
     "body": "The AI only orders the worklist. All slides must be manually reviewed by a pathologist."

@@ -6,9 +6,9 @@ export function DisclaimerBanner() {
   return (
     <p
       role="note"
-      className="border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100"
+      className="border-b border-[#d8c49a] bg-[#f4ecd9] px-4 py-1.5 text-center text-xs leading-relaxed text-[#6d5220] dark:border-line-soft dark:bg-[#221f17] dark:text-[#cdbf9c]"
     >
-      <strong className="font-semibold">{t('disclaimer.title')}</strong> {t('disclaimer.body')}
+      <strong className="font-display font-semibold text-[#4f3d17] dark:text-[#e2d3a6]">{t('disclaimer.title')}</strong> {t('disclaimer.body')}
     </p>
   )
 }
