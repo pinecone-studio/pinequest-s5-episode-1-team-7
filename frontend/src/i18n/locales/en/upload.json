@@ -31,5 +31,10 @@
   "objective": {
     "label": "Objective",
     "hint": "µm/px is scaled from the setup's calibration — 40x sees 4× finer than 10x."
+  },
+  "organ": {
+    "label": "Organ",
+    "pick": "Select the organ…",
+    "hint": "Each organ has its own AI model. Pick the organ on the slide — the wrong model gives meaningless scores."
   }
 }

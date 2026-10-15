@@ -42,6 +42,7 @@ export function makeSlide(id: number, overrides: Partial<Slide> = {}): Slide {
     scale_warning: null,
     model_name: null,
     model_sha256: null,
+    organ: null,
     created_at: '2026-10-09T08:00:00.000Z',
     updated_at: '2026-10-09T08:01:00.000Z',
     ...overrides,
@@ -136,9 +137,11 @@ export class MockBackend {
     s.updated_at = new Date().toISOString()
   }
 
-  /** GET /queue?sort=risk: manual priority first, then score; time: oldest first. */
-  private queue(sort: string | null) {
-    const queued = this.slides.filter((s) => s.state === 'queued')
+  /** GET /queue?sort=risk: manual priority first, then score; time: oldest first. `organ` narrows; null-organ slides count as lymph_node. */
+  private queue(sort: string | null, organ: string | null) {
+    const queued = this.slides.filter(
+      (s) => s.state === 'queued' && (organ == null || s.organ === organ || (s.organ == null && organ === 'lymph_node')),
+    )
     if (sort === 'time') return queued.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
     return queued.sort(
       (a, b) =>
@@ -151,6 +154,8 @@ export class MockBackend {
   private ingest(fields: Record<string, string>) {
     const setupId = fields.setup_id === undefined || fields.setup_id === '' ? null : Number(fields.setup_id)
     const objective = fields.objective || null
+    const organ = fields.organ || 'lymph_node'
+    if (!['lymph_node', 'colon'].includes(organ)) throw new Error(`no AI model for organ '${organ}'`)
     let umPerPx: number | null = null
     if (objective && setupId == null) throw new Error('objective needs a setup_id (calibrate a setup first)')
     if (setupId != null) {
@@ -170,6 +175,7 @@ export class MockBackend {
       setup_id: setupId,
       objective,
       um_per_px: umPerPx,
+      organ,
       created_at: new Date().toISOString(),
     })
     this.slides.push(slide)
@@ -195,11 +201,26 @@ export class MockBackend {
         }
 
         if (path === '/health') return json(route, { status: 'ok' })
-        if (path === '/model') return json(route, mockModelInfo)
-        if (path === '/queue') return json(route, this.queue(url.searchParams.get('sort')))
+        if (path === '/organs') return json(route, ['lymph_node', 'colon'])
+        if (path === '/model') {
+          const organ = url.searchParams.get('organ')
+          if (organ && !['lymph_node', 'colon'].includes(organ)) {
+            return json(route, { detail: `no AI model for organ '${organ}'` }, 404)
+          }
+          const name = organ === 'colon' ? 'CRC MobileNetV3-Small, Hibou-B-distilled' : mockModelInfo.card.name
+          return json(route, { ...mockModelInfo, organ: organ ?? 'lymph_node', card: { ...mockModelInfo.card, name } })
+        }
+        if (path === '/queue') {
+          return json(route, this.queue(url.searchParams.get('sort'), url.searchParams.get('organ')))
+        }
         if (path === '/slides') {
           const state = url.searchParams.get('state')
-          const list = this.slides.filter((s) => !state || s.state === state)
+          const organ = url.searchParams.get('organ')
+          const list = this.slides.filter(
+            (s) =>
+              (!state || s.state === state) &&
+              (organ == null || s.organ === organ || (s.organ == null && organ === 'lymph_node')),
+          )
           return json(route, [...list].sort((a, b) => b.created_at.localeCompare(a.created_at)))
         }
         if (path === '/ingest' && method === 'POST') {

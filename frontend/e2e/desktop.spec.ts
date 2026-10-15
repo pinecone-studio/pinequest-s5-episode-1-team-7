@@ -42,6 +42,7 @@ test('starts the backend, runs the full review flow offline, and stops the backe
 
   await win.getByRole('radio', { name: 'EN' }).click()
   await win.getByRole('radio', { name: 'Urgent' }).click()
+  await win.getByRole('complementary').getByLabel('Organ').selectOption('lymph_node')
   await win.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
   await win.getByRole('button', { name: 'Submit for AI triage' }).click()
 

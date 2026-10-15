@@ -35,11 +35,11 @@ def _log(conn: sqlite3.Connection, slide_id: int, src: Optional[str], dst: str, 
 
 def create_slide(conn: sqlite3.Connection, local_hash: str, indication: str, image_path: str,
                  setup_id: Optional[int] = None, objective: Optional[str] = None,
-                 um_per_px: Optional[float] = None) -> int:
+                 um_per_px: Optional[float] = None, organ: Optional[str] = None) -> int:
     cur = conn.execute(
-        "INSERT INTO slides (local_hash, indication, state, image_path, setup_id, objective, um_per_px)"
-        " VALUES (?,?,?,?,?,?,?)",
-        (local_hash, indication, SlideState.NEW.value, image_path, setup_id, objective, um_per_px),
+        "INSERT INTO slides (local_hash, indication, state, image_path, setup_id, objective, um_per_px, organ)"
+        " VALUES (?,?,?,?,?,?,?,?)",
+        (local_hash, indication, SlideState.NEW.value, image_path, setup_id, objective, um_per_px, organ),
     )
     slide_id = cur.lastrowid
     _log(conn, slide_id, None, SlideState.NEW.value, None)
@@ -88,7 +88,16 @@ def set_score(conn: sqlite3.Connection, slide_id: int, score: float, flag: Optio
     transition(conn, slide_id, SlideState.QUEUED)
 
 
-def list_queue(conn: sqlite3.Connection, sort: str = "risk") -> list[sqlite3.Row]:
+def _organ_filter(organ: Optional[str], default_organ: str) -> tuple[str, list]:
+    """SQL fragment matching one organ. Slides from before organs existed (organ
+    IS NULL) count as the default organ, so old worklists keep working."""
+    if organ is None:
+        return "", []
+    return "AND (organ = ? OR (organ IS NULL AND ? = ?))", [organ, default_organ, organ]
+
+
+def list_queue(conn: sqlite3.Connection, sort: str = "risk", organ: Optional[str] = None,
+               default_organ: str = "lymph_node") -> list[sqlite3.Row]:
     """Worklist (state = queued). 'risk' = descending S_slide (manual priority wins); 'time' = oldest first."""
     if sort == "time":
         order = "created_at ASC, id ASC"
@@ -96,16 +105,23 @@ def list_queue(conn: sqlite3.Connection, sort: str = "risk") -> list[sqlite3.Row
         # A pathologist's explicit override always outranks the AI score, even on ties.
         order = ("(priority_override IS NOT NULL) DESC, "
                  "COALESCE(priority_override, risk_score) DESC, created_at ASC, id ASC")
+    clause, params = _organ_filter(organ, default_organ)
     return conn.execute(
-        f"SELECT * FROM slides WHERE state=? ORDER BY {order}", (SlideState.QUEUED.value,)
+        f"SELECT * FROM slides WHERE state=? {clause} ORDER BY {order}",
+        [SlideState.QUEUED.value, *params],
     ).fetchall()
 
 
-def list_all(conn: sqlite3.Connection, state: Optional[str] = None) -> list[sqlite3.Row]:
+def list_all(conn: sqlite3.Connection, state: Optional[str] = None, organ: Optional[str] = None,
+             default_organ: str = "lymph_node") -> list[sqlite3.Row]:
+    clause, params = _organ_filter(organ, default_organ)
     if state:
         return conn.execute(
-            "SELECT * FROM slides WHERE state=? ORDER BY created_at DESC, id DESC", (state,)).fetchall()
-    return conn.execute("SELECT * FROM slides ORDER BY created_at DESC, id DESC").fetchall()
+            f"SELECT * FROM slides WHERE state=? {clause} ORDER BY created_at DESC, id DESC",
+            [state, *params]).fetchall()
+    return conn.execute(
+        f"SELECT * FROM slides WHERE 1=1 {clause} ORDER BY created_at DESC, id DESC",
+        params).fetchall()
 
 
 def list_events(conn: sqlite3.Connection, slide_id: int) -> list[sqlite3.Row]:

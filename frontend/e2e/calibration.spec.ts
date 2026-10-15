@@ -95,13 +95,14 @@ test('uploads with the calibrated setup and objective', async ({ page, backend }
   await page.goto('/')
 
   await page.getByLabel('Microscope setup').selectOption({ label: 'Scope A' })
+  await page.getByRole('complementary').getByLabel('Organ').selectOption('lymph_node')
   await page.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
   await page.getByRole('button', { name: 'Submit for AI triage' }).click()
   await expect(page.getByText(/Slide #\d+ added/)).toBeVisible()
 
   // Multipart fields arrive as strings; the objective defaults to the setup's calibration.
   expect(backend.posts).toEqual([
-    { path: '/ingest', body: { indication: 'Routine', setup_id: '1', objective: '40x' } },
+    { path: '/ingest', body: { indication: 'Routine', setup_id: '1', objective: '40x', organ: 'lymph_node' } },
   ])
   const slide = backend.slides.at(-1)!
   expect(slide.setup_id).toBe(1)

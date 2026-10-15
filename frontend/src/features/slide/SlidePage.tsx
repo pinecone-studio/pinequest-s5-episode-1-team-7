@@ -91,6 +91,7 @@ function Heading({ slide }: { slide: Slide }) {
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
             <span title={f.dateTime(slide.created_at)}>{t('received', { when: f.ago(slide.created_at) })}</span>
             <IndicationBadge indication={slide.indication} />
+            <span>{t(`common:organ.names.${slide.organ ?? 'lymph_node'}`, { defaultValue: slide.organ ?? 'lymph_node' })}</span>
           </p>
         </div>
         <StateLabel state={slide.state} />

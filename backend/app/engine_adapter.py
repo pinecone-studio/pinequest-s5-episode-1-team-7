@@ -2,7 +2,7 @@
 
 Member 1 exposes ONE function (default TRIAGE_ENGINE="engine.pipeline:analyze_slide"):
 
-    def analyze_slide(image_path: str, um_per_px: float | None = None) -> dict:
+    def analyze_slide(image_path: str, um_per_px: float | None = None, organ: str | None = None) -> dict:
         return {
             "score": 0.83,                 # S_slide in [0, 1]            (required)
             "risk_flag": "red",            # "red" | "yellow" | "green"   (optional)
@@ -11,24 +11,30 @@ Member 1 exposes ONE function (default TRIAGE_ENGINE="engine.pipeline:analyze_sl
             "inference_ms": 1180.0,        # (optional)
             "um_per_px_used": 0.25,        # µm/px the photo was taken at, None if not given (optional)
             "scale_warning": None,         # e.g. "no_scale_info" when um_per_px was None (optional)
+            "organ": "colon",              # organ whose model scored it (optional)
         }
 
 `um_per_px` is the photo's microns per pixel from the backend's calibrated setup
-profile (issue #35); the engine resizes to its training scale (MODEL_UM_PER_PX = 0.42)
-before tiling, and the heatmap keeps the original photo's size. Values outside
-0.05-2.0 µm/px raise ValueError (almost certainly a calibration or objective mistake),
-so the slide is marked FAILED. Engines that only take `image_path` keep working: the
-backend passes `um_per_px` only when the entry point accepts it (see call_engine).
+profile (issue #35); the engine resizes to that organ model's training scale
+(0.42 µm/px for lymph node, 0.5 for colon) before tiling, and the heatmap keeps
+the original photo's size. Values outside 0.05-2.0 µm/px raise ValueError
+(almost certainly a calibration or objective mistake), so the slide is marked
+FAILED. `organ` picks the organ's model (issue #53); None means the default
+organ and there is no fallback to another organ's model — an unknown organ
+raises ValueError. Engines that only take `image_path` keep working: the
+backend passes `um_per_px`/`organ` only when the entry point accepts them
+(see call_engine).
 
 If `risk_flag` is omitted the backend derives it from config thresholds.
 Until the engine exists (or if it fails to import) a deterministic STUB is used so the whole
 pipeline can be demoed. The stub is NOT a real model.
 
-Member 1 also exposes `model_info() -> dict` (About the AI): the committed model
-card plus the live model file (name, SHA-256, whether it matches the card) and
-the ONNX execution provider in use. `GET /model` serves it; every scored slide
-stores the model name + hash (stub scores are labelled `model_name="stub"`).
-Engines without `model_info` get `GET /model` 503.
+Member 1 also exposes `model_info(organ=None) -> dict` (About the AI): the organ's
+committed model card plus the live model file (name, SHA-256, whether it matches
+the card) and the ONNX execution provider in use. `GET /model` serves it (per
+organ); every scored slide stores organ + model name + hash (stub scores are
+labelled `model_name="stub"`). Engines without `model_info` get `GET /model` 503.
+`available_organs()` lists organs whose model file is present, default first.
 """
 import functools
 import importlib
@@ -61,6 +67,7 @@ class AnalysisResult:
     inference_ms: Optional[float] = None
     um_per_px_used: Optional[float] = None
     scale_warning: Optional[str] = None
+    organ: Optional[str] = None
 
     @classmethod
     def from_dict(cls, raw: Any) -> "AnalysisResult":
@@ -91,6 +98,9 @@ class AnalysisResult:
         scale_warning = raw.get("scale_warning")
         if scale_warning is not None:
             scale_warning = str(scale_warning)
+        organ = raw.get("organ")
+        if organ is not None:
+            organ = str(organ)
         return cls(
             score=score,
             risk_flag=flag,
@@ -99,23 +109,28 @@ class AnalysisResult:
             inference_ms=float(inference_ms) if inference_ms is not None else None,
             um_per_px_used=um_per_px_used,
             scale_warning=scale_warning,
+            organ=organ,
         )
 
 
-def call_engine(fn: AnalyzeFn, image_path: str, um_per_px: Optional[float] = None) -> dict:
-    """Call the engine entry point, passing um_per_px (issue #35) when it accepts it.
+def call_engine(fn: AnalyzeFn, image_path: str, um_per_px: Optional[float] = None,
+                organ: Optional[str] = None) -> dict:
+    """Call the engine entry point, passing um_per_px/organ when accepted.
 
-    Old engines and test doubles that only take image_path keep working: um_per_px
-    is passed as a keyword only when the signature has that parameter.
+    Old engines and test doubles that only take image_path keep working: each
+    keyword is passed only when the signature has that parameter (issue #53).
     """
-    if um_per_px is not None:
+    kwargs: dict = {}
+    if um_per_px is not None or organ is not None:
         try:
             params = inspect.signature(fn).parameters
         except (TypeError, ValueError):
             params = {}
-        if "um_per_px" in params:
-            return fn(image_path, um_per_px=um_per_px)
-    return fn(image_path)
+        if um_per_px is not None and "um_per_px" in params:
+            kwargs["um_per_px"] = um_per_px
+        if organ is not None and "organ" in params:
+            kwargs["organ"] = organ
+    return fn(image_path, **kwargs)
 
 
 def _ensure_repo_root() -> None:
@@ -128,8 +143,8 @@ def _ensure_repo_root() -> None:
         pass
 
 
-def get_model_info() -> Optional[dict]:
-    """The engine's model card plus live file/provider status (About the AI).
+def get_model_info(organ: Optional[str] = None) -> Optional[dict]:
+    """The organ model's card plus live file/provider status (About the AI).
 
     Returns None when the engine cannot be imported or predates model_info()
     (the stub has no model to describe). Never raises.
@@ -140,10 +155,42 @@ def get_model_info() -> Optional[dict]:
         fn = getattr(importlib.import_module(module_name), "model_info", None)
         if not callable(fn):
             return None
-        info = fn()
+        try:
+            params = inspect.signature(fn).parameters
+        except (TypeError, ValueError):
+            params = {}
+        info = fn(organ=organ) if "organ" in params else fn()
         return info if isinstance(info, dict) else None
     except Exception:
         return None
+
+
+def available_organs() -> list:
+    """Organs with a model file present, default first (for the organ picker).
+
+    Empty when the engine cannot be imported: the caller falls back to the
+    default organ instead of offering nothing.
+    """
+    try:
+        _ensure_repo_root()
+        module_name, _ = config.ENGINE_ENTRYPOINT.split(":")
+        fn = getattr(importlib.import_module(module_name), "available_organs", None)
+        if not callable(fn):
+            return []
+        organs = fn()
+        return list(organs) if organs else []
+    except Exception:
+        return []
+
+
+def default_organ() -> str:
+    """The organ used when none is picked (old slides, plain API calls)."""
+    try:
+        _ensure_repo_root()
+        module_name, _ = config.ENGINE_ENTRYPOINT.split(":")
+        return str(getattr(importlib.import_module(module_name), "DEFAULT_ORGAN", "lymph_node"))
+    except Exception:
+        return "lymph_node"
 
 
 def _stub_analyze_slide(image_path: str, um_per_px: Optional[float] = None) -> dict:

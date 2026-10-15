@@ -80,5 +80,11 @@
     "title": "Something went wrong on this page",
     "body": "Your cases are safe on the clinic computer. Reload the dashboard to continue.",
     "reload": "Reload dashboard"
+  },
+  "organ": {
+    "names": {
+      "lymph_node": "Lymph node",
+      "colon": "Colon"
+    }
   }
 }

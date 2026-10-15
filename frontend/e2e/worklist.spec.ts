@@ -44,12 +44,13 @@ test.describe('priority worklist', () => {
 
     await page.getByLabel('Patient ID (optional)').fill('MRN-0042')
     await page.getByRole('radio', { name: 'Urgent' }).click()
+    await page.getByRole('complementary').getByLabel('Organ').selectOption('lymph_node')
     await page.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
     await expect(page.getByRole('img', { name: 'Selected slide photo' })).toBeVisible()
     await page.getByRole('button', { name: 'Submit for AI triage' }).click()
 
     await expect(page.getByText('Slide #4 added.')).toBeVisible()
-    expect(backend.posts).toEqual([{ path: '/ingest', body: { patient_id: 'MRN-0042', indication: 'Urgent' } }])
+    expect(backend.posts).toEqual([{ path: '/ingest', body: { patient_id: 'MRN-0042', indication: 'Urgent', organ: 'lymph_node' } }])
     await expect(page.getByRole('region', { name: 'Processing and failed' }).getByRole('link', { name: /Slide #4/ })).toContainText(
       'AI model running',
     )

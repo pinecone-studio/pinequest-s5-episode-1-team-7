@@ -53,7 +53,7 @@ def test_scored_slide_records_model(env, monkeypatch):
 
 def test_stub_scored_slide_is_labelled_stub(env, monkeypatch):
     monkeypatch.setattr(pipeline, "load_engine", lambda: engine_adapter._stub_analyze_slide)
-    monkeypatch.setattr(pipeline, "get_model_info", lambda: None)
+    monkeypatch.setattr(pipeline, "get_model_info", lambda organ=None: None)
     slide_id = ingest.ingest_bytes(make_jpeg(), None)
     pipeline.process_slide(slide_id)
     with db.session() as conn:
@@ -63,7 +63,7 @@ def test_stub_scored_slide_is_labelled_stub(env, monkeypatch):
 
 def test_slide_api_exposes_model(env, monkeypatch):
     monkeypatch.setattr(pipeline, "load_engine", lambda: engine_adapter._stub_analyze_slide)
-    monkeypatch.setattr(pipeline, "get_model_info", lambda: None)
+    monkeypatch.setattr(pipeline, "get_model_info", lambda organ=None: None)
     with _api() as client:
         sid = client.post("/ingest", files={"file": ("s.jpg", make_jpeg(), "image/jpeg")}).json()["id"]
         slide = client.get(f"/slides/{sid}").json()

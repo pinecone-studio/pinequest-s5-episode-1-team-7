@@ -16,10 +16,11 @@ Data (DB, images, heatmaps) lives in `~/.pathology-triage` (override: `TRIAGE_DA
 ## API
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/ingest` | multipart `file`, `patient_id`, `indication` (Routine/Urgent), `setup_id?`, `objective?` (`10x`/`20x`/`40x`) -> 202 `{id,state}` |
-| GET | `/queue?sort=risk\|time` | worklist (state=queued), descending S_slide (manual priority wins) |
-| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log (`Slide` carries `setup_id`, `objective`, `um_per_px`, `scale_warning`, `model_name`, `model_sha256`) |
-| GET | `/model` | model card + live model file (name, SHA-256, matches-card) + ONNX provider (About the AI) |
+| POST | `/ingest` | multipart `file`, `patient_id`, `indication` (Routine/Urgent), `setup_id?`, `objective?` (`10x`/`20x`/`40x`), `organ?` (default `lymph_node`) -> 202 `{id,state}` |
+| GET | `/queue?sort=risk\|time&organ?` | worklist (state=queued), descending S_slide (manual priority wins); `organ` filters (slides without organ count as `lymph_node`) |
+| GET | `/slides`, `/slides/{id}`, `/slides/{id}/events` | records / audit log (`Slide` carries `setup_id`, `objective`, `um_per_px`, `scale_warning`, `model_name`, `model_sha256`, `organ`) |
+| GET | `/model?organ?` | organ model card + live file + ONNX provider (About the AI; default organ when omitted) |
+| GET | `/organs` | organ keys with a model file present, default first (never empties) |
 | GET | `/slides/{id}/image`, `/slides/{id}/heatmap` | files |
 | POST | `/slides/{id}/open` | queued -> under_review |
 | POST | `/slides/{id}/action` | `confirm_malignancy` / `mark_benign` / `request_biopsy` (archive) or `reassign_priority` + `priority` 0-1 |
@@ -34,8 +35,10 @@ Data (DB, images, heatmaps) lives in `~/.pathology-triage` (override: `TRIAGE_DA
 Slides interrupted by a crash/power cut are marked `failed` on the next start.
 
 ## Engine contract (Member 1)
-Expose `analyze_slide(image_path: str) -> dict` with `score` (0-1, required) and optional `risk_flag`
-(`red|yellow|green`), `heatmap_path` (PNG), `num_patches`, `inference_ms`. Default entry point is
+Expose `analyze_slide(image_path, um_per_px=None, organ=None) -> dict` with `score` (0-1, required) and optional `risk_flag`
+(`red|yellow|green`), `heatmap_path` (PNG), `num_patches`, `inference_ms`, `um_per_px_used`, `scale_warning`, `organ`.
+`organ` picks the organ's model (`available_organs()`, default `lymph_node`, no fallback); unknown organs raise ValueError.
+`model_info(organ=None)` returns the organ card + live status. Default entry point is
 `engine.pipeline:analyze_slide` (override with `TRIAGE_ENGINE`). If it cannot be imported a stub scorer is used (logged as a warning).
 
 ## Configuration (env vars)

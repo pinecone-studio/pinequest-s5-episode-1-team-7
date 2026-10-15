@@ -4,17 +4,23 @@ import uuid
 from typing import Optional
 
 from . import anonymize, config, db, quality, queue, setups
+from .engine_adapter import available_organs, default_organ
 
 ALLOWED_INDICATIONS = {"Routine", "Urgent"}
 
 
 def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Routine",
-                 setup_id: Optional[int] = None, objective: Optional[str] = None) -> int:
+                 setup_id: Optional[int] = None, objective: Optional[str] = None,
+                 organ: Optional[str] = None) -> int:
     """Validate, anonymize and store an image, then create the slide record (state NEW). Returns slide id.
 
     setup_id/objective (issue #35) resolve the photo's µm/px from a calibrated setup
     profile; it is stored on the slide and passed to the engine. An objective without
     a setup, an unknown setup or a bad objective all raise ValueError.
+
+    organ (issue #53) picks the organ's model; None means the default organ. An
+    organ with no model raises ValueError (checked against the engine's list
+    whenever the engine is available).
 
     Raises ValueError for bad input (empty / too large / not an image / bad indication
     / too blurry when TRIAGE_SHARPNESS > 0).
@@ -27,6 +33,12 @@ def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Rout
         raise ValueError(f"file larger than {config.MAX_UPLOAD_MB} MB")
     if setup_id is None and objective is not None:
         raise ValueError("objective needs a setup_id (calibrate a setup first)")
+    if organ is None:
+        organ = default_organ()
+    else:
+        known = available_organs()
+        if known and organ not in known:
+            raise ValueError(f"no AI model for organ {organ!r}; available: {sorted(known)}")
     um_per_px: Optional[float] = None
     if setup_id is not None:
         with db.session() as conn:
@@ -46,7 +58,7 @@ def ingest_bytes(data: bytes, patient_id: Optional[str], indication: str = "Rout
     try:
         with db.session() as conn:
             return queue.create_slide(conn, anonymize.hash_patient_id(patient_id), indication, str(path),
-                                      setup_id, objective, um_per_px)
+                                      setup_id, objective, um_per_px, organ)
     except Exception:
         path.unlink(missing_ok=True)
         raise

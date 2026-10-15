@@ -11,6 +11,7 @@ test('upload → AI score → review → archive against the real backend', asyn
 
   await page.getByLabel('Patient ID (optional)').fill('E2E-PATIENT')
   await page.getByRole('radio', { name: 'Urgent' }).click()
+  await page.getByRole('complementary').getByLabel('Organ').selectOption('lymph_node')
   await page.locator('input[type=file]').setInputFiles(SLIDE_PHOTO)
   await page.getByRole('button', { name: 'Submit for AI triage' }).click()
   await expect(page.getByText(/Slide #1 added/)).toBeVisible()

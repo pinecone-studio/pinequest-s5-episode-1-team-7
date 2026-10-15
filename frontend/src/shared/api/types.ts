@@ -64,6 +64,8 @@ export interface Slide {
   model_name: string | null
   /** SHA-256 of the model file that scored the slide; null for the stub. */
   model_sha256: string | null
+  /** Which organ's model scored the slide (issue #53); null on slides from before organs existed. */
+  organ: string | null
   created_at: string
   updated_at: string
 }
@@ -134,6 +136,7 @@ export interface ModelCard {
 }
 
 export interface ModelInfo {
+  organ: string | null
   card: ModelCard | null
   file: { path: string | null; name: string | null; exists: boolean; sha256: string | null; matches_card: boolean }
   provider: string | null

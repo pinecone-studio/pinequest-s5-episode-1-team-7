@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS slides (
     scale_warning     TEXT,
     model_name        TEXT,
     model_sha256      TEXT,
+    organ             TEXT,
     created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
     updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
@@ -65,6 +66,7 @@ _SLIDES_MIGRATION = (
     ("scale_warning", "TEXT"),
     ("model_name", "TEXT"),
     ("model_sha256", "TEXT"),
+    ("organ", "TEXT"),
 )
 
 
