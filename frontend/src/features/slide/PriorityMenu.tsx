@@ -57,7 +57,7 @@ export function PriorityMenu({ slide }: { slide: Slide }) {
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      {reassign.error && <p className="mt-1 text-sm text-critical">{reassign.error.message}</p>}
+      {reassign.error && <p className="mt-1 text-sm text-[#8e2a5b] dark:text-[#f0a6c8]">{reassign.error.message}</p>}
     </div>
   )
 }

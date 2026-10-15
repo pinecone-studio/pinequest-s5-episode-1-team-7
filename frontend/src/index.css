@@ -28,10 +28,13 @@
   --color-mist-ink: #0c1514;
   --color-mist-wash: #1a2b28;
 
-  /* ——— Risk flags: dusty, desaturated — readable without shouting ——— */
-  --color-critical: #cf8d8d;
-  --color-high: #c9ac7c;
-  --color-routine: #8fc0a6;
+  /* ——— Risk flags: verified colour-budget hues (see features/triage/risk.ts).
+     Text usages below are single-theme midpoints; components that render
+     text on a surface use explicit light:/dark: pairs instead. ——— */
+  --color-critical: #d6542f;
+  --color-high: #a5813f;
+  --color-routine: #2f8f74;
+  --color-error: #c24383;
   --color-info: #8fa9c6;
   --color-vio: #b3a6d6;
 }
@@ -153,6 +156,24 @@ html.light .panel {
 .leaflet-container {
   background: #0c1116;
   font: inherit;
+}
+
+/* Viewer chrome stays near-black (both themes): the photo is the brightest thing. */
+.leaflet-bar {
+  border: 1px solid rgb(255 255 255 / 0.1) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.7) !important;
+}
+.leaflet-bar a {
+  background-color: rgb(0 0 0 / 0.7) !important;
+  color: #b6c1cc !important;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1) !important;
+  backdrop-filter: blur(8px);
+}
+.leaflet-bar a:hover {
+  background-color: rgb(30 38 49 / 0.9) !important;
+  color: #e6ebf0 !important;
 }
 
 .reorder-move {

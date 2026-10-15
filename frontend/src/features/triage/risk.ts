@@ -1,24 +1,34 @@
 import type { RiskFlag, Slide } from '../../shared/api/types.ts'
 
 /**
- * Red / yellow / green risk flag colours (TDD 6.1).
- * Dusty, desaturated tones in both modes: readable without neon glare.
+ * Red / yellow / green risk flag colours (TDD 6.1) — the "colour budget".
+ *
+ * - Red is the most salient: highest chroma, vivid orange-red (not the darkest).
+ * - Green leans teal so it stays apart from red under red-green colour blindness.
+ * - Yellow is pale straw (dark theme) / dark olive (light theme): lightness
+ *   separates it from red when hue vision collapses.
+ * - Bars, rings and row edges reuse the badge text colours per theme, so every
+ *   rendered flag colour is one of the verified pairs:
+ *   contrast 5.1–8.3:1 (WCAG AA needs 4.5), every pair ΔE ≥ 20 under
+ *   simulated deuteranopia and protanopia.
+ * - Each flag also has a shape cue (see TriageBadges: ▲ ◆ ●), so flags work
+ *   in greyscale. Row edges appear on red/yellow rows only.
  */
 export const RISK_STYLE: Record<RiskFlag, { badge: string; bar: string; ring: string }> = {
   red: {
-    badge: 'border border-[#dfb9b9] bg-[#f3e2e2] text-[#7a3535] dark:border-[#5a3436] dark:bg-[#3a2426] dark:text-[#eec3c3]',
-    bar: 'bg-[#a85656] dark:bg-[#cf8d8d]',
-    ring: 'border-l-[#a85656] dark:border-l-[#cf8d8d]',
+    badge: 'border border-[#e8b49b] bg-[#fde9e2] text-[#b23a1f] dark:border-[#6b3a2c] dark:bg-[#3a2426] dark:text-[#ff7a45]',
+    bar: 'bg-[#b23a1f] dark:bg-[#ff7a45]',
+    ring: 'border-l-[#b23a1f] dark:border-l-[#ff7a45]',
   },
   yellow: {
-    badge: 'border border-[#d8c49a] bg-[#f2e8d3] text-[#6d5220] dark:border-[#57492f] dark:bg-[#3a3120] dark:text-[#e6cf9c]',
-    bar: 'bg-[#a5813f] dark:bg-[#c9ac7c]',
-    ring: 'border-l-[#a5813f] dark:border-l-[#c9ac7c]',
+    badge: 'border border-[#d3be8a] bg-[#f6ecd4] text-[#4f4f08] dark:border-[#57492f] dark:bg-[#3a3120] dark:text-[#ebcb8b]',
+    bar: 'bg-[#4f4f08] dark:bg-[#ebcb8b]',
+    ring: 'border-l-[#4f4f08] dark:border-l-[#ebcb8b]',
   },
   green: {
-    badge: 'border border-[#b3d4c2] bg-[#e2efe6] text-[#2f6b4e] dark:border-[#2f4a3e] dark:bg-[#22382f] dark:text-[#b7dcc4]',
-    bar: 'bg-[#4a8f6d] dark:bg-[#8fc0a6]',
-    ring: 'border-l-[#4a8f6d] dark:border-l-[#8fc0a6]',
+    badge: 'border border-[#a9cdbf] bg-[#dff0ea] text-[#0b6b5e] dark:border-[#2f5a50] dark:bg-[#1e3833] dark:text-[#7fe3d0]',
+    bar: 'bg-[#0b6b5e] dark:bg-[#7fe3d0]',
+    ring: 'border-l-[#0b6b5e] dark:border-l-[#7fe3d0]',
   },
 }
 

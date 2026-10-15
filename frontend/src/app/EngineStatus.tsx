@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { useHealth } from '../shared/api/queries.ts'
 import { cn } from '../shared/lib/cn.ts'
 
-/** Whether the local triage backend answers (GET /health). */
+/**
+ * Whether the local triage backend answers (GET /health).
+ * Colour budget: system states are not risk flags — teal for ok, error
+ * magenta for offline (never risk red), neutral pulse while connecting.
+ */
 export function EngineStatus() {
   const { t } = useTranslation()
   const health = useHealth()
@@ -16,7 +20,11 @@ export function EngineStatus() {
       <span
         className={cn(
           'size-2 shrink-0 rounded-full',
-          state === 'online' ? 'bg-routine shadow-[0_0_8px_rgb(143_192_166/0.8)]' : state === 'offline' ? 'bg-critical' : 'animate-pulse bg-high',
+          state === 'online'
+            ? 'bg-[#0b6b5e] dark:bg-[#7fe3d0]'
+            : state === 'offline'
+              ? 'bg-[#8e2a5b] dark:bg-[#f0a6c8]'
+              : 'animate-pulse bg-ink-faint',
         )}
       />
       <span className="truncate">{t(`engine.${state}`)}</span>

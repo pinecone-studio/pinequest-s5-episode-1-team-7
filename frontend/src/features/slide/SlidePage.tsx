@@ -24,7 +24,7 @@ export function SlidePage() {
     const notFound = error instanceof ApiError && error.status === 404
     return (
       <main className="p-8 text-center">
-        <p className="text-critical">{notFound ? t('notFound') : error.message}</p>
+        <p className="text-[#8e2a5b] dark:text-[#f0a6c8]">{notFound ? t('notFound') : error.message}</p>
         <Link to="/" className="mt-2 inline-block text-mist underline hover:text-mist-strong">
           {t('backToWorklist')}
         </Link>

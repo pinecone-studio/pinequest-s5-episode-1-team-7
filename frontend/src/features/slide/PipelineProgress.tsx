@@ -11,10 +11,11 @@ const STEPS: SlideState[] = ['new', 'image_processing', 'ai_running', 'scored', 
 export function PipelineProgress({ slide }: { slide: Slide }) {
   const { t } = useTranslation(['slide', 'common'])
   if (slide.state === 'failed') {
+    // Failed analysis is an error (magenta), never a risk colour.
     return (
-      <section className="rounded-xl border border-[#dfb9b9] bg-[#f7e8e8] p-3 text-sm dark:border-[#5a3436] dark:bg-[#2a1e20]">
-        <h2 className="font-display font-bold text-[#7a3535] dark:text-[#eec3c3]">{t('pipeline.failed')}</h2>
-        {slide.error && <p className="tnum mt-1 break-words text-[#965151] dark:text-[#d8a3a3]">{slide.error}</p>}
+      <section className="rounded-xl border border-[#dfa3be] bg-[#f9e3ec] p-3 text-sm dark:border-[#6b3450] dark:bg-[#38222e]">
+        <h2 className="font-display font-bold text-[#8e2a5b] dark:text-[#f0a6c8]">{t('pipeline.failed')}</h2>
+        {slide.error && <p className="tnum mt-1 break-words text-[#a34a76] dark:text-[#d894b8]">{slide.error}</p>}
       </section>
     )
   }
@@ -32,7 +33,7 @@ export function PipelineProgress({ slide }: { slide: Slide }) {
             className={cn('flex items-center gap-2 text-sm', i > current ? 'text-ink-faint' : i === current ? 'font-medium text-ink' : 'text-ink-dim')}
           >
             <span className="flex size-4 items-center justify-center">
-              {i < current ? <span className="text-routine">✓</span> : i === current ? <Spinner className="text-mist" /> : <span className="size-1.5 rounded-full bg-current" />}
+              {i < current ? <span className="text-[#0b6b5e] dark:text-[#7fe3d0]">✓</span> : i === current ? <Spinner className="text-mist" /> : <span className="size-1.5 rounded-full bg-current" />}
             </span>
             {t(`common:state.${step}`)}
           </li>

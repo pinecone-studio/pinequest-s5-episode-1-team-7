@@ -16,7 +16,9 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
       to={`/slides/${s.id}`}
       className={cn(
         'group grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b border-l-[3px] border-b-line-soft px-4 py-3 transition duration-150 hover:bg-raised/70 focus-visible:bg-raised/70 focus-visible:outline-none md:grid-cols-[116px_minmax(0,1fr)_90px_120px_150px] md:items-center',
-        s.risk_flag ? RISK_STYLE[s.risk_flag].ring : 'border-l-transparent',
+        // Colour budget: the left edge is a scrolling cue for red/yellow rows only.
+        // Green rows stay quiet (no edge) so red slides stand out at a glance.
+        s.risk_flag === 'red' || s.risk_flag === 'yellow' ? RISK_STYLE[s.risk_flag].ring : 'border-l-transparent',
       )}
     >
       <span className="order-2 flex flex-wrap items-center gap-1 md:order-none">
@@ -39,7 +41,7 @@ export function SlideRow({ s, now }: { s: Slide; now: number }) {
       </span>
       <span className="order-5 col-span-2 flex flex-wrap items-center gap-2 md:order-none md:col-span-1">
         {s.state === 'archived' && s.decision ? (
-          <span className="text-xs font-medium text-routine">{t(`decision.${s.decision}`)}</span>
+          <span className="text-xs font-medium text-[#0b6b5e] dark:text-[#7fe3d0]">{t(`decision.${s.decision}`)}</span>
         ) : (
           <StateLabel state={s.state} />
         )}

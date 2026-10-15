@@ -117,5 +117,5 @@ function Archived({ slide }: { slide: Slide }) {
 
 function ErrorText({ error }: { error: Error | null }) {
   if (!error) return null
-  return <p className="text-sm text-critical">{error.message}</p>
+  return <p className="text-sm text-[#8e2a5b] dark:text-[#f0a6c8]">{error.message}</p>
 }
