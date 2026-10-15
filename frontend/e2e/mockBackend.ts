@@ -137,7 +137,7 @@ export class MockBackend {
     s.updated_at = new Date().toISOString()
   }
 
-  /** GET /queue?sort=risk: manual priority first, then score; time: oldest first. `organ` narrows; null-organ slides count as lymph_node. */
+  /** GET /queue?sort=risk: by priority (a manual priority replaces the score; it wins ties); time: oldest first. `organ` narrows; null-organ slides count as lymph_node. */
   private queue(sort: string | null, organ: string | null) {
     const queued = this.slides.filter(
       (s) => s.state === 'queued' && (organ == null || s.organ === organ || (s.organ == null && organ === 'lymph_node')),
@@ -145,8 +145,8 @@ export class MockBackend {
     if (sort === 'time') return queued.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
     return queued.sort(
       (a, b) =>
-        Number(b.priority_override != null) - Number(a.priority_override != null) ||
         (b.priority_override ?? b.risk_score ?? 0) - (a.priority_override ?? a.risk_score ?? 0) ||
+        Number(b.priority_override != null) - Number(a.priority_override != null) ||
         a.created_at.localeCompare(b.created_at),
     )
   }

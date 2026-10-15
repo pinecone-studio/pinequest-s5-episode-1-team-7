@@ -98,13 +98,18 @@ def _organ_filter(organ: Optional[str], default_organ: str) -> tuple[str, list]:
 
 def list_queue(conn: sqlite3.Connection, sort: str = "risk", organ: Optional[str] = None,
                default_organ: str = "lymph_node") -> list[sqlite3.Row]:
-    """Worklist (state = queued). 'risk' = descending S_slide (manual priority wins); 'time' = oldest first."""
+    """Worklist (state = queued). 'risk' = descending priority; 'time' = oldest first.
+
+    A pathologist's priority (0-1) replaces the slide's AI score in the ranking, so "low" sinks
+    and "highest" rises. It used to put every overridden slide above every AI-ranked one, so a
+    slide set back to low stayed at the top.
+    """
     if sort == "time":
         order = "created_at ASC, id ASC"
     else:
-        # A pathologist's explicit override always outranks the AI score, even on ties.
-        order = ("(priority_override IS NOT NULL) DESC, "
-                 "COALESCE(priority_override, risk_score) DESC, created_at ASC, id ASC")
+        # On a tie, the pathologist's explicit priority outranks the AI score.
+        order = ("COALESCE(priority_override, risk_score) DESC, "
+                 "(priority_override IS NOT NULL) DESC, created_at ASC, id ASC")
     clause, params = _organ_filter(organ, default_organ)
     return conn.execute(
         f"SELECT * FROM slides WHERE state=? {clause} ORDER BY {order}",

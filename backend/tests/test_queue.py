@@ -82,6 +82,22 @@ def test_reassign_priority_reorders(env):
         assert [r["id"] for r in queue.list_queue(conn)] == [b, a]
 
 
+def test_reassigned_priority_ranks_like_a_score(env):
+    with db.session() as conn:
+        top, mid, sid = _queued(conn, 0.9), _queued(conn, 0.6), _queued(conn, 0.3)
+        queue.apply_action(conn, sid, "reassign_priority", 0.75)   # high: between the two AI slides
+        assert [r["id"] for r in queue.list_queue(conn)] == [top, sid, mid]
+        queue.apply_action(conn, sid, "reassign_priority", 0.25)   # back to low: below both again
+        assert [r["id"] for r in queue.list_queue(conn)] == [top, mid, sid]
+
+
+def test_reassigned_priority_wins_a_tie_with_the_ai_score(env):
+    with db.session() as conn:
+        ai, manual = _queued(conn, 0.75), _queued(conn, 0.2)
+        queue.apply_action(conn, manual, "reassign_priority", 0.75)
+        assert [r["id"] for r in queue.list_queue(conn)] == [manual, ai]
+
+
 def test_reassign_from_review_returns_to_queue(env):
     with db.session() as conn:
         sid = _queued(conn, 0.2)
