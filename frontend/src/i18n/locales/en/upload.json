@@ -1,9 +1,7 @@
 {
   "title": "New slide",
-  "intro": "Capture high-field regions with the phone on the microscope eyepiece. Analysis runs on this computer, offline.",
   "field": {
     "patient": "Patient ID (optional)",
-    "patientHint": "Stored only as an anonymous code; photo metadata is removed.",
     "indication": "Clinical request"
   },
   "drop": {
@@ -24,7 +22,7 @@
   },
   "setup": {
     "label": "Microscope setup",
-    "none": "Captured resolution (uncalibrated)",
+    "none": "Uncalibrated",
     "hint": "Calibrate once per microscope + phone: every capture is then analysed at the AI's magnification.",
     "calibrate": "Calibrate a setup"
   },
@@ -34,7 +32,6 @@
   },
   "organ": {
     "label": "Organ",
-    "pick": "Select the organ…",
-    "hint": "Each organ has its own AI model. Pick the organ on the slide — the wrong model gives meaningless scores."
+    "pick": "Select the organ…"
   }
 }

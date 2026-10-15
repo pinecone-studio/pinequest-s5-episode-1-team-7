@@ -1,10 +1,9 @@
 import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { WorklistPage } from '../features/worklist/WorklistPage.tsx'
 import { AboutPage } from '../features/about/AboutPage.tsx'
-import { CalibratePage } from '../features/calibration/CalibratePage.tsx'
 import { DisclaimerBanner } from './DisclaimerBanner.tsx'
 import { ErrorBoundary } from './ErrorBoundary.tsx'
 import { Header } from './Header.tsx'
@@ -26,7 +25,8 @@ export default function App() {
             <Routes>
               <Route path="/" element={<WorklistPage />} />
               <Route path="/slides/:id" element={<SlidePage />} />
-              <Route path="/calibrate" element={<CalibratePage />} />
+              {/* Calibration is a dialog on the worklist now; keep old links working. */}
+              <Route path="/calibrate" element={<Navigate to="/" replace />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
