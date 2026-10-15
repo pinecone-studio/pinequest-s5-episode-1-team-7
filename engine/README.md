@@ -233,9 +233,11 @@ Phones are about as good as scanners. The last row is why the organ must be chos
 
 Caveats: CRC-VAL-HE-7K has no patient IDs, so the validation and test halves share patients. The test set is independent of training, but not of the epoch and threshold choices.
 
-### Stomach (Phase 2 — weights pending a GPU run)
+### Stomach (Phase 2 — on hold, not shipped)
 
-Data: [HMU-GC-HE-30K](https://doi.org/10.6084/m9.figshare.25954813) (Lou et al. 2024, CC BY 4.0, so trained weights may be redistributed with attribution). ~31,000 tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x objective — the AT2's nominal 20x scale), in the same tissue-class scheme as the colon data; tumour (TUM) vs everything else. Chosen over GasHisSDB, which is non-commercial only, ships small 80–160 px crops, and has no patient IDs to split by.
+**On hold since 15 Oct.** The model was trained (HMU test AUC 0.956) but is not good enough to offer. HMU is almost all gland-forming adenocarcinoma, and the model is at chance on PLISM's EBV-associated gastric cancer and misses some TCGA-STAD signet-ring slides, so it likely misses diffuse, signet-ring and EBV-associated gastric cancer. There is no stomach model or `pipeline/organs.py` entry on `main`. The trained model and a TCGA/GTEx whole-slide check are on the branches `feat/stomach-model` and `feat/gastric-eval`. Details: `docs/PLAN.md` Step 10. The recipe below is kept for when better gastric data is available.
+
+Data: [HMU-GC-HE-30K](https://doi.org/10.6084/m9.figshare.25954813) (Lou et al. 2024, CC BY 4.0, so trained weights may be redistributed with attribution). ~31,000 tiles of 224 px at ~0.5 µm/px (Aperio AT2, 20x objective — the AT2's nominal 20x scale), in the same tissue-class scheme as the colon data; tumour (TUM) vs everything else. Chosen over GasHisSDB (also CC BY 4.0 on figshare), which ships small 80–160 px crops that were renamed and shuffled, with no image or patient IDs to split by.
 
 `training/download_hmu_gc.py` converts the figshare zip to the PCam HDF5 layout (`--dataset hmu_gc` is registered in `training/pcam.py`). File names carry no patient or slide IDs, so train/valid/test are a stratified random 80/10/10 split — treat test as slightly optimistic. Then the standard recipe, on a CUDA GPU (teacher features + training need it; ~1–2 h on an RTX 4060):
 
