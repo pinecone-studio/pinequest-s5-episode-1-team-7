@@ -37,8 +37,8 @@
   },
   "priority": {
     "trigger": "Re-assign priority",
-    "hint": "Manually prioritised slides are listed above AI-ranked ones, ordered by this level.",
-    "hintReview": "Sends the slide back to the worklist with this priority, above AI-ranked slides."
+    "hint": "The worklist ranks this slide by the level's score instead of the AI's: Highest 100, High 75, Medium 50, Low 25.",
+    "hintReview": "Sends the slide back to the worklist, ranked by the level's score instead of the AI's."
   },
   "history": {
     "title_one": "History ({{count}} event)",

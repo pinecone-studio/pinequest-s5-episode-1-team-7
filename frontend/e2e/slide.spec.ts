@@ -51,7 +51,7 @@ test.describe('slide page', () => {
     expect(backend.posts).toEqual([])
   })
 
-  test('re-assigning priority from review sends the slide back to the top of the worklist', async ({ page, backend }) => {
+  test('re-assigning priority from review sends the slide back to the worklist, ranked by that level', async ({ page, backend }) => {
     backend.get(3).state = 'under_review'
     await page.goto('/slides/3')
     await page.getByRole('button', { name: 'Re-assign priority' }).click()
@@ -60,7 +60,8 @@ test.describe('slide page', () => {
     expect(backend.posts).toEqual([{ path: '/slides/3/action', body: { action: 'reassign_priority', priority: 0.75 } }])
 
     await page.getByRole('link', { name: 'Worklist' }).click()
-    await expect.poll(() => rowIds(page, 'Worklist')).toEqual([3, 1, 2])
+    // High = 75: below slide 1 (AI score 91), above slide 2 (12).
+    await expect.poll(() => rowIds(page, 'Worklist')).toEqual([1, 3, 2])
   })
 
   test('a failed slide can be retried', async ({ page, backend }) => {

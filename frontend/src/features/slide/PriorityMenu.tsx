@@ -6,8 +6,9 @@ import type { Slide } from '../../shared/api/types.ts'
 import { PRIORITY_LEVELS, priorityLevel } from '../triage/risk.ts'
 
 /**
- * "Re-assign priority" (TDD 6.2). The backend lists manually prioritised slides above AI-ranked ones;
- * on an under-review slide it also hands the slide back to the worklist.
+ * "Re-assign priority" (TDD 6.2). The level replaces the slide's AI score in the worklist ranking
+ * as if it were the slide's score (highest 100 ... low 25; it wins ties); on an
+ * under-review slide it also hands the slide back to the worklist.
  */
 export function PriorityMenu({ slide }: { slide: Slide }) {
   const { t } = useTranslation(['slide', 'common'])

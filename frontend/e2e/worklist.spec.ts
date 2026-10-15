@@ -22,12 +22,23 @@ test.describe('priority worklist', () => {
     await expect(page.getByRole('switch', { name: 'Sort by AI risk score' })).toHaveAttribute('aria-checked', 'false')
   })
 
-  test('a manually prioritised slide goes to the top, marked as such', async ({ page, backend }) => {
-    backend.get(3).priority_override = 0.25
+  test('a manual priority ranks the slide by that level, marked as such', async ({ page, backend }) => {
+    backend.get(3).priority_override = 1 // highest: above every AI score
     await useLanguage(page, 'en')
     await page.goto('/')
     expect(await rowIds(page, 'Worklist')).toEqual([3, 1, 2])
     await expect(page.getByRole('link', { name: /Slide #3/ })).toContainText('Manual priority')
+  })
+
+  test('setting a slide back to low priority moves it back down', async ({ page, backend }) => {
+    backend.get(3).priority_override = 1
+    await useLanguage(page, 'en')
+    await page.goto('/')
+    expect(await rowIds(page, 'Worklist')).toEqual([3, 1, 2])
+
+    backend.get(3).priority_override = 0.25 // low: ranked as a score of 25, below slide 1 (91), above slide 2 (12)
+    await page.reload()
+    expect(await rowIds(page, 'Worklist')).toEqual([1, 3, 2])
   })
 
   test('relative times are Mongolian in Chrome (which has no Mongolian Intl data)', async ({ page, backend }) => {
