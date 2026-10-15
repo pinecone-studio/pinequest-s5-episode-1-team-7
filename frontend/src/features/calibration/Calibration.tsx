@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../shared/api/client.ts'
 import { useCreateSetup, useDeleteSetup, useSetups } from '../../shared/api/queries.ts'
 import { OBJECTIVES, type Objective, type SetupProfile } from '../../shared/api/types.ts'
-import { useDocumentTitle } from '../../shared/lib/hooks.ts'
 import { useImageSize } from '../viewer/useImageSize.ts'
 import { Alert } from '../../shared/ui/Alert.tsx'
 import { Button } from '../../shared/ui/Button.tsx'
@@ -19,24 +18,10 @@ import { umPerPx, type Point } from './scale.ts'
  * adapter. The technician photographs a stage micrometer, clicks two marks a known
  * distance apart, and the app stores µm/px at the objective used. Every later
  * capture names this setup plus its objective, and the engine resizes to its
- * training magnification from that.
+ * training magnification from that. Shown in CalibrationDialog, opened from the
+ * New slide panel.
  */
-export function CalibratePage() {
-  const { t } = useTranslation('calibrate')
-  useDocumentTitle(`${t('title')} · PathTriage`)
-  return (
-    <main className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
-      <div>
-        <h1 className="font-display text-[22px] font-bold tracking-[-0.02em]">{t('title')}</h1>
-        <p className="mt-1 text-sm text-ink-dim">{t('intro')}</p>
-      </div>
-      <SetupList />
-      <SetupForm />
-    </main>
-  )
-}
-
-function SetupList() {
+export function SetupList() {
   const { t } = useTranslation(['calibrate', 'common'])
   const setups = useSetups()
   const remove = useDeleteSetup()
@@ -85,7 +70,8 @@ function SetupList() {
   )
 }
 
-function SetupForm() {
+/** onSaved: called with the new setup (the dialog selects it and closes). */
+export function SetupForm({ onSaved }: { onSaved?: (setup: SetupProfile) => void } = {}) {
   const { t } = useTranslation(['calibrate', 'common'])
   const create = useCreateSetup()
   const [name, setName] = useState('')
@@ -134,6 +120,7 @@ function SetupForm() {
           setMarks([])
           if (photo) URL.revokeObjectURL(photo)
           setPhoto('')
+          onSaved?.(setup)
         },
       },
     )
@@ -219,7 +206,7 @@ function SetupForm() {
             e.target.value = ''
           }}
         />
-        <p className="mt-1 text-[11px] text-ink-faint">{photo ? t('calibrate:form.marksHint') : t('calibrate:form.photoHint')}</p>
+        {photo && <p className="mt-1 text-[11px] text-ink-faint">{t('calibrate:form.marksHint')}</p>}
       </div>
 
       <label className="block">
