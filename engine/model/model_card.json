@@ -136,7 +136,7 @@
       "test_auc": 0.9842,
       "size_mb": 343,
       "per_slide_s": 23.0,
-      "local": "slow",
+      "local": "no",
       "note": "most accurate, but about 230x slower than this model on a CPU"
     },
     {
@@ -149,7 +149,7 @@
         11.57
       ],
       "speed_estimated": true,
-      "local": "slow",
+      "local": "no",
       "note": "published accuracy; speed estimated"
     },
     {
@@ -182,7 +182,7 @@
           1.11,
           11.57
         ],
-        "local": "slow"
+        "local": "no"
       },
       {
         "model": "DenseNet (Veeling et al. 2018)",

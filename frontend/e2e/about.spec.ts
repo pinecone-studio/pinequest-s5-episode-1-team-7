@@ -18,7 +18,7 @@ test('about page shows the essentials and a model comparison', async ({ page, ba
   await expect(page.getByRole('heading', { name: 'Compared with other models' })).toBeVisible()
   const rows = page.getByRole('row')
   await expect(rows.filter({ hasText: 'Hibou-B teacher' })).toContainText('343 MB')
-  await expect(rows.filter({ hasText: 'Hibou-B teacher' })).toContainText('Yes, slowly')
+  await expect(rows.filter({ hasText: 'Hibou-B teacher' })).toContainText('No')
   await expect(rows.filter({ hasText: 'Published DenseNet' })).toContainText('0.955')
   await expect(rows.filter({ hasText: 'Published DenseNet' })).toContainText('≈0.48 s (est. 0.15–1.56)')
   await expect(page.getByRole('link', { name: 'Veeling et al. 2018' })).toHaveAttribute('href', 'https://arxiv.org/abs/1806.03962')

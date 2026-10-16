@@ -30,7 +30,7 @@
       "no": "No"
     },
     "estimated": "≈{{s}} s (est. {{low}}–{{high}})",
-    "localHelp": "\"Yes, slowly\": it runs on this PC, but over the 1.5 s per slide target. Speeds marked est. are estimated here with a network of the same size, because papers don't report speed."
+    "localHelp": "\"No\": too slow to use on this PC, over the 1.5 s per slide target. Speeds marked est. are estimated here with a network of the same size, because papers don't report speed."
   },
   "organ": {
     "label": "Organ model"

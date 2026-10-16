@@ -14,7 +14,7 @@
         1.11,
         11.57
       ],
-      "local": "slow"
+      "local": "no"
     },
     {
       "model": "DenseNet (Veeling et al. 2018)",
