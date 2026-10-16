@@ -75,8 +75,8 @@ def main():
         b["per_slide_s"] = round(float(np.sqrt(low * high)), 2)
         b["per_slide_range_s"] = [low, high]
         b["speed_method"] = method + (f"; x{P4M_COST_PER_PARAM} for rotation-equivariant layers" if factor > 1 else "")
-        # Small CNNs: they run on a clinic CPU; "slow" if the estimate misses the TDD budget.
-        b["local"] = "yes" if b["per_slide_s"] <= LOCAL_BUDGET_S else "slow"
+        # "no" if the estimate misses the TDD budget: too slow to run on a clinic CPU.
+        b["local"] = "yes" if b["per_slide_s"] <= LOCAL_BUDGET_S else "no"
         b.pop("clinic_pc", None)
         print(f"{b['model']}: ~{b['per_slide_s']} s per slide ({low}-{high}), local: {b['local']}")
     RESULTS.write_text(json.dumps(literature, indent=2) + "\n", encoding="utf-8")

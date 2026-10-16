@@ -110,7 +110,7 @@ export const mockModelInfo = {
     },
     comparison: [
       { model: 'This model', test_auc: 0.9687, size_mb: 6.42, per_slide_s: 0.1, local: 'yes', note: 'shipped' },
-      { model: 'Hibou-B teacher', test_auc: 0.9842, size_mb: 343, per_slide_s: 23, local: 'slow', note: 'too slow' },
+      { model: 'Hibou-B teacher', test_auc: 0.9842, size_mb: 343, per_slide_s: 23, local: 'no', note: 'too slow' },
       {
         model: 'Published DenseNet',
         test_auc: 0.955,

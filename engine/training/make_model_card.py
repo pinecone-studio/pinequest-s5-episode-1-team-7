@@ -103,7 +103,7 @@ def _device_table(plism: dict) -> tuple[dict, dict]:
     return scanners, phones
 
 
-LOCAL_BUDGET_S = 1.5  # TDD: under 1.5 s per slide on a clinic CPU; slower models still run, "slowly"
+LOCAL_BUDGET_S = 1.5  # TDD: under 1.5 s per slide on a clinic CPU; slower models count as not runnable locally
 
 
 def _teacher_row(teacher: dict, shipped_s: float) -> dict:
@@ -112,7 +112,7 @@ def _teacher_row(teacher: dict, shipped_s: float) -> dict:
     slower = round(seconds / shipped_s, -1)
     return {"model": "Hibou-B pathology foundation model (the teacher)", "test_auc": round(teacher["test_auc"], 4),
             "size_mb": teacher["cpu"]["size_mb"], "per_slide_s": seconds,
-            "local": "yes" if seconds <= LOCAL_BUDGET_S else "slow",
+            "local": "yes" if seconds <= LOCAL_BUDGET_S else "no",
             "note": f"most accurate, but about {slower:.0f}x slower than this model on a CPU"}
 
 

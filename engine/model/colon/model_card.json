@@ -145,7 +145,7 @@
       "test_auc": 0.9996,
       "size_mb": 343,
       "per_slide_s": 23.0,
-      "local": "slow",
+      "local": "no",
       "note": "most accurate, but about 230x slower than this model on a CPU"
     }
   ],
